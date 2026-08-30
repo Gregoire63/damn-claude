@@ -1,0 +1,40 @@
+# Nuxt dev/build outputs
+.output
+.nuxt
+.nitro
+.cache
+dist
+
+# Node dependencies
+node_modules
+
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# Misc
+.DS_Store
+.fleet
+.idea
+
+# Local env files
+.env
+.env.*
+!.env.example
+
+# Vercel
+.vercel
+
+# Netlify
+.netlify
+# Coffre local (miroir, propositions et passkey en développement)
+.data/vault/
+
+# Sas de suppression : `device_bash` ne sait pas supprimer sur le montage, donc les
+# fichiers à jeter y transitent. Ils n'ont jamais rien à faire dans un commit.
+_to_delete/

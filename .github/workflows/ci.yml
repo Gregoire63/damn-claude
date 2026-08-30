@@ -1,0 +1,50 @@
+name: CI
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+
+# Une seule exécution par branche : pousser trois fois de suite n'a pas à occuper
+# trois exécuteurs pour deux résultats qui n'intéressent plus personne.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verifier:
+    name: Garde-fous, tests et build
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-node@v6
+        with:
+          # La même version qu'en production (netlify.toml), épinglée : « 22 » tout
+          # court résout vers la dernière 22.x, ce qui passe aujourd'hui sans que
+          # rien ne le garantisse.
+          node-version-file: .nvmrc
+          cache: npm
+
+      - run: npm ci
+
+      # Les trois garde-fous d'abord : ils tournent en deux secondes et attrapent des
+      # fautes qu'aucun test ne verrait — un sélecteur CSS défini deux fois, une clé
+      # de données en double, une balise Vue mal fermée.
+      - name: Garde-fous
+        run: npm run check
+
+      - name: Tests
+        run: npm test
+
+      # Le build en dernier : il est le plus long, et il n'a d'intérêt que si le
+      # reste passe. Il vérifie aussi ce qu'aucun test ne couvre — que les gabarits
+      # compilent et que le bundle se construit.
+      - name: Build
+        run: npm run build
+        env:
+          # Le build ne doit pas dépendre de secrets. S'il en réclame un, c'est un
+          # bug à corriger, pas une variable à ajouter ici.
+          NODE_ENV: production

@@ -1,0 +1,247 @@
+# Héberger sa propre instance de Van Claude
+
+Ce suivi est fait pour tourner **chez toi**, sur ton hébergement, avec ton compte
+Anthropic. Il n'y a pas de compte à créer chez moi, pas de serveur central, pas de
+données qui transitent ailleurs que chez toi.
+
+L'architecture le permet parce qu'elle est mono-utilisateur *par instance* : un
+passkey, un miroir, une boîte de propositions. Ce n'est pas une limite qu'on
+contourne, c'est le modèle — chacun sa copie.
+
+---
+
+## Ce que tu obtiens
+
+- Un suivi de séances et de nutrition qui vit dans le navigateur de ton téléphone.
+  Aucune donnée ne quitte l'appareil tant que tu ne l'y autorises pas.
+- Un connecteur MCP que **ton** Claude peut lire, et dans lequel il dépose des
+  propositions que tu valides d'un tap. Il n'écrit jamais directement.
+- Une sauvegarde côté serveur (le miroir), qui sert aussi à changer de téléphone.
+
+## Ce que ça demande
+
+Un compte Netlify (l'offre gratuite suffit largement), un nom de domaine ou le
+sous-domaine `.netlify.app`, et dix minutes.
+
+---
+
+## 1. Déployer
+
+```bash
+git clone <ce dépôt> mon-suivi
+cd mon-suivi && npm install
+npm run dev            # http://localhost:3000
+```
+
+Sur Netlify : « Add new site » → « Import an existing project ». La configuration
+est déjà dans `netlify.toml` — commande `npm run build`, dossier `dist/`.
+
+> **`npm run build`, jamais `nuxt generate`.** `generate` prérend tout en fichiers
+> statiques : il n'y a alors aucun serveur, et les routes `server/api/**` n'existent
+> pas. Le connecteur et la sauvegarde disparaissent sans message d'erreur.
+
+L'application vit **à la racine** du domaine. Si tu la montes ailleurs, il faudra
+reprendre le `scope` du service worker (`public/sw.js`) et les chemins du manifeste.
+
+## 2. Poser les variables
+
+Dans Netlify → Site configuration → Environment variables. `.env.example` liste les
+mêmes, pour le développement local.
+
+### Obligatoires
+
+| Variable | À quoi ça sert | Comment la fabriquer |
+|---|---|---|
+| `NUXT_VAULT_SECRET` | Signe les jetons de session et du connecteur | `openssl rand -base64 48` |
+| `NUXT_VAULT_BOOTSTRAP` | Le code qui autorise à poser le **premier** passkey | Ce que tu veux, ≥ 8 caractères |
+
+### Pour le connecteur Claude
+
+| Variable | À quoi ça sert |
+|---|---|
+| `NUXT_MCP_CLIENT_ID` | Identifiant du client OAuth que tu donneras à Claude |
+| `NUXT_MCP_CLIENT_SECRET` | Son secret |
+
+Invente-les — ce sont **tes** identifiants, pas ceux d'un service tiers.
+`openssl rand -hex 16` fait très bien l'affaire pour les deux.
+
+### Facultative
+
+| Variable | À quoi ça sert |
+|---|---|
+| `NUXT_OWNER_NAME` | Ton prénom, si tu préfères le décrire ici. **Ce n'est pas nécessaire** : l'application te le demande au moment de poser ton passkey, et tu peux le corriger ensuite depuis le profil sans redéployer. |
+
+> ⚠️ **Aucun secret n'entre dans le dépôt.** Pas dans `.env` (il est ignoré), pas
+> dans un fichier de notes, pas dans un README de mise en route. Un dépôt public
+> garde tout dans son historique : effacer le fichier ne répare rien, seule la
+> régénération des clés répare. Tout se pose dans l'interface de l'hébergeur.
+
+### Et le nom du compte Claude ?
+
+On ne peut pas le récupérer. Le protocole MCP ne transporte **aucune identité
+d'utilisateur** : le message `initialize` porte un `clientInfo`, qui est le nom du
+*logiciel* client (« Claude »), pas celui de la personne. Le flux OAuth n'en
+transporte pas davantage — c'est ton propre serveur qui émet les jetons, et il
+décide seul de ce qu'il y met.
+
+C'est donc l'application qui demande le prénom, au moment où l'on pose le passkey.
+C'est le bon moment : c'est exactement là qu'on déclare que cette instance est la
+sienne, et la fenêtre du système l'affiche dans la seconde qui suit. C'est aussi de
+là que viennent les initiales affichées en haut de l'écran.
+
+## 3. Vérifier avant d'aller plus loin
+
+```
+https://ton-domaine/api/vault/health
+```
+
+Tu dois lire `"pret": true` et `"store": "ok"`. Si une variable manque, elle est
+nommée là ; si le stockage ne répond pas, l'erreur est là aussi.
+
+C'est le point de contrôle le plus important : sans lui, une variable oubliée se
+manifeste par « Aucun passkey », c'est-à-dire exactement ce qu'affiche une
+installation saine où l'on n'a rien fait.
+
+## 4. Poser ton passkey
+
+Ouvre `https://ton-domaine` → onglet **Profil** → carte **Connecteur Claude** →
+« Poser un passkey ». On te demandera ton prénom (facultatif) et le
+`NUXT_VAULT_BOOTSTRAP`.
+
+Le prénom est rangé à côté du passkey, pas dans la configuration : il s'affiche dans
+la fenêtre de ton téléphone, et dans ce que le connecteur raconte à Claude. Tu peux
+le changer plus tard depuis la même carte — « renommer ».
+
+**Une seule inscription est possible.** Une fois le passkey posé, la route
+d'enregistrement se ferme — sans quoi n'importe qui passant sur le site pourrait s'en
+créer un et lire tes données. Pour repartir de zéro (téléphone perdu), la route de
+remise à zéro demande le même code de démarrage. Ne le supprime donc pas après
+l'installation : c'est ton double des clés.
+
+> Le passkey est lié au **domaine**. Changer de domaine invalide celui que tu as
+> posé — il faudra en reposer un avec le code de démarrage.
+
+## 5. Brancher Claude
+
+Dans Claude → Paramètres → Connecteurs → « Ajouter un connecteur personnalisé » :
+
+- URL : `https://ton-domaine/api/mcp`
+- Identifiant client : ton `NUXT_MCP_CLIENT_ID`
+- Secret client : ton `NUXT_MCP_CLIENT_SECRET`
+
+Claude t'enverra sur une page d'autorisation servie par ton propre site, qui te
+demandera ton passkey avant d'accorder quoi que ce soit.
+
+`SKILL.md`, à la racine, est la fiche qui explique à Claude comment se servir des
+outils. Installe-la comme compétence : sans elle il découvre les outils un par un,
+avec elle il sait par lequel commencer.
+
+> La liste des outils est mise en cache **à la connexion**. Après un déploiement qui
+> change les outils, ouvre une nouvelle conversation ou rebranche le connecteur —
+> sinon la session en cours continue de voir l'ancienne version.
+
+---
+
+## 6. Poids et pas
+
+L'onglet **Profil** → carte **Poids et pas**.
+
+**Sans aucun objet connecté, ça marche.** Tu saisis ton poids au réveil et tes pas si
+tu les connais. C'est ce que faisaient les carnets, et ça suffit à tout calculer : le
+métabolisme de base, la dépense du jour, la cible à manger. Laisser les pas vides
+retombe sur une estimation tirée de ta semaine type.
+
+### Brancher une balance
+
+| Marque | État | Ce qu'il faut poser |
+|---|---|---|
+| **Withings** | Fonctionne | `NUXT_WITHINGS_CLIENT_ID`, `NUXT_WITHINGS_CLIENT_SECRET` |
+| **Fitbit** | Écrit, **jamais déroulé en vrai** | `NUXT_FITBIT_CLIENT_ID`, `NUXT_FITBIT_CLIENT_SECRET` |
+| **Garmin** | **Impossible aujourd'hui** | — |
+
+Une marque dont les variables ne sont pas posées **ne s'affiche pas** dans l'écran.
+C'est délibéré : un bouton « Connecter » qui rend une erreur se lit comme une panne,
+et on cherche pendant dix minutes un problème qui n'existe pas.
+
+**Withings** — crée une application sur <https://developer.withings.com>, en
+indiquant comme URL de retour `https://ton-domaine/api/withings/callback`. L'URL doit
+correspondre **exactement**. Les jetons de chaque personne restent dans le navigateur
+de son téléphone ; le serveur n'en conserve aucun, et ils sont volontairement exclus
+de l'export JSON comme du miroir.
+
+**Fitbit** — crée une application sur <https://dev.fitbit.com/apps/new>. Type
+« Personal » (c'est le seul qui donne accès aux données détaillées de ton propre
+compte), URL de rappel `https://ton-domaine/api/fitbit/callback`, et coche les
+autorisations **`weight`** et **`activity`** — sans elles l'API répond 403, et
+réautoriser n'y changera rien.
+
+> **Ce chemin n'a jamais été déroulé sur un vrai compte.** Les points d'entrée et
+> les formats viennent de la documentation officielle, et le trajet reprend celui de
+> Withings, éprouvé lui. Mais aucun compte développeur n'était disponible pour le
+> tester de bout en bout : attends-toi à corriger un détail au premier essai. Les
+> messages d'erreur sont écrits pour ça — ils distinguent « pas configuré » (501),
+> « autorisations manquantes dans le portail » (403), « autorisation expirée » (401)
+> et « Fitbit injoignable » (502). Si tu tombes sur l'un d'eux, il dit quoi regarder.
+
+Un piège vérifié au passage : Fitbit décide des **unités** d'après l'en-tête
+`Accept-Language`. Sans lui, les poids arrivent en livres — 91,5 kg devient 201,7, et
+rien dans la réponse ne le signale. Le client force `fr_FR`.
+
+**Garmin** — le programme développeur Garmin est **en pause** : le formulaire de
+demande d'accès a été retiré et aucune date de réouverture n'est annoncée
+(vérifié en août 2026). Personne ne peut obtenir d'identifiants, quel que soit le
+code écrit ici. La fiche reste dans `lib/providers.ts` pour que la question ne se
+repose pas tous les six mois.
+
+### Ajouter une marque
+
+Trois choses, et Fitbit sert de modèle complet :
+
+1. une fiche dans `lib/providers.ts` — le nom, ce qu'elle fournit, les variables
+   à poser — plus une fonction de conversion vers la forme de l'application ;
+2. quatre routes dans `server/api/<marque>/` : `authorize`, `callback`, `claim`,
+   `sync`. Recopie `server/api/fitbit/`, le trajet est le même pour tout le monde ;
+3. un composable qui garde SES jetons et verse dans les magasins communs —
+   `useWithings().adopt()` pour les pesées, `useNutrition().setSteps()` pour les pas.
+
+Le point à ne pas rater est le troisième. Une marque qui se construit son propre
+historique de poids donne deux séries du même chiffre : la courbe en choisit une, le
+métabolisme de base l'autre, et l'écart se découvre des semaines plus tard. `adopt`
+existe pour ça — dédoublonnage, quarantaine des pesées aberrantes et miroir vers le
+module séances viennent avec.
+
+---
+
+## Ce qui reste à toi de régler
+
+**L'application démarre vide.** Ni programme, ni aliments, ni recettes, ni menus : le
+premier écran te propose de la faire remplir par Claude (un message prêt à coller) ou
+de charger le pack d'exemple. Ce pack — quatre séances, cent cinquante-deux aliments,
+trente-quatre recettes, deux semaines de menus — ce sont **mes** données. Il arrive
+comme une sauvegarde, donc en contenu personnel : tu le modifies, et tu peux le
+retirer entièrement.
+
+Si tu veux plutôt que TA copie livre TON contenu — pour l'installer sur plusieurs
+téléphones sans repasser par l'import — remplace `data/exemple/programme.ts` et
+`data/exemple/nutrition.ts` par les tiens et relance `npm run exemple`. Un test
+vérifie que `public/exemple.json` est à jour, donc tu ne peux pas l'oublier.
+
+Une chose n'est encore réglable que dans le code : l'estimation de pas par défaut
+(3 500 en télétravail, 7 500 sur site) correspond à mon rythme — elle est dans
+`lib/nutritionStats.ts`.
+
+Les icônes (`public/icon-192.png`, `public/icon-512.png`) et le nom affiché
+(`public/manifest.webmanifest`, `nuxt.config.ts`) sont les miens aussi. Remplace-les :
+c'est ton application sur ton téléphone.
+
+---
+
+## Et la licence ?
+
+**GNU AGPL v3.** Pour ce que tu es en train de faire — héberger ta copie, pour toi —
+elle ne te demande rien du tout. Modifie, remplace le pack d'exemple, garde tout pour
+toi : c'est ton instance.
+
+Elle se réveille dans un seul cas : si tu fais tourner une version modifiée **comme
+service pour d'autres personnes**, tes modifications doivent être publiques sous la
+même licence. C'est la différence entre l'AGPL et la GPL, et c'est délibéré.

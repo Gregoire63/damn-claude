@@ -1,0 +1,4394 @@
+{
+  "_apropos": "Contenu d’exemple — programme, semaine type, aliments, recettes et menus. Import depuis Profil → Données. Rien n’est écrasé : tout arrive comme du contenu personnel, modifiable.",
+  "programme": {
+    "sessions": [
+      {
+        "id": "s1",
+        "name": "Pecs, Épaules & Triceps",
+        "tag": "Lundi · Push",
+        "color": "#8b6f5c",
+        "sprint": null,
+        "exercises": [
+          {
+            "id": "dc-barre",
+            "name": "Développé couché barre",
+            "sets": 4,
+            "reps": "6-8",
+            "rest": 180,
+            "muscles": [
+              "pecs",
+              "epaules-av",
+              "triceps"
+            ],
+            "cues": [
+              "Omoplates serrées, pieds ancrés au sol",
+              "Barre au niveau des mamelons, coudes ~45°",
+              "Pousse en explosif, descends en 2 sec"
+            ],
+            "machine": "Alternative On Air : machine convergente si les barres sont prises"
+          },
+          {
+            "id": "di-halteres",
+            "name": "Développé incliné haltères",
+            "sets": 3,
+            "reps": "8-10",
+            "rest": 120,
+            "muscles": [
+              "pecs",
+              "epaules-av"
+            ],
+            "cues": [
+              "Banc à 30° max, pas plus",
+              "Descends jusqu'à l'étirement du pec",
+              "Ne claque pas les haltères en haut"
+            ],
+            "machine": ""
+          },
+          {
+            "id": "dev-mil",
+            "name": "Développé militaire haltères",
+            "sets": 2,
+            "reps": "8-10",
+            "rest": 120,
+            "muscles": [
+              "epaules-av",
+              "epaules-lat",
+              "triceps"
+            ],
+            "cues": [
+              "Assis dossier à 85°",
+              "Descends les haltères au niveau des oreilles",
+              "Gainage serré, pas d'arche lombaire"
+            ],
+            "machine": "Alternative : machine développé épaules"
+          },
+          {
+            "id": "elev-lat",
+            "name": "Élévations latérales",
+            "sets": 3,
+            "reps": "15",
+            "rest": 75,
+            "muscles": [
+              "epaules-lat"
+            ],
+            "cues": [
+              "Monte jusqu'à l'horizontale, pas plus",
+              "Petit doigt légèrement vers le haut",
+              "Léger et strict > lourd et moche"
+            ],
+            "machine": "Ou poulie basse unilatéral"
+          },
+          {
+            "id": "dips",
+            "name": "Dips lestés",
+            "sets": 3,
+            "reps": "8-12",
+            "rest": 150,
+            "muscles": [
+              "pecs",
+              "triceps"
+            ],
+            "cues": [
+              "Buste penché en avant = pec, droit = triceps",
+              "Descends jusqu'à 90° aux coudes",
+              "Charge préremplie avec ton poids de corps — ajoute ton lest par-dessus dès que tu passes 12 reps"
+            ],
+            "machine": "Alternative : machine à dips assis",
+            "bodyweight": true
+          },
+          {
+            "id": "crunch-cable",
+            "name": "Crunch à la poulie",
+            "sets": 3,
+            "reps": "12-15",
+            "rest": 60,
+            "muscles": [
+              "abdos"
+            ],
+            "cues": [
+              "À genoux face à la poulie haute",
+              "Enroule la colonne, ne tire pas avec les bras",
+              "Charge progressive"
+            ],
+            "machine": ""
+          }
+        ]
+      },
+      {
+        "id": "s2",
+        "name": "Dos & Biceps",
+        "tag": "Mardi + Sprint",
+        "color": "#5f7a6b",
+        "sprint": {
+          "title": "Sprints — fin de séance",
+          "goal": "Développer puissance et explosivité sans casser la récup des jambes. On reste à ~90 %, jamais à fond : la qualité prime sur la quantité.",
+          "warmup": [
+            "5 min footing léger pour monter la température",
+            "Mobilité : montées de genoux, talons-fesses, pas chassés (2 × 20 m)",
+            "3 accélérations progressives sur 60 m : 60 %, puis 70 %, puis 80 %"
+          ],
+          "protocol": [
+            {
+              "label": "Séries",
+              "value": "5 à 6"
+            },
+            {
+              "label": "Effort",
+              "value": "60–80 m · 10–15 s"
+            },
+            {
+              "label": "Intensité",
+              "value": "85–90 %"
+            },
+            {
+              "label": "Récup",
+              "value": "2 min marche"
+            }
+          ],
+          "exterieur": [
+            "Surface souple de préférence : piste synthétique, herbe sèche. Évite le bitume dur.",
+            "Départ debout, accélération progressive sur les 20 premiers mètres.",
+            "Tiens la vitesse max sur 30–40 m, sans crisper.",
+            "Décélère en douceur sur 15–20 m — ne t'arrête jamais net."
+          ],
+          "tapis": [
+            "Règle la vitesse AVANT de lancer l'effort : sur tapis on sprinte à vitesse fixe.",
+            "Vitesse cible ≈ 15–18 km/h (commence plus bas et monte semaine après semaine).",
+            "Inclinaison 1–2 % pour se rapprocher des conditions extérieures.",
+            "Attache la pince d'arrêt d'urgence à toi — obligatoire.",
+            "Pieds sur les rails latéraux, lance le tapis, attends la vitesse, puis pose-toi sur la bande (mains aux barres au départ si besoin).",
+            "Sprinte 10–15 s, puis repose les pieds sur les rails (laisse le tapis tourner) pour la récup."
+          ],
+          "tapisNote": "Sur tapis, raisonne en TEMPS (10–15 s) plutôt qu'en distance, et ne descends jamais du tapis à pleine vitesse.",
+          "cues": [
+            "Grandis-toi, buste très légèrement en avant.",
+            "Bras actifs qui rythment la foulée, mains et épaules relâchées.",
+            "Appuis sur l'avant du pied, fréquence élevée plutôt que grandes enjambées."
+          ],
+          "cooldown": "5 min de marche + étirements légers ischios/mollets. Idéalement un week-end de récup derrière."
+        },
+        "exercises": [
+          {
+            "id": "tirage-v",
+            "name": "Tirage vertical",
+            "sets": 3,
+            "reps": "8-10",
+            "rest": 120,
+            "muscles": [
+              "dos",
+              "biceps"
+            ],
+            "cues": [
+              "Prise légèrement plus large que les épaules",
+              "Tire vers le haut des pecs, coudes vers le bas",
+              "Ne te balance pas en arrière"
+            ],
+            "machine": "Ou tractions lestées si maîtrisées"
+          },
+          {
+            "id": "rowing-m",
+            "name": "Rowing machine",
+            "sets": 4,
+            "reps": "8-10",
+            "rest": 120,
+            "muscles": [
+              "dos",
+              "biceps"
+            ],
+            "cues": [
+              "Poitrine collée au support",
+              "Tire les coudes en arrière, serre les omoplates",
+              "Pause 1 sec en contraction"
+            ],
+            "machine": "Machine rowing assis prise neutre"
+          },
+          {
+            "id": "lombaires",
+            "name": "Extensions lombaires (banc)",
+            "sets": 3,
+            "reps": "12-15",
+            "rest": 75,
+            "muscles": [
+              "lombaires",
+              "fessiers"
+            ],
+            "cues": [
+              "Buste qui descend lentement, dos neutre",
+              "Remonte jusqu'à l'alignement, sans cambrer à l'excès",
+              "Serre les fessiers en haut",
+              "1-2 tenues de 5 s en haut sur la dernière série",
+              "Disque contre la poitrine quand 15 reps deviennent faciles (note le lest, 0 = poids de corps)"
+            ],
+            "machine": "Banc à lombaires 45° ou banc romain"
+          },
+          {
+            "id": "face-pull",
+            "name": "Face pull",
+            "sets": 3,
+            "reps": "15",
+            "rest": 75,
+            "muscles": [
+              "epaules-ar",
+              "dos"
+            ],
+            "cues": [
+              "Poulie à hauteur du visage, corde",
+              "Tire vers le front en écartant",
+              "Rotation externe en fin de mouvement"
+            ],
+            "machine": ""
+          },
+          {
+            "id": "oiseau",
+            "name": "Oiseau (reverse fly)",
+            "sets": 3,
+            "reps": "15",
+            "rest": 75,
+            "muscles": [
+              "epaules-ar"
+            ],
+            "cues": [
+              "Buste penché à ~90°, dos plat",
+              "Écarte les bras en serrant les omoplates",
+              "Léger et strict, aucun élan — monte jusqu'à l'horizontale"
+            ],
+            "machine": "Haltères, poulies croisées ou pec deck inversé"
+          },
+          {
+            "id": "curl-marteau",
+            "name": "Curl marteau (hammer)",
+            "sets": 3,
+            "reps": "10-12",
+            "rest": 90,
+            "muscles": [
+              "biceps",
+              "avant-bras"
+            ],
+            "cues": [
+              "Prise NEUTRE (paumes qui se font face), poignets verrouillés",
+              "Travaille le brachial (sous le biceps) + le long chef → l'épaisseur du bras",
+              "Contrôle la descente 2-3 s, aucun élan"
+            ],
+            "machine": "Haltères, ou corde à la poulie basse"
+          },
+          {
+            "id": "suspension",
+            "name": "Suspension à la barre",
+            "sets": 3,
+            "reps": "30-45 s",
+            "rest": 90,
+            "mesure": "temps",
+            "bodyweight": true,
+            "muscles": [
+              "avant-bras",
+              "abdos"
+            ],
+            "cues": [
+              "Suspension passive : épaules relâchées, bras tendus",
+              "Serre la barre, respire, tiens",
+              "Compte les secondes — la progression se joue sur la durée, puis sur le lest"
+            ],
+            "machine": "Barre de traction — sangles INTERDITES, c'est la poigne qu'on travaille"
+          }
+        ]
+      },
+      {
+        "id": "s3",
+        "name": "Jambes",
+        "tag": "Jeudi · maintien",
+        "color": "#b07d2e",
+        "sprint": null,
+        "exercises": [
+          {
+            "id": "squat",
+            "name": "Squat",
+            "sets": 3,
+            "reps": "6-8",
+            "rest": 180,
+            "muscles": [
+              "quadris",
+              "fessiers"
+            ],
+            "cues": [
+              "Descends sous la parallèle si mobilité OK",
+              "Genoux dans l'axe des pieds",
+              "Gainage avant de descendre"
+            ],
+            "machine": ""
+          },
+          {
+            "id": "sdt-r",
+            "name": "Soulevé de terre roumain",
+            "sets": 3,
+            "reps": "8-10",
+            "rest": 180,
+            "muscles": [
+              "ischios",
+              "fessiers",
+              "dos"
+            ],
+            "cues": [
+              "Hanches en arrière, genoux quasi fixes",
+              "Barre collée aux jambes",
+              "Étirement ischio puis remonte avec les hanches"
+            ],
+            "machine": ""
+          },
+          {
+            "id": "fentes",
+            "name": "Fentes marchées",
+            "sets": 2,
+            "reps": "10/j",
+            "rest": 150,
+            "muscles": [
+              "quadris",
+              "fessiers"
+            ],
+            "cues": [
+              "Grand pas, genou arrière frôle le sol",
+              "Buste droit",
+              "Haltères le long du corps"
+            ],
+            "machine": "Ou presse unilatérale"
+          },
+          {
+            "id": "leg-curl",
+            "name": "Leg curl (ischios)",
+            "sets": 3,
+            "reps": "10-12",
+            "rest": 90,
+            "muscles": [
+              "ischios"
+            ],
+            "cues": [
+              "Contrôle la descente (2-3 s)",
+              "Amplitude complète, sans à-coup",
+              "Bassin plaqué au banc, pas de coup de rein"
+            ],
+            "machine": "Machine leg curl allongé ou assis"
+          },
+          {
+            "id": "mollets",
+            "name": "Mollets debout",
+            "sets": 3,
+            "reps": "12-15",
+            "rest": 75,
+            "muscles": [
+              "mollets"
+            ],
+            "cues": [
+              "Amplitude complète, pause en bas",
+              "Monte sur la pointe max",
+              "Pas de rebond"
+            ],
+            "machine": "Machine debout ou à la presse"
+          },
+          {
+            "id": "releves",
+            "name": "Relevés de jambes suspendu",
+            "sets": 3,
+            "reps": "12",
+            "rest": 60,
+            "muscles": [
+              "abdos"
+            ],
+            "cues": [
+              "Enroule le bassin, pas juste les jambes",
+              "Contrôle la descente",
+              "Tape seulement le LEST : rien si tu es à vide, le poids des lests de chevilles sinon"
+            ],
+            "machine": "Barre de traction ou chaise romaine",
+            "bodyweight": true
+          }
+        ]
+      },
+      {
+        "id": "s4",
+        "name": "Pecs & Bras",
+        "tag": "Vendredi + Sprint",
+        "color": "#9a6a4f",
+        "sprint": {
+          "title": "Sprints — fin de séance",
+          "goal": "Développer puissance et explosivité sans casser la récup des jambes. On reste à ~90 %, jamais à fond : la qualité prime sur la quantité.",
+          "warmup": [
+            "5 min footing léger pour monter la température",
+            "Mobilité : montées de genoux, talons-fesses, pas chassés (2 × 20 m)",
+            "3 accélérations progressives sur 60 m : 60 %, puis 70 %, puis 80 %"
+          ],
+          "protocol": [
+            {
+              "label": "Séries",
+              "value": "5 à 6"
+            },
+            {
+              "label": "Effort",
+              "value": "60–80 m · 10–15 s"
+            },
+            {
+              "label": "Intensité",
+              "value": "85–90 %"
+            },
+            {
+              "label": "Récup",
+              "value": "2 min marche"
+            }
+          ],
+          "exterieur": [
+            "Surface souple de préférence : piste synthétique, herbe sèche. Évite le bitume dur.",
+            "Départ debout, accélération progressive sur les 20 premiers mètres.",
+            "Tiens la vitesse max sur 30–40 m, sans crisper.",
+            "Décélère en douceur sur 15–20 m — ne t'arrête jamais net."
+          ],
+          "tapis": [
+            "Règle la vitesse AVANT de lancer l'effort : sur tapis on sprinte à vitesse fixe.",
+            "Vitesse cible ≈ 15–18 km/h (commence plus bas et monte semaine après semaine).",
+            "Inclinaison 1–2 % pour se rapprocher des conditions extérieures.",
+            "Attache la pince d'arrêt d'urgence à toi — obligatoire.",
+            "Pieds sur les rails latéraux, lance le tapis, attends la vitesse, puis pose-toi sur la bande (mains aux barres au départ si besoin).",
+            "Sprinte 10–15 s, puis repose les pieds sur les rails (laisse le tapis tourner) pour la récup."
+          ],
+          "tapisNote": "Sur tapis, raisonne en TEMPS (10–15 s) plutôt qu'en distance, et ne descends jamais du tapis à pleine vitesse.",
+          "cues": [
+            "Grandis-toi, buste très légèrement en avant.",
+            "Bras actifs qui rythment la foulée, mains et épaules relâchées.",
+            "Appuis sur l'avant du pied, fréquence élevée plutôt que grandes enjambées."
+          ],
+          "cooldown": "5 min de marche + étirements légers ischios/mollets. Idéalement un week-end de récup derrière."
+        },
+        "exercises": [
+          {
+            "id": "dev-halteres",
+            "name": "Développé couché haltères",
+            "sets": 4,
+            "reps": "8-10",
+            "rest": 120,
+            "muscles": [
+              "pecs",
+              "epaules-av",
+              "triceps"
+            ],
+            "cues": [
+              "Amplitude plus grande qu'à la barre",
+              "Descends jusqu'à l'étirement",
+              "Trajectoire en léger arc de cercle"
+            ],
+            "machine": ""
+          },
+          {
+            "id": "ecartes",
+            "name": "Écartés à la poulie",
+            "sets": 3,
+            "reps": "12-15",
+            "rest": 75,
+            "muscles": [
+              "pecs"
+            ],
+            "cues": [
+              "Léger arrondi des coudes, fixe",
+              "Croise légèrement les mains devant",
+              "Tension continue, pas de repos en haut"
+            ],
+            "machine": "Ou au pec deck"
+          },
+          {
+            "id": "tractions",
+            "name": "Tractions",
+            "sets": 4,
+            "reps": "max",
+            "rest": 150,
+            "muscles": [
+              "dos",
+              "biceps"
+            ],
+            "cues": [
+              "Note le nombre de reps à chaque série — objectif : battre ton total",
+              "Tape seulement le LEST : ton poids du jour est ajouté tout seul",
+              "Ajoute du lest dès que tu passes 10-12 reps propres",
+              "Descente lente et contrôlée (2-3 s) — le négatif fait grossir le dos"
+            ],
+            "machine": "Barre de traction — assistance élastique/machine si besoin",
+            "bodyweight": true
+          },
+          {
+            "id": "ss-bras",
+            "name": "Superset triceps : pushdown + extension",
+            "sets": 3,
+            "reps": "12+12",
+            "rest": 120,
+            "muscles": [
+              "triceps"
+            ],
+            "cues": [
+              "12 pushdowns à la corde (poulie haute)",
+              "Puis SANS repos, 12 extensions au-dessus de la tête (corde, poulie basse)",
+              "Repos seulement après les deux exos, puis on recommence",
+              "Deux angles : chef latéral (pushdown) + longue portion (overhead) = triceps complet"
+            ],
+            "machine": "Poulie corde — haute pour le pushdown, basse pour l'overhead",
+            "superset": [
+              "Pushdown",
+              "Overhead"
+            ]
+          },
+          {
+            "id": "curl-21",
+            "name": "Curl 21 (méthode 7-7-7)",
+            "sets": 3,
+            "reps": "7+7+7 (21)",
+            "rest": 90,
+            "muscles": [
+              "biceps"
+            ],
+            "cues": [
+              "7 reps sur la moitié basse (bas → milieu)",
+              "7 reps sur la moitié haute (milieu → haut)",
+              "7 reps en amplitude complète",
+              "Charge légère, aucun élan — c'est la brûlure qui fait le boulot"
+            ],
+            "machine": "Barre EZ, haltères ou poulie basse"
+          },
+          {
+            "id": "tractions-tenue",
+            "name": "Tenue menton au-dessus de la barre",
+            "sets": 2,
+            "reps": "10-20 s",
+            "rest": 90,
+            "mesure": "temps",
+            "bodyweight": true,
+            "optionnel": true,
+            "muscles": [
+              "dos",
+              "biceps"
+            ],
+            "cues": [
+              "Menton franchement au-dessus de la barre, épaules basses",
+              "Tiens jusqu'à ne plus pouvoir tenir la position — pas jusqu'à ce que ce soit dur",
+              "Compte les secondes, pas les répétitions"
+            ],
+            "machine": "Barre de traction"
+          }
+        ]
+      }
+    ]
+  },
+  "weekPlan": [
+    "s1",
+    "s2",
+    null,
+    "s3",
+    "s4",
+    null,
+    null
+  ],
+  "nutrition": {
+    "userFoods": [
+      {
+        "id": "flocons-d-avoine",
+        "name": "Flocons d'avoine",
+        "cat": "feculents",
+        "kcal": 375,
+        "p": 13,
+        "g": 60,
+        "l": 7,
+        "buy": "pesé cru",
+        "micro": {
+          "fib": 10,
+          "ca": 54,
+          "fe": 4,
+          "mg": 145,
+          "zn": 3,
+          "k": 380,
+          "b9": 32
+        }
+      },
+      {
+        "id": "fromage-blanc-0",
+        "name": "Fromage blanc 0 %",
+        "cat": "laitiers",
+        "kcal": 47,
+        "p": 8,
+        "g": 4.5,
+        "l": 0.2,
+        "micro": {
+          "ca": 120,
+          "fe": 0.1,
+          "mg": 11,
+          "zn": 0.5,
+          "k": 150,
+          "vc": 1,
+          "b9": 12
+        }
+      },
+      {
+        "id": "yaourt-grec-0",
+        "name": "Yaourt grec 0 %",
+        "cat": "laitiers",
+        "kcal": 57,
+        "p": 10,
+        "g": 4,
+        "l": 0.2,
+        "buy": "la base de toutes les sauces crémeuses du plan",
+        "keeps": 5,
+        "noFreeze": true,
+        "micro": {
+          "ca": 110,
+          "fe": 0.1,
+          "mg": 11,
+          "zn": 0.5,
+          "k": 141,
+          "b9": 7
+        }
+      },
+      {
+        "id": "whey-poudre",
+        "name": "Protéine en poudre",
+        "cat": "complements",
+        "kcal": 407,
+        "p": 90,
+        "g": 6,
+        "l": 2.5,
+        "buy": "1 dose ≈ 30 g · vise 80 g de protéines ou plus pour 100 g",
+        "micro": {
+          "ca": 20,
+          "fe": 2,
+          "mg": 15,
+          "zn": 3,
+          "k": 100,
+          "b9": 5
+        }
+      },
+      {
+        "id": "creatine-monohydrate",
+        "name": "Creatine monohydrate",
+        "cat": "complements",
+        "kcal": 0,
+        "p": 0,
+        "g": 0,
+        "l": 0
+      },
+      {
+        "id": "fruits-rouges-surgeles",
+        "name": "Fruits rouges surgelés",
+        "cat": "fruits",
+        "kcal": 45,
+        "p": 1,
+        "g": 8,
+        "l": 0.3,
+        "buy": "surgelés",
+        "micro": {
+          "fib": 5,
+          "ca": 25,
+          "fe": 0.6,
+          "mg": 18,
+          "zn": 0.3,
+          "k": 150,
+          "vc": 25,
+          "b9": 25
+        }
+      },
+      {
+        "id": "filet-de-poulet",
+        "cook": "22 min au four à 200 °C — paprika, ail, curry",
+        "name": "Filet de poulet",
+        "cat": "viandes",
+        "kcal": 110,
+        "p": 23,
+        "g": 0,
+        "l": 1.8,
+        "keeps": 3,
+        "micro": {
+          "ca": 8,
+          "fe": 0.5,
+          "mg": 28,
+          "zn": 0.9,
+          "k": 350,
+          "vd": 0.1,
+          "o3": 30,
+          "b9": 5
+        }
+      },
+      {
+        "id": "escalope-de-dinde",
+        "cook": "en lanières, 6 min à la poêle à feu vif",
+        "name": "Escalope de dinde",
+        "cat": "viandes",
+        "kcal": 105,
+        "p": 22,
+        "g": 0,
+        "l": 1.5,
+        "keeps": 3,
+        "micro": {
+          "ca": 10,
+          "fe": 0.7,
+          "mg": 28,
+          "zn": 1.5,
+          "k": 330,
+          "vd": 0.1,
+          "o3": 25,
+          "b9": 8
+        }
+      },
+      {
+        "id": "steak-hache-5",
+        "cook": "poêlé à sec 5 min, il rend assez de gras pour lui-même",
+        "name": "Steak haché 5 %",
+        "cat": "viandes",
+        "kcal": 137,
+        "p": 21,
+        "g": 0,
+        "l": 5,
+        "keeps": 3,
+        "micro": {
+          "ca": 8,
+          "fe": 2.6,
+          "mg": 22,
+          "zn": 4.5,
+          "k": 330,
+          "vd": 0.2,
+          "o3": 30,
+          "b9": 8
+        }
+      },
+      {
+        "id": "cabillaud-colin",
+        "cook": "en papillote, 15 min au four à 200 °C — citron, ail, herbes",
+        "name": "Cabillaud / colin",
+        "cat": "viandes",
+        "kcal": 80,
+        "p": 18,
+        "g": 0,
+        "l": 0.8,
+        "keeps": 2,
+        "micro": {
+          "ca": 20,
+          "fe": 0.2,
+          "mg": 25,
+          "zn": 0.4,
+          "k": 380,
+          "vc": 1,
+          "vd": 1,
+          "o3": 200,
+          "b9": 8
+        }
+      },
+      {
+        "id": "maquereau",
+        "cook": "au four 12 min à 200 °C, ou à la poêle 3 min par face. En boîte au naturel, c'est tout aussi bon et déjà cuit.",
+        "name": "Maquereau",
+        "cat": "viandes",
+        "kcal": 205,
+        "p": 19,
+        "g": 0,
+        "l": 14,
+        "buy": "frais, surgelé ou en boîte au naturel — deux fois moins cher que le saumon",
+        "keeps": 2,
+        "micro": {
+          "ca": 12,
+          "fe": 1.6,
+          "mg": 76,
+          "zn": 0.6,
+          "k": 314,
+          "vd": 13.8,
+          "o3": 2600,
+          "b9": 1
+        }
+      },
+      {
+        "id": "champignons-uv",
+        "cook": "émincés, 6 min à la poêle À SEC d'abord, pour qu'ils rendent leur eau",
+        "name": "Champignons exposés aux UV",
+        "cat": "legumes",
+        "kcal": 22,
+        "p": 3,
+        "g": 1,
+        "l": 0.3,
+        "buy": "cherche la mention « source de vitamine D » ou « exposés aux UV » sur la barquette — ce sont les mêmes champignons, passés sous une lampe. Les ordinaires n'en contiennent quasiment pas.",
+        "keeps": 3,
+        "micro": {
+          "fib": 2,
+          "ca": 4,
+          "fe": 0.5,
+          "mg": 10,
+          "zn": 0.5,
+          "k": 350,
+          "vc": 2,
+          "vd": 10,
+          "b9": 25
+        }
+      },
+      {
+        "id": "saumon",
+        "cook": "côté peau 4 min sans le retourner, puis 1 min sur l'autre face",
+        "name": "Saumon",
+        "cat": "viandes",
+        "kcal": 200,
+        "p": 20,
+        "g": 0,
+        "l": 13,
+        "keeps": 2,
+        "micro": {
+          "ca": 12,
+          "fe": 0.4,
+          "mg": 28,
+          "zn": 0.5,
+          "k": 380,
+          "vd": 8,
+          "o3": 2200,
+          "b9": 26
+        }
+      },
+      {
+        "id": "thon-au-naturel-egoutte",
+        "cook": "rien à cuire : égoutte et ajoute hors du feu",
+        "name": "Thon au naturel égoutté",
+        "cat": "viandes",
+        "kcal": 110,
+        "p": 26,
+        "g": 0,
+        "l": 1,
+        "keeps": 3,
+        "micro": {
+          "ca": 15,
+          "fe": 1,
+          "mg": 30,
+          "zn": 0.7,
+          "k": 240,
+          "vd": 2,
+          "o3": 250,
+          "b9": 4
+        }
+      },
+      {
+        "id": "ufs-entiers",
+        "noFreeze": true,
+        "cook": "battus, versés sur les légumes déjà saisis, 3 min à couvert",
+        "name": "Œufs entiers",
+        "cat": "oeufs",
+        "kcal": 143,
+        "p": 12.5,
+        "g": 0.7,
+        "l": 10,
+        "buy": "1 œuf ≈ 55 g",
+        "keeps": 3,
+        "micro": {
+          "ca": 55,
+          "fe": 1.8,
+          "mg": 12,
+          "zn": 1.3,
+          "k": 130,
+          "vd": 2,
+          "o3": 90,
+          "b9": 50
+        }
+      },
+      {
+        "id": "riz-basmati",
+        "cook": "11 min à l'eau bouillante salée, puis égoutte et étale sur un plat pour refroidir vite",
+        "name": "Riz basmati",
+        "cat": "feculents",
+        "kcal": 350,
+        "p": 7,
+        "g": 78,
+        "l": 0.6,
+        "buy": "pesé cru",
+        "micro": {
+          "fib": 1.4,
+          "ca": 10,
+          "fe": 0.9,
+          "mg": 35,
+          "zn": 1.1,
+          "k": 110,
+          "b9": 8
+        }
+      },
+      {
+        "id": "pates-completes",
+        "cook": "9 min, al dente — elles finiront de cuire au réchauffage",
+        "name": "Pâtes complètes",
+        "cat": "feculents",
+        "kcal": 350,
+        "p": 13,
+        "g": 66,
+        "l": 2,
+        "buy": "pesé cru",
+        "micro": {
+          "fib": 8,
+          "ca": 35,
+          "fe": 3,
+          "mg": 120,
+          "zn": 2.5,
+          "k": 300,
+          "b9": 30
+        }
+      },
+      {
+        "id": "pommes-de-terre",
+        "cook": "en cubes de 2 cm, 30 min au four à 200 °C (ou 20 min vapeur)",
+        "name": "Pommes de terre",
+        "cat": "feculents",
+        "kcal": 77,
+        "p": 2,
+        "g": 17,
+        "l": 0.1,
+        "micro": {
+          "fib": 1.8,
+          "ca": 8,
+          "fe": 0.5,
+          "mg": 22,
+          "zn": 0.3,
+          "k": 420,
+          "vc": 15,
+          "b9": 20
+        }
+      },
+      {
+        "id": "patate-douce",
+        "cook": "en frites, 25 min au four à 200 °C",
+        "name": "Patate douce",
+        "cat": "feculents",
+        "kcal": 86,
+        "p": 1.6,
+        "g": 20,
+        "l": 0.1,
+        "micro": {
+          "fib": 3,
+          "ca": 30,
+          "fe": 0.6,
+          "mg": 25,
+          "zn": 0.3,
+          "k": 340,
+          "vc": 15,
+          "b9": 11
+        }
+      },
+      {
+        "id": "lentilles-vertes",
+        "cook": "20 min à l'eau NON salée, sale seulement en fin de cuisson",
+        "name": "Lentilles vertes",
+        "cat": "feculents",
+        "kcal": 340,
+        "p": 24,
+        "g": 50,
+        "l": 1.5,
+        "buy": "pesées crues",
+        "micro": {
+          "fib": 15,
+          "ca": 50,
+          "fe": 7,
+          "mg": 90,
+          "zn": 3.5,
+          "k": 900,
+          "vc": 2,
+          "b9": 200
+        }
+      },
+      {
+        "id": "pain-complet",
+        "name": "Pain complet",
+        "cat": "feculents",
+        "kcal": 250,
+        "p": 9,
+        "g": 43,
+        "l": 2.5,
+        "micro": {
+          "fib": 7,
+          "ca": 45,
+          "fe": 2.5,
+          "mg": 80,
+          "zn": 1.8,
+          "k": 250,
+          "b9": 30
+        }
+      },
+      {
+        "id": "brocolis",
+        "cook": "6 min vapeur — ils doivent rester fermes sous la fourchette",
+        "name": "Brocolis",
+        "cat": "legumes",
+        "kcal": 34,
+        "p": 2.8,
+        "g": 4,
+        "l": 0.4,
+        "buy": "frais ou surgelés",
+        "keeps": 4,
+        "micro": {
+          "fib": 3,
+          "ca": 47,
+          "fe": 0.7,
+          "mg": 21,
+          "zn": 0.4,
+          "k": 320,
+          "vc": 90,
+          "b9": 63
+        }
+      },
+      {
+        "id": "haricots-verts",
+        "cook": "8 min vapeur, directement depuis les surgelés",
+        "name": "Haricots verts",
+        "cat": "legumes",
+        "kcal": 31,
+        "p": 1.8,
+        "g": 5,
+        "l": 0.2,
+        "buy": "surgelés",
+        "micro": {
+          "fib": 3,
+          "ca": 40,
+          "fe": 0.8,
+          "mg": 22,
+          "zn": 0.3,
+          "k": 230,
+          "vc": 12,
+          "b9": 40
+        }
+      },
+      {
+        "id": "courgettes",
+        "cook": "en dés, 8 min à la poêle à feu vif",
+        "name": "Courgettes",
+        "cat": "legumes",
+        "kcal": 17,
+        "p": 1.2,
+        "g": 3,
+        "l": 0.3,
+        "micro": {
+          "fib": 1.1,
+          "ca": 18,
+          "fe": 0.4,
+          "mg": 18,
+          "zn": 0.3,
+          "k": 260,
+          "vc": 15,
+          "b9": 24
+        }
+      },
+      {
+        "id": "poivrons",
+        "cook": "en lanières, 10 min au four avec le reste de la plaque",
+        "name": "Poivrons",
+        "cat": "legumes",
+        "kcal": 26,
+        "p": 1,
+        "g": 5,
+        "l": 0.2,
+        "micro": {
+          "fib": 2,
+          "ca": 10,
+          "fe": 0.4,
+          "mg": 12,
+          "zn": 0.2,
+          "k": 210,
+          "vc": 120,
+          "b9": 46
+        }
+      },
+      {
+        "id": "tomates-concassees",
+        "cook": "versées en fin de cuisson, 10 min à frémir à découvert",
+        "name": "Tomates concassées",
+        "cat": "legumes",
+        "kcal": 25,
+        "p": 1.2,
+        "g": 4,
+        "l": 0.2,
+        "keeps": 4,
+        "micro": {
+          "fib": 1.2,
+          "ca": 12,
+          "fe": 0.6,
+          "mg": 11,
+          "zn": 0.2,
+          "k": 250,
+          "vc": 10,
+          "b9": 15
+        }
+      },
+      {
+        "id": "oignon",
+        "cook": "émincé, 5 min à feu doux AVANT le reste",
+        "name": "Oignon",
+        "cat": "legumes",
+        "kcal": 40,
+        "p": 1.1,
+        "g": 8,
+        "l": 0.1,
+        "micro": {
+          "fib": 1.7,
+          "ca": 23,
+          "fe": 0.2,
+          "mg": 10,
+          "zn": 0.2,
+          "k": 150,
+          "vc": 7,
+          "b9": 19
+        }
+      },
+      {
+        "id": "champignons",
+        "cook": "émincés, 6 min à la poêle À SEC d'abord, pour qu'ils rendent leur eau",
+        "name": "Champignons",
+        "cat": "legumes",
+        "kcal": 22,
+        "p": 3,
+        "g": 1,
+        "l": 0.3,
+        "keeps": 3,
+        "micro": {
+          "fib": 2,
+          "ca": 4,
+          "fe": 0.5,
+          "mg": 10,
+          "zn": 0.5,
+          "k": 350,
+          "vc": 2,
+          "vd": 0.2,
+          "b9": 25
+        }
+      },
+      {
+        "id": "epinards",
+        "cook": "3 min à la poêle avec un peu d'ail — ils réduisent des trois quarts",
+        "name": "Épinards",
+        "cat": "legumes",
+        "kcal": 23,
+        "p": 2.9,
+        "g": 1.5,
+        "l": 0.4,
+        "buy": "surgelés ou frais",
+        "keeps": 2,
+        "micro": {
+          "fib": 2.5,
+          "ca": 100,
+          "fe": 2.7,
+          "mg": 55,
+          "zn": 0.5,
+          "k": 500,
+          "vc": 30,
+          "b9": 150
+        }
+      },
+      {
+        "id": "salade-verte",
+        "noFreeze": true,
+        "cook": "lavée et essorée, à ajouter au dernier moment",
+        "name": "Salade verte",
+        "cat": "legumes",
+        "kcal": 15,
+        "p": 1.4,
+        "g": 1.5,
+        "l": 0.2,
+        "keeps": 1,
+        "micro": {
+          "fib": 1.3,
+          "ca": 35,
+          "fe": 0.7,
+          "mg": 11,
+          "zn": 0.2,
+          "k": 220,
+          "vc": 8,
+          "b9": 55
+        }
+      },
+      {
+        "id": "banane",
+        "name": "Banane",
+        "cat": "fruits",
+        "kcal": 89,
+        "p": 1.1,
+        "g": 21,
+        "l": 0.3,
+        "buy": "1 banane ≈ 120 g épluchée",
+        "micro": {
+          "fib": 2.6,
+          "ca": 6,
+          "fe": 0.3,
+          "mg": 27,
+          "zn": 0.15,
+          "k": 360,
+          "vc": 9,
+          "b9": 20
+        }
+      },
+      {
+        "id": "pomme",
+        "name": "Pomme",
+        "cat": "fruits",
+        "kcal": 52,
+        "p": 0.3,
+        "g": 12,
+        "l": 0.2,
+        "buy": "1 pomme ≈ 150 g",
+        "micro": {
+          "fib": 2,
+          "ca": 6,
+          "fe": 0.1,
+          "mg": 5,
+          "zn": 0.05,
+          "k": 110,
+          "vc": 5,
+          "b9": 3
+        }
+      },
+      {
+        "id": "huile-d-olive",
+        "cook": "APRÈS cuisson, versée dans la boîte — c'est le poste où le déficit se perd",
+        "name": "Huile d'olive",
+        "cat": "grasses",
+        "kcal": 900,
+        "p": 0,
+        "g": 0,
+        "l": 100,
+        "buy": "1 c. à soupe = 10 g",
+        "micro": {
+          "ca": 1,
+          "fe": 0.1,
+          "k": 1
+        }
+      },
+      {
+        "id": "amandes",
+        "name": "Amandes",
+        "cat": "grasses",
+        "kcal": 600,
+        "p": 21,
+        "g": 5,
+        "l": 53,
+        "micro": {
+          "fib": 12,
+          "ca": 250,
+          "fe": 3.7,
+          "mg": 270,
+          "zn": 3.1,
+          "k": 730,
+          "b9": 44
+        }
+      },
+      {
+        "id": "ail",
+        "name": "Ail",
+        "cat": "aromates",
+        "kcal": 149,
+        "p": 6.4,
+        "g": 33,
+        "l": 0.5,
+        "buy": "1 gousse ≈ 5 g",
+        "keeps": 5,
+        "micro": {
+          "fib": 2.1,
+          "ca": 180,
+          "fe": 1.7,
+          "mg": 25,
+          "zn": 1.2,
+          "k": 400,
+          "vc": 31,
+          "b9": 3
+        }
+      },
+      {
+        "id": "gingembre-frais",
+        "name": "Gingembre frais",
+        "cat": "aromates",
+        "kcal": 80,
+        "p": 1.8,
+        "g": 18,
+        "l": 0.8,
+        "buy": "un morceau de 5 cm dure deux semaines",
+        "keeps": 5,
+        "micro": {
+          "fib": 2,
+          "ca": 16,
+          "fe": 0.6,
+          "mg": 43,
+          "zn": 0.3,
+          "k": 415,
+          "vc": 5
+        }
+      },
+      {
+        "id": "citron",
+        "name": "Citron",
+        "cat": "aromates",
+        "kcal": 29,
+        "p": 1.1,
+        "g": 9,
+        "l": 0.3,
+        "buy": "1 citron ≈ 100 g, soit 40 g de jus",
+        "keeps": 5,
+        "micro": {
+          "fib": 2.8,
+          "ca": 26,
+          "fe": 0.6,
+          "mg": 8,
+          "zn": 0.06,
+          "k": 138,
+          "vc": 53,
+          "b9": 11
+        }
+      },
+      {
+        "id": "sauce-soja",
+        "name": "Sauce soja (peu salée)",
+        "cat": "aromates",
+        "kcal": 60,
+        "p": 6,
+        "g": 6,
+        "l": 0.1,
+        "buy": "1 c. à soupe = 15 g · prends la version réduite en sel",
+        "keeps": 5
+      },
+      {
+        "id": "vinaigre-balsamique",
+        "name": "Vinaigre balsamique",
+        "cat": "aromates",
+        "kcal": 88,
+        "p": 0.5,
+        "g": 17,
+        "l": 0,
+        "buy": "1 c. à soupe = 15 g",
+        "keeps": 5
+      },
+      {
+        "id": "moutarde-dijon",
+        "name": "Moutarde de Dijon",
+        "cat": "aromates",
+        "kcal": 66,
+        "p": 4,
+        "g": 6,
+        "l": 3.5,
+        "buy": "1 c. à café = 5 g",
+        "keeps": 5
+      },
+      {
+        "id": "concentre-tomate",
+        "name": "Concentré de tomate",
+        "cat": "aromates",
+        "kcal": 82,
+        "p": 4.3,
+        "g": 19,
+        "l": 0.5,
+        "buy": "1 c. à soupe = 15 g",
+        "keeps": 5,
+        "micro": {
+          "fib": 4,
+          "ca": 36,
+          "fe": 2.9,
+          "mg": 42,
+          "zn": 0.6,
+          "k": 1014,
+          "vc": 21
+        }
+      },
+      {
+        "id": "levure-maltee",
+        "name": "Levure maltée",
+        "cat": "aromates",
+        "kcal": 350,
+        "p": 45,
+        "g": 35,
+        "l": 5,
+        "buy": "1 c. à soupe = 5 g · goût de fromage, sans le fromage",
+        "keeps": 5,
+        "micro": {
+          "fib": 20,
+          "fe": 5,
+          "mg": 120,
+          "zn": 8,
+          "k": 1900,
+          "b9": 300
+        }
+      },
+      {
+        "id": "paprika-fume",
+        "name": "Paprika fumé",
+        "cat": "aromates",
+        "kcal": 280,
+        "p": 14,
+        "g": 34,
+        "l": 13,
+        "buy": "1 c. à café = 2 g · le fumé change tout, pas le doux",
+        "keeps": 5,
+        "micro": {
+          "fe": 21,
+          "k": 2280,
+          "mg": 178,
+          "vc": 1
+        }
+      },
+      {
+        "id": "curry-poudre",
+        "name": "Curry en poudre",
+        "cat": "aromates",
+        "kcal": 325,
+        "p": 14,
+        "g": 58,
+        "l": 14,
+        "buy": "1 c. à café = 2 g",
+        "keeps": 5
+      },
+      {
+        "id": "cumin-moulu",
+        "name": "Cumin moulu",
+        "cat": "aromates",
+        "kcal": 375,
+        "p": 18,
+        "g": 44,
+        "l": 22,
+        "buy": "1 c. à café = 2 g",
+        "keeps": 5
+      },
+      {
+        "id": "herbes-de-provence",
+        "name": "Herbes de Provence",
+        "cat": "aromates",
+        "kcal": 200,
+        "p": 9,
+        "g": 25,
+        "l": 7,
+        "buy": "1 c. à café = 1 g",
+        "micro": {
+          "ca": 1200,
+          "fe": 40,
+          "mg": 250
+        },
+        "keeps": 5
+      },
+      {
+        "id": "piment-en-poudre",
+        "name": "Piment en poudre",
+        "cat": "aromates",
+        "kcal": 282,
+        "p": 12,
+        "g": 30,
+        "l": 14,
+        "buy": "à doser selon ta tolérance",
+        "micro": {
+          "fe": 17,
+          "k": 1950,
+          "mg": 150
+        },
+        "keeps": 5
+      },
+      {
+        "id": "ail-en-poudre",
+        "name": "Ail en poudre",
+        "cat": "aromates",
+        "kcal": 331,
+        "p": 17,
+        "g": 73,
+        "l": 0.7,
+        "buy": "1 c. à café = 3 g · pour les marinades sèches",
+        "keeps": 5
+      },
+      {
+        "id": "persil-frais",
+        "name": "Persil frais",
+        "cat": "aromates",
+        "kcal": 36,
+        "p": 3,
+        "g": 6,
+        "l": 0.8,
+        "buy": "1 botte ≈ 60 g",
+        "keeps": 3,
+        "micro": {
+          "fib": 3.3,
+          "ca": 138,
+          "fe": 6.2,
+          "mg": 50,
+          "zn": 1.1,
+          "k": 554,
+          "vc": 133,
+          "b9": 152
+        }
+      },
+      {
+        "id": "basilic-frais",
+        "name": "Basilic frais",
+        "cat": "aromates",
+        "kcal": 23,
+        "p": 3.2,
+        "g": 2.7,
+        "l": 0.6,
+        "buy": "1 botte ≈ 25 g · à ajouter cru, jamais cuit",
+        "keeps": 1,
+        "micro": {
+          "fib": 1.6,
+          "ca": 177,
+          "fe": 3.2,
+          "mg": 64,
+          "zn": 0.8,
+          "k": 295,
+          "vc": 18,
+          "b9": 68
+        }
+      },
+      {
+        "id": "cornichons",
+        "name": "Cornichons",
+        "cat": "aromates",
+        "kcal": 12,
+        "p": 0.6,
+        "g": 2,
+        "l": 0.2,
+        "buy": "le croquant et l'acide qui manquent aux plats réchauffés",
+        "keeps": 5
+      },
+      {
+        "id": "skyr",
+        "name": "Skyr nature 0 %",
+        "cat": "laitiers",
+        "kcal": 63,
+        "p": 11,
+        "g": 4,
+        "l": 0.2,
+        "buy": "plus épais et plus protéiné que le fromage blanc",
+        "keeps": 5,
+        "noFreeze": true,
+        "micro": {
+          "ca": 150,
+          "fe": 0.1,
+          "mg": 11,
+          "zn": 0.5,
+          "k": 160,
+          "b9": 8
+        }
+      },
+      {
+        "id": "lait-ecreme",
+        "name": "Lait écrémé",
+        "cat": "laitiers",
+        "kcal": 33,
+        "p": 3.4,
+        "g": 5,
+        "l": 0.1,
+        "buy": "1 verre = 250 ml",
+        "keeps": 5,
+        "micro": {
+          "ca": 120,
+          "mg": 11,
+          "zn": 0.4,
+          "k": 155,
+          "b9": 5
+        }
+      },
+      {
+        "id": "cacao-maigre",
+        "name": "Cacao en poudre non sucré",
+        "cat": "aromates",
+        "kcal": 350,
+        "p": 23,
+        "g": 10,
+        "l": 20,
+        "buy": "1 c. à soupe = 5 g · non sucré, pas du chocolat en poudre",
+        "keeps": 5,
+        "micro": {
+          "fib": 33,
+          "ca": 128,
+          "fe": 13,
+          "mg": 500,
+          "zn": 6.8,
+          "k": 1500
+        }
+      },
+      {
+        "id": "cannelle",
+        "name": "Cannelle",
+        "cat": "aromates",
+        "kcal": 140,
+        "p": 4,
+        "g": 28,
+        "l": 1.2,
+        "buy": "1 c. à café = 2 g · elle donne un goût sucré sans sucre",
+        "keeps": 5,
+        "micro": {
+          "fib": 53,
+          "ca": 1000,
+          "fe": 8,
+          "mg": 60,
+          "zn": 1.8,
+          "k": 430
+        }
+      },
+      {
+        "id": "beurre-de-cacahuete",
+        "name": "Beurre de cacahuète",
+        "cat": "grasses",
+        "kcal": 600,
+        "p": 25,
+        "g": 12,
+        "l": 50,
+        "buy": "1 c. à café = 8 g · sans sucre ni huile de palme ajoutés",
+        "keeps": 5,
+        "micro": {
+          "fib": 6,
+          "ca": 45,
+          "fe": 1.9,
+          "mg": 160,
+          "zn": 2.9,
+          "k": 650,
+          "b9": 90
+        }
+      },
+      {
+        "id": "graines-de-chia",
+        "name": "Graines de chia",
+        "cat": "grasses",
+        "kcal": 486,
+        "p": 17,
+        "g": 8,
+        "l": 31,
+        "buy": "1 c. à soupe = 10 g · elles gonflent jusqu'à dix fois leur poids — à doser très petit",
+        "keeps": 5,
+        "micro": {
+          "fib": 34,
+          "ca": 630,
+          "fe": 7.7,
+          "mg": 335,
+          "zn": 4.6,
+          "k": 407,
+          "o3": 17800
+        }
+      },
+      {
+        "id": "aquafaba",
+        "name": "Aquafaba (eau de pois chiche)",
+        "cat": "complements",
+        "kcal": 5,
+        "p": 0.3,
+        "g": 1,
+        "l": 0,
+        "buy": "l'eau d'une boîte de pois chiche, à ne plus jeter",
+        "keeps": 3,
+        "noFreeze": true
+      },
+      {
+        "id": "blanc-de-dinde-tranche",
+        "name": "Blanc de dinde (tranches)",
+        "cat": "viandes",
+        "kcal": 104,
+        "p": 20,
+        "g": 1.5,
+        "l": 1.8,
+        "buy": "charcuterie maigre · vérifie < 2 % de MG",
+        "keeps": 3,
+        "noFreeze": true,
+        "micro": {
+          "fe": 0.7,
+          "zn": 1.2,
+          "k": 300,
+          "mg": 24
+        }
+      },
+      {
+        "id": "jambon-blanc-degraisse",
+        "name": "Jambon blanc dégraissé",
+        "cat": "viandes",
+        "kcal": 107,
+        "p": 20,
+        "g": 1,
+        "l": 2.5,
+        "buy": "« découenné dégraissé » · le moins salé possible",
+        "keeps": 3,
+        "noFreeze": true,
+        "micro": {
+          "fe": 0.8,
+          "zn": 1.9,
+          "k": 320,
+          "mg": 21
+        }
+      },
+      {
+        "id": "viande-hachee-dinde",
+        "name": "Viande hachée de dinde",
+        "cat": "viandes",
+        "kcal": 117,
+        "p": 21,
+        "g": 0,
+        "l": 3.5,
+        "buy": "pesée crue",
+        "keeps": 3,
+        "cook": "8 min à la poêle, émiettée",
+        "micro": {
+          "fe": 1.2,
+          "zn": 2.4,
+          "k": 300,
+          "mg": 26
+        }
+      },
+      {
+        "id": "steak-hache-15",
+        "name": "Steak haché 15 %",
+        "cat": "viandes",
+        "kcal": 219,
+        "p": 19,
+        "g": 0,
+        "l": 15,
+        "buy": "pesé cru · quand le 5 % manque",
+        "keeps": 3,
+        "cook": "6 min à la poêle",
+        "micro": {
+          "fe": 2.4,
+          "zn": 4.6,
+          "k": 290,
+          "mg": 20
+        }
+      },
+      {
+        "id": "cuisse-de-poulet-sans-peau",
+        "name": "Cuisse de poulet sans peau",
+        "cat": "viandes",
+        "kcal": 148,
+        "p": 19,
+        "g": 0,
+        "l": 8,
+        "buy": "pesée crue · moins chère et plus goûteuse que le filet",
+        "keeps": 3,
+        "cook": "30 min au four à 200 °C",
+        "micro": {
+          "fe": 1.1,
+          "zn": 2.1,
+          "k": 260,
+          "mg": 22
+        }
+      },
+      {
+        "id": "porc-filet-mignon",
+        "name": "Filet mignon de porc",
+        "cat": "viandes",
+        "kcal": 143,
+        "p": 21,
+        "g": 0,
+        "l": 6,
+        "buy": "pesé cru · le morceau maigre du porc",
+        "keeps": 3,
+        "cook": "20 min au four à 200 °C",
+        "micro": {
+          "fe": 0.9,
+          "zn": 2,
+          "k": 380,
+          "mg": 25
+        }
+      },
+      {
+        "id": "boeuf-bavette",
+        "name": "Bavette de bœuf",
+        "cat": "viandes",
+        "kcal": 176,
+        "p": 21,
+        "g": 0,
+        "l": 10,
+        "buy": "pesée crue",
+        "keeps": 3,
+        "cook": "3 min par face à feu vif",
+        "micro": {
+          "fe": 2.6,
+          "zn": 4.4,
+          "k": 330,
+          "mg": 22
+        }
+      },
+      {
+        "id": "sardines-huile-egouttees",
+        "name": "Sardines à l'huile (égouttées)",
+        "cat": "viandes",
+        "kcal": 217,
+        "p": 25,
+        "g": 0,
+        "l": 13,
+        "buy": "boîte · égoutter permet de compter 13 g de MG et non 25",
+        "keeps": 2,
+        "noFreeze": true,
+        "micro": {
+          "ca": 380,
+          "fe": 2.9,
+          "vd": 10,
+          "o3": 2.2,
+          "k": 400,
+          "mg": 39,
+          "zn": 1.6
+        }
+      },
+      {
+        "id": "maquereau-vin-blanc",
+        "name": "Maquereau au vin blanc (égoutté)",
+        "cat": "viandes",
+        "kcal": 180,
+        "p": 19,
+        "g": 1,
+        "l": 11,
+        "buy": "boîte · le plus simple des poissons gras",
+        "keeps": 2,
+        "noFreeze": true,
+        "micro": {
+          "vd": 8,
+          "o3": 2.5,
+          "k": 320,
+          "mg": 30,
+          "fe": 1.2
+        }
+      },
+      {
+        "id": "truite-fumee",
+        "name": "Truite fumée",
+        "cat": "viandes",
+        "kcal": 168,
+        "p": 23,
+        "g": 0,
+        "l": 8.5,
+        "buy": "moins salée et moins chère que le saumon fumé",
+        "keeps": 3,
+        "noFreeze": true,
+        "micro": {
+          "vd": 11,
+          "o3": 1.1,
+          "k": 350,
+          "mg": 28
+        }
+      },
+      {
+        "id": "crevettes-cuites",
+        "name": "Crevettes décortiquées cuites",
+        "cat": "viandes",
+        "kcal": 99,
+        "p": 21,
+        "g": 0.2,
+        "l": 1.4,
+        "buy": "très maigres · pratiques en salade",
+        "keeps": 2,
+        "noFreeze": true,
+        "micro": {
+          "ca": 70,
+          "fe": 0.5,
+          "zn": 1.3,
+          "k": 190,
+          "mg": 37
+        }
+      },
+      {
+        "id": "lieu-noir",
+        "name": "Lieu noir (filet)",
+        "cat": "viandes",
+        "kcal": 82,
+        "p": 18,
+        "g": 0,
+        "l": 1,
+        "buy": "pesé cru · l'alternative bon marché au cabillaud",
+        "keeps": 2,
+        "cook": "12 min à la vapeur",
+        "micro": {
+          "k": 380,
+          "mg": 30,
+          "vd": 1.5,
+          "o3": 0.3
+        }
+      },
+      {
+        "id": "dorade-bar",
+        "name": "Dorade / bar (filet)",
+        "cat": "viandes",
+        "kcal": 105,
+        "p": 20,
+        "g": 0,
+        "l": 2.5,
+        "buy": "pesé cru",
+        "keeps": 2,
+        "cook": "15 min au four à 180 °C",
+        "micro": {
+          "k": 400,
+          "mg": 33,
+          "o3": 0.4
+        }
+      },
+      {
+        "id": "thon-frais",
+        "name": "Thon frais (steak)",
+        "cat": "viandes",
+        "kcal": 144,
+        "p": 23,
+        "g": 0,
+        "l": 5,
+        "buy": "pesé cru",
+        "keeps": 2,
+        "cook": "2 min par face, cœur rosé",
+        "micro": {
+          "vd": 5,
+          "o3": 1.3,
+          "k": 440,
+          "mg": 50,
+          "fe": 1.3
+        }
+      },
+      {
+        "id": "blancs-d-oeufs",
+        "name": "Blancs d'œufs",
+        "cat": "oeufs",
+        "kcal": 48,
+        "p": 11,
+        "g": 0.7,
+        "l": 0.2,
+        "buy": "brique au rayon frais · 100 g ≈ 3 blancs",
+        "keeps": 3,
+        "noFreeze": true,
+        "micro": {
+          "k": 160,
+          "mg": 11
+        }
+      },
+      {
+        "id": "cottage-cheese",
+        "name": "Cottage cheese",
+        "cat": "laitiers",
+        "kcal": 98,
+        "p": 11,
+        "g": 3.4,
+        "l": 4.3,
+        "buy": "texture en grains · excellent en salé",
+        "keeps": 5,
+        "noFreeze": true,
+        "micro": {
+          "ca": 83,
+          "k": 104,
+          "mg": 8,
+          "zn": 0.4
+        }
+      },
+      {
+        "id": "mozzarella-light",
+        "name": "Mozzarella allégée",
+        "cat": "laitiers",
+        "kcal": 175,
+        "p": 22,
+        "g": 2,
+        "l": 9,
+        "buy": "« 30 % MG sur produit fini » · à égoutter",
+        "keeps": 4,
+        "noFreeze": true,
+        "micro": {
+          "ca": 700,
+          "zn": 2.8,
+          "k": 90,
+          "mg": 22
+        }
+      },
+      {
+        "id": "feta",
+        "name": "Feta",
+        "cat": "laitiers",
+        "kcal": 264,
+        "p": 14,
+        "g": 1.5,
+        "l": 21,
+        "buy": "salée : 30 g suffisent à parfumer une salade entière",
+        "keeps": 7,
+        "noFreeze": true,
+        "micro": {
+          "ca": 490,
+          "zn": 2.9,
+          "k": 62,
+          "mg": 19
+        }
+      },
+      {
+        "id": "parmesan",
+        "name": "Parmesan",
+        "cat": "laitiers",
+        "kcal": 402,
+        "p": 33,
+        "g": 0,
+        "l": 29,
+        "buy": "râpé au moment · 10 g changent un plat",
+        "keeps": 21,
+        "noFreeze": true,
+        "micro": {
+          "ca": 1180,
+          "zn": 5.3,
+          "k": 92,
+          "mg": 44
+        }
+      },
+      {
+        "id": "comte",
+        "name": "Comté",
+        "cat": "laitiers",
+        "kcal": 417,
+        "p": 27,
+        "g": 1.5,
+        "l": 34,
+        "buy": "à peser · le fromage le plus calorique du frigo",
+        "keeps": 14,
+        "noFreeze": true,
+        "micro": {
+          "ca": 900,
+          "zn": 4.2,
+          "k": 90,
+          "mg": 40
+        }
+      },
+      {
+        "id": "ricotta",
+        "name": "Ricotta",
+        "cat": "laitiers",
+        "kcal": 146,
+        "p": 11,
+        "g": 3,
+        "l": 10,
+        "buy": "moins protéinée qu'elle en a l'air",
+        "keeps": 4,
+        "noFreeze": true,
+        "micro": {
+          "ca": 210,
+          "k": 105,
+          "mg": 11
+        }
+      },
+      {
+        "id": "lait-demi-ecreme",
+        "name": "Lait demi-écrémé",
+        "cat": "laitiers",
+        "kcal": 46,
+        "p": 3.3,
+        "g": 4.8,
+        "l": 1.5,
+        "buy": "briques longue conservation",
+        "keeps": 4,
+        "noFreeze": true,
+        "micro": {
+          "ca": 115,
+          "k": 150,
+          "mg": 11,
+          "b9": 5
+        }
+      },
+      {
+        "id": "yaourt-nature",
+        "name": "Yaourt nature",
+        "cat": "laitiers",
+        "kcal": 61,
+        "p": 4,
+        "g": 4.7,
+        "l": 3.2,
+        "buy": "le yaourt de base, non sucré",
+        "keeps": 5,
+        "noFreeze": true,
+        "micro": {
+          "ca": 130,
+          "k": 170,
+          "mg": 12,
+          "b9": 7
+        }
+      },
+      {
+        "id": "caseine-poudre",
+        "name": "Caséine en poudre",
+        "cat": "complements",
+        "kcal": 370,
+        "p": 80,
+        "g": 6,
+        "l": 3,
+        "buy": "digestion lente · pour le repas du soir",
+        "micro": {
+          "ca": 1200
+        }
+      },
+      {
+        "id": "psyllium",
+        "name": "Psyllium (téguments)",
+        "cat": "complements",
+        "kcal": 50,
+        "p": 2,
+        "g": 8,
+        "l": 0.5,
+        "buy": "5 g dans un grand verre d'eau · quasiment que des fibres, donc presque pas de calories utilisables",
+        "micro": {
+          "fib": 80
+        }
+      },
+      {
+        "id": "levure-de-biere",
+        "name": "Levure de bière",
+        "cat": "complements",
+        "kcal": 344,
+        "p": 45,
+        "g": 20,
+        "l": 5,
+        "buy": "en paillettes · très riche en vitamines B",
+        "micro": {
+          "fib": 22,
+          "fe": 5,
+          "mg": 231,
+          "zn": 8,
+          "k": 1900,
+          "b9": 800
+        }
+      },
+      {
+        "id": "huile-de-poisson-omega3",
+        "name": "Oméga-3 (huile de poisson)",
+        "cat": "complements",
+        "kcal": 900,
+        "p": 0,
+        "g": 0,
+        "l": 100,
+        "buy": "capsules · lire l'EPA+DHA par capsule, pas le poids d'huile",
+        "micro": {
+          "o3": 30
+        }
+      },
+      {
+        "id": "riz-complet",
+        "name": "Riz complet",
+        "cat": "feculents",
+        "kcal": 353,
+        "p": 8,
+        "g": 71,
+        "l": 2.8,
+        "buy": "pesé cru",
+        "cook": "25 min à l'eau bouillante salée",
+        "micro": {
+          "fib": 3.5,
+          "mg": 110,
+          "fe": 1.5,
+          "zn": 2,
+          "k": 250,
+          "b9": 20
+        }
+      },
+      {
+        "id": "quinoa",
+        "name": "Quinoa",
+        "cat": "feculents",
+        "kcal": 368,
+        "p": 14,
+        "g": 58,
+        "l": 6,
+        "buy": "pesé cru · à rincer avant cuisson",
+        "cook": "15 min à l'eau, 2 volumes",
+        "micro": {
+          "fib": 7,
+          "mg": 197,
+          "fe": 4.6,
+          "zn": 3.1,
+          "k": 563,
+          "b9": 184
+        }
+      },
+      {
+        "id": "boulgour",
+        "name": "Boulgour",
+        "cat": "feculents",
+        "kcal": 342,
+        "p": 12,
+        "g": 63,
+        "l": 1.3,
+        "buy": "pesé cru",
+        "cook": "10 min à l'eau, ou gonflé 15 min à l'eau bouillante",
+        "micro": {
+          "fib": 12.5,
+          "mg": 164,
+          "fe": 2.5,
+          "zn": 1.9,
+          "k": 410,
+          "b9": 27
+        }
+      },
+      {
+        "id": "semoule-complete",
+        "name": "Semoule complète",
+        "cat": "feculents",
+        "kcal": 350,
+        "p": 12,
+        "g": 68,
+        "l": 1.8,
+        "buy": "pesée crue · la plus rapide",
+        "cook": "5 min gonflée à l'eau bouillante, à volume égal",
+        "micro": {
+          "fib": 6,
+          "mg": 90,
+          "fe": 2.3,
+          "zn": 1.5,
+          "k": 250
+        }
+      },
+      {
+        "id": "pates-blanches",
+        "name": "Pâtes (blanches)",
+        "cat": "feculents",
+        "kcal": 358,
+        "p": 12,
+        "g": 72,
+        "l": 1.5,
+        "buy": "pesées crues",
+        "cook": "9 min à l'eau bouillante salée",
+        "micro": {
+          "fib": 3,
+          "mg": 53,
+          "fe": 1.3,
+          "zn": 1.1,
+          "k": 190,
+          "b9": 18
+        }
+      },
+      {
+        "id": "pois-chiches-cuits",
+        "name": "Pois chiches (conserve, égouttés)",
+        "cat": "feculents",
+        "kcal": 139,
+        "p": 7.5,
+        "g": 17,
+        "l": 2.6,
+        "buy": "bocal égoutté · poids NET égoutté",
+        "keeps": 4,
+        "micro": {
+          "fib": 7.5,
+          "fe": 2.1,
+          "mg": 45,
+          "zn": 1.2,
+          "k": 290,
+          "b9": 55
+        }
+      },
+      {
+        "id": "haricots-rouges-cuits",
+        "name": "Haricots rouges (conserve, égouttés)",
+        "cat": "feculents",
+        "kcal": 118,
+        "p": 8,
+        "g": 15,
+        "l": 0.5,
+        "buy": "bocal égoutté · poids NET égoutté",
+        "keeps": 4,
+        "micro": {
+          "fib": 7.4,
+          "fe": 2.2,
+          "mg": 42,
+          "zn": 1,
+          "k": 400,
+          "b9": 48
+        }
+      },
+      {
+        "id": "lentilles-corail",
+        "name": "Lentilles corail",
+        "cat": "feculents",
+        "kcal": 350,
+        "p": 24,
+        "g": 50,
+        "l": 1.5,
+        "buy": "pesées crues · cuisent deux fois plus vite que les vertes",
+        "cook": "12 min à l'eau, elles se défont",
+        "micro": {
+          "fib": 11,
+          "fe": 6.5,
+          "mg": 80,
+          "zn": 3.3,
+          "k": 700,
+          "b9": 200
+        }
+      },
+      {
+        "id": "flageolets-cuits",
+        "name": "Flageolets (conserve, égouttés)",
+        "cat": "feculents",
+        "kcal": 106,
+        "p": 7,
+        "g": 15,
+        "l": 0.5,
+        "buy": "bocal égoutté",
+        "keeps": 4,
+        "micro": {
+          "fib": 6.5,
+          "fe": 1.9,
+          "mg": 38,
+          "k": 350,
+          "b9": 45
+        }
+      },
+      {
+        "id": "pain-de-mie-complet",
+        "name": "Pain de mie complet",
+        "cat": "feculents",
+        "kcal": 248,
+        "p": 9,
+        "g": 40,
+        "l": 4,
+        "buy": "vérifie « farine complète » en premier ingrédient",
+        "micro": {
+          "fib": 5.5,
+          "fe": 2.5,
+          "mg": 60,
+          "k": 230,
+          "zn": 1.3
+        }
+      },
+      {
+        "id": "wrap-complet",
+        "name": "Galette / wrap complet",
+        "cat": "feculents",
+        "kcal": 300,
+        "p": 9,
+        "g": 48,
+        "l": 7,
+        "buy": "1 galette ≈ 60 g",
+        "micro": {
+          "fib": 5,
+          "fe": 2.4,
+          "mg": 55,
+          "k": 200
+        }
+      },
+      {
+        "id": "galettes-de-riz",
+        "name": "Galettes de riz soufflé",
+        "cat": "feculents",
+        "kcal": 384,
+        "p": 8,
+        "g": 81,
+        "l": 3,
+        "buy": "1 galette ≈ 9 g · beaucoup de volume, peu de satiété",
+        "micro": {
+          "fib": 4,
+          "mg": 90,
+          "k": 200
+        }
+      },
+      {
+        "id": "mais-doux",
+        "name": "Maïs doux (conserve, égoutté)",
+        "cat": "feculents",
+        "kcal": 96,
+        "p": 3,
+        "g": 17,
+        "l": 1.2,
+        "buy": "poids NET égoutté",
+        "keeps": 3,
+        "micro": {
+          "fib": 3.5,
+          "mg": 30,
+          "k": 200,
+          "vc": 4
+        }
+      },
+      {
+        "id": "petits-pois",
+        "name": "Petits pois",
+        "cat": "feculents",
+        "kcal": 81,
+        "p": 5.4,
+        "g": 11,
+        "l": 0.4,
+        "buy": "surgelés · à mi-chemin du légume et du féculent",
+        "cook": "5 min à l'eau bouillante",
+        "micro": {
+          "fib": 5.5,
+          "vc": 22,
+          "fe": 1.5,
+          "mg": 33,
+          "k": 244,
+          "b9": 65
+        }
+      },
+      {
+        "id": "carottes",
+        "name": "Carottes",
+        "cat": "legumes",
+        "kcal": 36,
+        "p": 0.8,
+        "g": 6.5,
+        "l": 0.3,
+        "buy": "crues en bâtonnets ou cuites",
+        "cook": "15 min à la vapeur",
+        "micro": {
+          "fib": 2.8,
+          "vc": 5,
+          "k": 320,
+          "mg": 11,
+          "b9": 30
+        }
+      },
+      {
+        "id": "chou-fleur",
+        "name": "Chou-fleur",
+        "cat": "legumes",
+        "kcal": 26,
+        "p": 2.3,
+        "g": 2.4,
+        "l": 0.4,
+        "buy": "frais ou surgelé",
+        "keeps": 4,
+        "cook": "12 min à la vapeur",
+        "micro": {
+          "fib": 2.5,
+          "vc": 57,
+          "k": 300,
+          "mg": 15,
+          "b9": 57
+        }
+      },
+      {
+        "id": "choux-de-bruxelles",
+        "name": "Choux de Bruxelles",
+        "cat": "legumes",
+        "kcal": 43,
+        "p": 3.4,
+        "g": 5,
+        "l": 0.4,
+        "buy": "surgelés · les plus riches en vitamine C du rayon",
+        "keeps": 4,
+        "cook": "20 min au four à 200 °C",
+        "micro": {
+          "fib": 4.5,
+          "vc": 85,
+          "k": 390,
+          "mg": 23,
+          "b9": 61
+        }
+      },
+      {
+        "id": "aubergine",
+        "name": "Aubergine",
+        "cat": "legumes",
+        "kcal": 25,
+        "p": 1,
+        "g": 2.5,
+        "l": 0.4,
+        "buy": "boit l'huile : compte celle que tu ajoutes",
+        "keeps": 3,
+        "cook": "25 min au four à 200 °C",
+        "micro": {
+          "fib": 3,
+          "vc": 3,
+          "k": 230,
+          "mg": 14,
+          "b9": 22
+        }
+      },
+      {
+        "id": "poireau",
+        "name": "Poireau",
+        "cat": "legumes",
+        "kcal": 33,
+        "p": 1.5,
+        "g": 5,
+        "l": 0.3,
+        "buy": "le blanc et le vert clair",
+        "keeps": 4,
+        "cook": "20 min à la vapeur",
+        "micro": {
+          "fib": 3.2,
+          "vc": 12,
+          "k": 180,
+          "mg": 14,
+          "b9": 64
+        }
+      },
+      {
+        "id": "betterave-cuite",
+        "name": "Betterave cuite",
+        "cat": "legumes",
+        "kcal": 44,
+        "p": 1.9,
+        "g": 7.5,
+        "l": 0.2,
+        "buy": "sous vide au rayon frais",
+        "keeps": 4,
+        "noFreeze": true,
+        "micro": {
+          "fib": 2.5,
+          "vc": 3,
+          "k": 300,
+          "mg": 20,
+          "b9": 80
+        }
+      },
+      {
+        "id": "concombre",
+        "name": "Concombre",
+        "cat": "legumes",
+        "kcal": 14,
+        "p": 0.7,
+        "g": 1.9,
+        "l": 0.1,
+        "buy": "cru · presque que de l'eau et du volume",
+        "keeps": 2,
+        "noFreeze": true,
+        "micro": {
+          "fib": 0.7,
+          "vc": 5,
+          "k": 150,
+          "mg": 10
+        }
+      },
+      {
+        "id": "radis",
+        "name": "Radis",
+        "cat": "legumes",
+        "kcal": 16,
+        "p": 0.7,
+        "g": 2,
+        "l": 0.1,
+        "buy": "crus",
+        "keeps": 3,
+        "noFreeze": true,
+        "micro": {
+          "fib": 1.6,
+          "vc": 15,
+          "k": 230,
+          "mg": 10
+        }
+      },
+      {
+        "id": "roquette",
+        "name": "Roquette",
+        "cat": "legumes",
+        "kcal": 25,
+        "p": 2.6,
+        "g": 2,
+        "l": 0.7,
+        "buy": "sachet · se flétrit vite",
+        "keeps": 2,
+        "noFreeze": true,
+        "micro": {
+          "fib": 1.6,
+          "vc": 15,
+          "ca": 160,
+          "fe": 1.5,
+          "k": 370,
+          "b9": 97
+        }
+      },
+      {
+        "id": "mache",
+        "name": "Mâche",
+        "cat": "legumes",
+        "kcal": 21,
+        "p": 2,
+        "g": 1.5,
+        "l": 0.4,
+        "buy": "sachet · plus douce que la roquette",
+        "keeps": 2,
+        "noFreeze": true,
+        "micro": {
+          "fib": 1.5,
+          "vc": 38,
+          "ca": 35,
+          "fe": 2,
+          "k": 460,
+          "b9": 145
+        }
+      },
+      {
+        "id": "chou-rouge",
+        "name": "Chou rouge",
+        "cat": "legumes",
+        "kcal": 31,
+        "p": 1.4,
+        "g": 4.5,
+        "l": 0.2,
+        "buy": "cru râpé · tient une semaine",
+        "keeps": 6,
+        "micro": {
+          "fib": 2.5,
+          "vc": 57,
+          "k": 240,
+          "mg": 16,
+          "b9": 18
+        }
+      },
+      {
+        "id": "asperges",
+        "name": "Asperges vertes",
+        "cat": "legumes",
+        "kcal": 22,
+        "p": 2.4,
+        "g": 2,
+        "l": 0.2,
+        "buy": "surgelées hors saison",
+        "keeps": 3,
+        "cook": "8 min à la vapeur",
+        "micro": {
+          "fib": 2.1,
+          "vc": 6,
+          "k": 200,
+          "mg": 14,
+          "b9": 150
+        }
+      },
+      {
+        "id": "haricots-beurre",
+        "name": "Haricots beurre",
+        "cat": "legumes",
+        "kcal": 30,
+        "p": 1.8,
+        "g": 4,
+        "l": 0.2,
+        "buy": "surgelés",
+        "cook": "8 min à l'eau bouillante",
+        "micro": {
+          "fib": 3.2,
+          "vc": 9,
+          "k": 210,
+          "mg": 22,
+          "b9": 40
+        }
+      },
+      {
+        "id": "celeri-branche",
+        "name": "Céleri branche",
+        "cat": "legumes",
+        "kcal": 18,
+        "p": 0.7,
+        "g": 2,
+        "l": 0.2,
+        "buy": "cru en bâtonnets",
+        "keeps": 5,
+        "micro": {
+          "fib": 1.6,
+          "vc": 3,
+          "k": 280,
+          "mg": 11
+        }
+      },
+      {
+        "id": "endives",
+        "name": "Endives",
+        "cat": "legumes",
+        "kcal": 20,
+        "p": 1,
+        "g": 2.4,
+        "l": 0.2,
+        "buy": "crues en salade ou braisées",
+        "keeps": 5,
+        "cook": "20 min braisées à la poêle",
+        "micro": {
+          "fib": 2.2,
+          "vc": 4,
+          "k": 210,
+          "mg": 10,
+          "b9": 40
+        }
+      },
+      {
+        "id": "potiron",
+        "name": "Potiron / courge",
+        "cat": "legumes",
+        "kcal": 30,
+        "p": 1,
+        "g": 5,
+        "l": 0.2,
+        "buy": "en cubes surgelés hors saison",
+        "cook": "25 min au four à 200 °C",
+        "micro": {
+          "fib": 2,
+          "vc": 12,
+          "k": 350,
+          "mg": 12
+        }
+      },
+      {
+        "id": "choucroute-crue",
+        "name": "Chou blanc / choucroute crue",
+        "cat": "legumes",
+        "kcal": 22,
+        "p": 1.3,
+        "g": 2.5,
+        "l": 0.2,
+        "buy": "rayon frais, non cuisinée",
+        "keeps": 6,
+        "micro": {
+          "fib": 2.7,
+          "vc": 20,
+          "k": 190,
+          "mg": 13
+        }
+      },
+      {
+        "id": "orange",
+        "name": "Orange",
+        "cat": "fruits",
+        "kcal": 45,
+        "p": 1,
+        "g": 9,
+        "l": 0.2,
+        "buy": "1 orange ≈ 130 g de chair",
+        "keeps": 10,
+        "micro": {
+          "fib": 2,
+          "vc": 53,
+          "k": 180,
+          "ca": 40,
+          "b9": 30
+        }
+      },
+      {
+        "id": "clementine",
+        "name": "Clémentine",
+        "cat": "fruits",
+        "kcal": 47,
+        "p": 0.8,
+        "g": 10,
+        "l": 0.2,
+        "buy": "1 clémentine ≈ 60 g",
+        "keeps": 8,
+        "micro": {
+          "fib": 1.7,
+          "vc": 40,
+          "k": 170,
+          "b9": 24
+        }
+      },
+      {
+        "id": "kiwi",
+        "name": "Kiwi",
+        "cat": "fruits",
+        "kcal": 58,
+        "p": 1.1,
+        "g": 11,
+        "l": 0.5,
+        "buy": "1 kiwi ≈ 75 g de chair",
+        "keeps": 8,
+        "micro": {
+          "fib": 2.4,
+          "vc": 90,
+          "k": 300,
+          "mg": 15,
+          "b9": 25
+        }
+      },
+      {
+        "id": "fraises",
+        "name": "Fraises",
+        "cat": "fruits",
+        "kcal": 33,
+        "p": 0.7,
+        "g": 6,
+        "l": 0.3,
+        "buy": "fraîches en saison",
+        "keeps": 2,
+        "noFreeze": true,
+        "micro": {
+          "fib": 2,
+          "vc": 60,
+          "k": 150,
+          "mg": 13,
+          "b9": 34
+        }
+      },
+      {
+        "id": "myrtilles",
+        "name": "Myrtilles",
+        "cat": "fruits",
+        "kcal": 57,
+        "p": 0.7,
+        "g": 12,
+        "l": 0.3,
+        "buy": "surgelées toute l'année",
+        "keeps": 3,
+        "micro": {
+          "fib": 2.4,
+          "vc": 10,
+          "k": 77,
+          "mg": 6,
+          "b9": 6
+        }
+      },
+      {
+        "id": "ananas",
+        "name": "Ananas",
+        "cat": "fruits",
+        "kcal": 50,
+        "p": 0.5,
+        "g": 11,
+        "l": 0.1,
+        "buy": "frais · en conserve, vérifie « sans sucre ajouté »",
+        "keeps": 4,
+        "micro": {
+          "fib": 1.4,
+          "vc": 48,
+          "k": 110,
+          "mg": 12,
+          "b9": 18
+        }
+      },
+      {
+        "id": "mangue",
+        "name": "Mangue",
+        "cat": "fruits",
+        "kcal": 60,
+        "p": 0.8,
+        "g": 13,
+        "l": 0.4,
+        "buy": "fraîche mûre, ou surgelée en cubes",
+        "keeps": 4,
+        "micro": {
+          "fib": 1.6,
+          "vc": 36,
+          "k": 168,
+          "mg": 10,
+          "b9": 43
+        }
+      },
+      {
+        "id": "poire",
+        "name": "Poire",
+        "cat": "fruits",
+        "kcal": 57,
+        "p": 0.4,
+        "g": 12,
+        "l": 0.1,
+        "buy": "1 poire ≈ 150 g",
+        "keeps": 6,
+        "micro": {
+          "fib": 3.1,
+          "vc": 4,
+          "k": 116,
+          "mg": 7
+        }
+      },
+      {
+        "id": "raisin",
+        "name": "Raisin",
+        "cat": "fruits",
+        "kcal": 69,
+        "p": 0.7,
+        "g": 16,
+        "l": 0.2,
+        "buy": "dense en sucre : à peser",
+        "keeps": 5,
+        "micro": {
+          "fib": 0.9,
+          "vc": 3,
+          "k": 191,
+          "mg": 7
+        }
+      },
+      {
+        "id": "avocat",
+        "name": "Avocat",
+        "cat": "fruits",
+        "kcal": 160,
+        "p": 2,
+        "g": 1.8,
+        "l": 15,
+        "buy": "1 avocat ≈ 140 g de chair · compté en matière grasse, pas en fruit",
+        "keeps": 3,
+        "noFreeze": true,
+        "micro": {
+          "fib": 6.7,
+          "vc": 10,
+          "k": 485,
+          "mg": 29,
+          "b9": 81
+        }
+      },
+      {
+        "id": "dattes",
+        "name": "Dattes",
+        "cat": "fruits",
+        "kcal": 282,
+        "p": 2.5,
+        "g": 65,
+        "l": 0.4,
+        "buy": "1 datte ≈ 8 g · sucre concentré, utile avant une séance",
+        "micro": {
+          "fib": 8,
+          "k": 656,
+          "mg": 54,
+          "fe": 1,
+          "ca": 39
+        }
+      },
+      {
+        "id": "compote-sans-sucre",
+        "name": "Compote de pommes sans sucre ajouté",
+        "cat": "fruits",
+        "kcal": 47,
+        "p": 0.3,
+        "g": 11,
+        "l": 0.1,
+        "buy": "gourde ou pot · vérifie « sans sucres ajoutés »",
+        "keeps": 4,
+        "micro": {
+          "fib": 1.4,
+          "vc": 2,
+          "k": 90
+        }
+      },
+      {
+        "id": "huile-de-colza",
+        "name": "Huile de colza",
+        "cat": "grasses",
+        "kcal": 900,
+        "p": 0,
+        "g": 0,
+        "l": 100,
+        "buy": "à cru uniquement · c'est elle qui apporte les oméga-3 végétaux",
+        "micro": {
+          "o3": 9
+        }
+      },
+      {
+        "id": "noix",
+        "name": "Noix",
+        "cat": "grasses",
+        "kcal": 654,
+        "p": 15,
+        "g": 7,
+        "l": 65,
+        "buy": "1 cerneau ≈ 4 g · la meilleure source végétale d'oméga-3",
+        "micro": {
+          "fib": 6.7,
+          "o3": 9,
+          "mg": 158,
+          "fe": 2.9,
+          "zn": 3.1,
+          "k": 441,
+          "ca": 98,
+          "b9": 98
+        }
+      },
+      {
+        "id": "noisettes",
+        "name": "Noisettes",
+        "cat": "grasses",
+        "kcal": 646,
+        "p": 15,
+        "g": 7,
+        "l": 61,
+        "buy": "entières, non salées",
+        "micro": {
+          "fib": 9.7,
+          "mg": 163,
+          "fe": 4.7,
+          "zn": 2.5,
+          "k": 680,
+          "ca": 114,
+          "b9": 113
+        }
+      },
+      {
+        "id": "graines-de-courge",
+        "name": "Graines de courge",
+        "cat": "grasses",
+        "kcal": 559,
+        "p": 30,
+        "g": 11,
+        "l": 49,
+        "buy": "la graine la plus protéinée · 10 g suffisent sur une salade",
+        "micro": {
+          "fib": 6,
+          "mg": 592,
+          "fe": 8.8,
+          "zn": 7.8,
+          "k": 809,
+          "ca": 46
+        }
+      },
+      {
+        "id": "graines-de-lin-moulues",
+        "name": "Graines de lin moulues",
+        "cat": "grasses",
+        "kcal": 460,
+        "p": 18,
+        "g": 1.6,
+        "l": 42,
+        "buy": "MOULUES · entières, elles traversent sans être digérées",
+        "micro": {
+          "fib": 27,
+          "o3": 22,
+          "mg": 392,
+          "fe": 5.7,
+          "zn": 4.3,
+          "k": 813,
+          "ca": 255
+        }
+      },
+      {
+        "id": "tahini",
+        "name": "Purée de sésame (tahini)",
+        "cat": "grasses",
+        "kcal": 595,
+        "p": 17,
+        "g": 10,
+        "l": 54,
+        "buy": "la base du houmous · à mélanger, elle se sépare",
+        "micro": {
+          "fib": 9,
+          "ca": 426,
+          "fe": 8.9,
+          "mg": 95,
+          "zn": 4.6
+        }
+      },
+      {
+        "id": "olives-noires",
+        "name": "Olives noires",
+        "cat": "grasses",
+        "kcal": 145,
+        "p": 1,
+        "g": 3,
+        "l": 15,
+        "buy": "dénoyautées · saler moins le plat en conséquence",
+        "keeps": 14,
+        "micro": {
+          "fib": 3.3,
+          "fe": 3.3,
+          "ca": 88,
+          "k": 8
+        }
+      },
+      {
+        "id": "creme-fraiche-legere",
+        "name": "Crème fraîche légère 15 %",
+        "cat": "grasses",
+        "kcal": 165,
+        "p": 2.5,
+        "g": 3.5,
+        "l": 15,
+        "buy": "15 % de MG · pour lier une sauce sans la charger",
+        "keeps": 5,
+        "noFreeze": true,
+        "micro": {
+          "ca": 90,
+          "k": 110
+        }
+      },
+      {
+        "id": "curcuma",
+        "name": "Curcuma en poudre",
+        "cat": "aromates",
+        "kcal": 255,
+        "p": 10,
+        "g": 45,
+        "l": 3.3,
+        "buy": "à associer au poivre",
+        "micro": {
+          "fib": 22,
+          "fe": 55,
+          "mg": 208,
+          "k": 2080
+        }
+      },
+      {
+        "id": "origan-seche",
+        "name": "Origan séché",
+        "cat": "aromates",
+        "kcal": 190,
+        "p": 9,
+        "g": 25,
+        "l": 4.3,
+        "buy": "pot · l'herbe des plats de tomate",
+        "micro": {
+          "fib": 42,
+          "ca": 1600,
+          "fe": 37,
+          "mg": 270
+        }
+      },
+      {
+        "id": "thym-seche",
+        "name": "Thym séché",
+        "cat": "aromates",
+        "kcal": 215,
+        "p": 9,
+        "g": 27,
+        "l": 7.4,
+        "buy": "pot",
+        "micro": {
+          "fib": 37,
+          "ca": 1890,
+          "fe": 124,
+          "mg": 220
+        }
+      },
+      {
+        "id": "laurier",
+        "name": "Feuilles de laurier",
+        "cat": "aromates",
+        "kcal": 313,
+        "p": 8,
+        "g": 48,
+        "l": 8.4,
+        "buy": "1 feuille ≈ 0,2 g",
+        "micro": {
+          "fib": 26,
+          "ca": 830,
+          "fe": 43
+        }
+      },
+      {
+        "id": "coriandre-fraiche",
+        "name": "Coriandre fraîche",
+        "cat": "aromates",
+        "kcal": 23,
+        "p": 2.1,
+        "g": 0.9,
+        "l": 0.5,
+        "buy": "botte",
+        "keeps": 4,
+        "noFreeze": true,
+        "micro": {
+          "fib": 2.8,
+          "vc": 27,
+          "k": 521,
+          "ca": 67,
+          "b9": 62
+        }
+      },
+      {
+        "id": "ciboulette",
+        "name": "Ciboulette",
+        "cat": "aromates",
+        "kcal": 30,
+        "p": 3.3,
+        "g": 1.8,
+        "l": 0.7,
+        "buy": "fraîche ou surgelée",
+        "keeps": 4,
+        "micro": {
+          "fib": 2.5,
+          "vc": 58,
+          "k": 296,
+          "ca": 92,
+          "b9": 105
+        }
+      },
+      {
+        "id": "echalote",
+        "name": "Échalote",
+        "cat": "aromates",
+        "kcal": 72,
+        "p": 2.5,
+        "g": 15,
+        "l": 0.1,
+        "buy": "1 échalote ≈ 25 g · plus fine que l'oignon",
+        "keeps": 30,
+        "micro": {
+          "fib": 3.2,
+          "vc": 8,
+          "k": 334,
+          "mg": 21,
+          "b9": 34
+        }
+      },
+      {
+        "id": "poivre-noir",
+        "name": "Poivre noir moulu",
+        "cat": "aromates",
+        "kcal": 251,
+        "p": 10,
+        "g": 39,
+        "l": 3.3,
+        "buy": "moulin",
+        "micro": {
+          "fib": 25,
+          "ca": 437,
+          "fe": 9.7,
+          "mg": 171,
+          "k": 1259
+        }
+      },
+      {
+        "id": "bouillon-de-legumes-cube",
+        "name": "Bouillon de légumes (cube)",
+        "cat": "aromates",
+        "kcal": 200,
+        "p": 8,
+        "g": 20,
+        "l": 10,
+        "buy": "1 cube ≈ 10 g pour 500 ml · très salé, goûte avant de resaler"
+      },
+      {
+        "id": "vinaigre-de-cidre",
+        "name": "Vinaigre de cidre",
+        "cat": "aromates",
+        "kcal": 21,
+        "p": 0,
+        "g": 0.9,
+        "l": 0,
+        "buy": "pour les vinaigrettes légères"
+      },
+      {
+        "id": "sauce-sriracha",
+        "name": "Sauce sriracha",
+        "cat": "aromates",
+        "kcal": 93,
+        "p": 2,
+        "g": 19,
+        "l": 1,
+        "buy": "piquante et sucrée · 5 g suffisent",
+        "keeps": 60
+      },
+      {
+        "id": "miel",
+        "name": "Miel",
+        "cat": "aromates",
+        "kcal": 320,
+        "p": 0.4,
+        "g": 79,
+        "l": 0,
+        "buy": "1 cuillère à café ≈ 7 g",
+        "micro": {
+          "k": 52
+        }
+      },
+      {
+        "id": "sirop-d-agave",
+        "name": "Sirop d'agave",
+        "cat": "aromates",
+        "kcal": 310,
+        "p": 0,
+        "g": 76,
+        "l": 0,
+        "buy": "même densité que le miel, goût plus neutre"
+      },
+      {
+        "id": "sauce-tomate-nature",
+        "name": "Sauce tomate nature",
+        "cat": "aromates",
+        "kcal": 35,
+        "p": 1.5,
+        "g": 5.5,
+        "l": 0.5,
+        "buy": "vérifie « sans sucres ajoutés »",
+        "keeps": 5,
+        "micro": {
+          "fib": 1.5,
+          "vc": 10,
+          "k": 300
+        }
+      },
+      {
+        "id": "cornichons-aigre-doux",
+        "name": "Pickles de légumes",
+        "cat": "aromates",
+        "kcal": 30,
+        "p": 0.8,
+        "g": 5,
+        "l": 0.2,
+        "buy": "bocal · relève une assiette fade sans calories",
+        "keeps": 60
+      },
+      {
+        "id": "sel-fin",
+        "name": "Sel fin",
+        "cat": "aromates",
+        "kcal": 0,
+        "p": 0,
+        "g": 0,
+        "l": 0,
+        "buy": "aucune calorie · c'est le sel qui rend un plat mangeable trois jours de suite"
+      }
+    ],
+    "userRecipes": [
+      {
+        "id": "boite-a",
+        "sauce": "sauce-blanche",
+        "name": "Boîte A — Poulet paprika, riz, brocolis",
+        "kind": "boite",
+        "batch": true,
+        "steps": "Frotte le poulet AVANT cuisson avec paprika fumé, ail en poudre, cumin, sel, poivre et un filet de citron : la marinade sèche fait plus pour le goût que n'importe quelle sauce ajoutée après. Four 200 °C, 22 min. Riz à l'eau. Brocolis et poivrons vapeur. L'huile s'ajoute APRÈS cuisson, directement dans la boîte : c'est le poste où le déficit se perd. La sauce blanche se met dans un pot à part, jamais dans la boîte.",
+        "items": [
+          {
+            "food": "filet-de-poulet",
+            "g": 120
+          },
+          {
+            "food": "riz-basmati",
+            "g": 40
+          },
+          {
+            "food": "brocolis",
+            "g": 220
+          },
+          {
+            "food": "poivrons",
+            "g": 120
+          },
+          {
+            "food": "huile-d-olive",
+            "g": 20
+          },
+          {
+            "food": "paprika-fume",
+            "g": 2
+          },
+          {
+            "food": "ail-en-poudre",
+            "g": 3
+          },
+          {
+            "food": "cumin-moulu",
+            "g": 1
+          }
+        ]
+      },
+      {
+        "id": "boite-b",
+        "sauce": "chimichurri",
+        "name": "Boîte B — Bœuf cumin, pommes de terre",
+        "kind": "boite",
+        "batch": true,
+        "steps": "Bœuf poêlé à sec avec l'oignon (il rend assez de gras), cumin et paprika jetés en fin de cuisson pour qu'ils ne brûlent pas. Pommes de terre en cubes au four 200 °C, 30 min, avec l'ail en poudre. Haricots verts vapeur. Le chimichurri à part réveille l'ensemble au dernier moment.",
+        "items": [
+          {
+            "food": "steak-hache-5",
+            "g": 125
+          },
+          {
+            "food": "pommes-de-terre",
+            "g": 175
+          },
+          {
+            "food": "haricots-verts",
+            "g": 220
+          },
+          {
+            "food": "oignon",
+            "g": 50
+          },
+          {
+            "food": "huile-d-olive",
+            "g": 18
+          },
+          {
+            "food": "cumin-moulu",
+            "g": 2
+          },
+          {
+            "food": "paprika-fume",
+            "g": 2
+          },
+          {
+            "food": "ail-en-poudre",
+            "g": 2
+          }
+        ]
+      },
+      {
+        "id": "boite-c",
+        "sauce": "vinaigrette-moutarde",
+        "name": "Boîte C — Pâtes thon-tomate, courgettes",
+        "kind": "boite",
+        "batch": true,
+        "steps": "Pâtes al dente : elles finiront de cuire au réchauffage. Sauce oignon + ail + courgettes en dés + tomates concassées + herbes, thon ajouté hors du feu. Les cornichons se coupent au dernier moment : c'est le croquant et l'acide qui manquent toujours à un plat réchauffé. Le basilic se déchire À LA MAIN et se pose dans l'assiette au dernier moment : cuit ou réchauffé, il noircit et ne sert plus à rien. Très bon froid, en salade de pâtes.",
+        "items": [
+          {
+            "food": "thon-au-naturel-egoutte",
+            "g": 110
+          },
+          {
+            "food": "pates-completes",
+            "g": 54
+          },
+          {
+            "food": "tomates-concassees",
+            "g": 200
+          },
+          {
+            "food": "courgettes",
+            "g": 200
+          },
+          {
+            "food": "oignon",
+            "g": 50
+          },
+          {
+            "food": "huile-d-olive",
+            "g": 18
+          },
+          {
+            "food": "ail",
+            "g": 5
+          },
+          {
+            "food": "herbes-de-provence",
+            "g": 2
+          },
+          {
+            "food": "cornichons",
+            "g": 20
+          },
+          {
+            "food": "basilic-frais",
+            "g": 10
+          }
+        ]
+      },
+      {
+        "id": "din-poisson",
+        "sauce": "sauce-blanche",
+        "name": "Poisson blanc citron-herbes, pommes de terre",
+        "kind": "diner",
+        "batch": false,
+        "steps": "Cabillaud en papillote au four, 15 min, avec citron, ail et herbes DANS la papillote — le poisson prend le goût en cuisant, il ne le prend plus après. Pommes de terre vapeur. Le poisson ne se réchauffe pas bien : s'il te reste dix minutes le soir même, préfère le cuire à la minute.",
+        "items": [
+          {
+            "food": "cabillaud-colin",
+            "g": 160
+          },
+          {
+            "food": "pommes-de-terre",
+            "g": 190
+          },
+          {
+            "food": "haricots-verts",
+            "g": 250
+          },
+          {
+            "food": "champignons-uv",
+            "g": 100
+          },
+          {
+            "food": "huile-d-olive",
+            "g": 18
+          },
+          {
+            "food": "pain-complet",
+            "g": 15
+          },
+          {
+            "food": "citron",
+            "g": 20
+          },
+          {
+            "food": "ail",
+            "g": 5
+          },
+          {
+            "food": "herbes-de-provence",
+            "g": 2
+          }
+        ]
+      },
+      {
+        "id": "din-dinde",
+        "sauce": "sauce-soja-gingembre",
+        "name": "Dinde soja-gingembre, riz, courgettes",
+        "kind": "diner",
+        "batch": false,
+        "steps": "Dinde en lanières à la poêle très chaude avec les courgettes et les champignons. Sauce soja, gingembre râpé et ail en fin de cuisson, hors du feu : le gingembre cuit perd tout son mordant. Riz à côté.",
+        "items": [
+          {
+            "food": "escalope-de-dinde",
+            "g": 150
+          },
+          {
+            "food": "riz-basmati",
+            "g": 40
+          },
+          {
+            "food": "courgettes",
+            "g": 300
+          },
+          {
+            "food": "champignons-uv",
+            "g": 100
+          },
+          {
+            "food": "huile-d-olive",
+            "g": 18
+          },
+          {
+            "food": "gingembre-frais",
+            "g": 8
+          },
+          {
+            "food": "ail",
+            "g": 5
+          },
+          {
+            "food": "sauce-soja",
+            "g": 15
+          }
+        ]
+      },
+      {
+        "id": "din-maquereau",
+        "sauce": "sauce-blanche",
+        "name": "Maquereau au four, pommes de terre, haricots",
+        "kind": "diner",
+        "batch": true,
+        "keeps": 2,
+        "steps": "Maquereau au four 12 min à 200 °C avec le citron et l'ail, ou en boîte au naturel égoutté si tu n'as pas le temps — même valeur, aucun travail. Pommes de terre à l'eau, haricots vapeur. PAS d'huile ajoutée dans ce plat : le maquereau en apporte déjà 21 g à lui seul, c'est le poisson le plus gras du programme et c'est exactement pour ça qu'il est là. Il porte à lui seul le tiers de tes besoins en vitamine D de la journée.",
+        "items": [
+          {
+            "food": "maquereau",
+            "g": 150
+          },
+          {
+            "food": "pommes-de-terre",
+            "g": 190
+          },
+          {
+            "food": "haricots-verts",
+            "g": 250
+          },
+          {
+            "food": "citron",
+            "g": 20
+          },
+          {
+            "food": "ail",
+            "g": 5
+          },
+          {
+            "food": "herbes-de-provence",
+            "g": 2
+          }
+        ]
+      },
+      {
+        "id": "din-saumon",
+        "sauce": "vinaigrette-moutarde",
+        "name": "Saumon, patate douce, épinards",
+        "kind": "diner",
+        "batch": false,
+        "steps": "Saumon à la poêle côté peau, 4 min sans le retourner, puis 1 min sur l'autre face. Patate douce en frites au four, saupoudrée de paprika fumé. Épinards poêlés à l'ail, citron pressé dessus au moment de servir.",
+        "items": [
+          {
+            "food": "saumon",
+            "g": 150
+          },
+          {
+            "food": "patate-douce",
+            "g": 190
+          },
+          {
+            "food": "epinards",
+            "g": 250
+          },
+          {
+            "food": "huile-d-olive",
+            "g": 4
+          },
+          {
+            "food": "citron",
+            "g": 15
+          },
+          {
+            "food": "ail",
+            "g": 5
+          },
+          {
+            "food": "paprika-fume",
+            "g": 1
+          }
+        ]
+      },
+      {
+        "id": "din-omelette",
+        "sauce": "sauce-tomate-piquante",
+        "name": "Omelette-poêlée dinde et légumes",
+        "kind": "diner",
+        "batch": false,
+        "steps": "3 œufs ENTIERS, jaunes compris — aucun gaspillage. Dinde émincée saisie d'abord, puis les légumes et l'ail, puis les œufs battus par-dessus. Persil frais jeté à la fin, hors du feu. 10 min chrono.",
+        "items": [
+          {
+            "food": "ufs-entiers",
+            "g": 180
+          },
+          {
+            "food": "escalope-de-dinde",
+            "g": 60
+          },
+          {
+            "food": "poivrons",
+            "g": 150
+          },
+          {
+            "food": "champignons-uv",
+            "g": 100
+          },
+          {
+            "food": "epinards",
+            "g": 100
+          },
+          {
+            "food": "pain-complet",
+            "g": 15
+          },
+          {
+            "food": "huile-d-olive",
+            "g": 5
+          },
+          {
+            "food": "ail",
+            "g": 5
+          },
+          {
+            "food": "cumin-moulu",
+            "g": 1
+          },
+          {
+            "food": "persil-frais",
+            "g": 10
+          }
+        ]
+      },
+      {
+        "id": "din-poulet",
+        "sauce": "sauce-cesar",
+        "name": "Poulet, lentilles, salade",
+        "kind": "diner",
+        "batch": true,
+        "steps": "Lentilles 20 min à l'eau non salée, avec une gousse d'ail entière dedans — à cuire pendant la session de cuisine, elles se gardent 4 jours. Poulet grillé, citron pressé dessus. Salade ajoutée au moment de manger, jamais avant : elle rend de l'eau et se flétrit en une heure.",
+        "items": [
+          {
+            "food": "filet-de-poulet",
+            "g": 140
+          },
+          {
+            "food": "lentilles-vertes",
+            "g": 40
+          },
+          {
+            "food": "salade-verte",
+            "g": 100
+          },
+          {
+            "food": "tomates-concassees",
+            "g": 100
+          },
+          {
+            "food": "champignons-uv",
+            "g": 100
+          },
+          {
+            "food": "huile-d-olive",
+            "g": 18
+          },
+          {
+            "food": "ail",
+            "g": 5
+          },
+          {
+            "food": "herbes-de-provence",
+            "g": 2
+          },
+          {
+            "food": "citron",
+            "g": 15
+          }
+        ]
+      },
+      {
+        "id": "col-pre",
+        "name": "Banane d'avant-séance",
+        "kind": "collation",
+        "batch": false,
+        "steps": "Une demi-heure avant la séance, au bureau — surtout PAS collée au petit-déjeuner : par-dessus un bol entier elle ne passe pas, et elle sert justement à avoir du sucre disponible pour l'effort. C'est ton seul apport entre 9 h et la salle : ne la saute pas, sinon la fin de séance décroche. Elle reste légère — 120 g, 3 g de fibres, aucun lipide — donc elle ne pèse pas au départ, contrairement au petit-déjeuner qui, lui, a reculé d'une heure.",
+        "items": [
+          {
+            "food": "banane",
+            "g": 120
+          }
+        ]
+      },
+      {
+        "id": "creatine",
+        "name": "Créatine",
+        "kind": "collation",
+        "batch": false,
+        "steps": "5 g de monohydrate dans le petit-déjeuner, tous les jours, séance ou pas : ce qui compte est la saturation du muscle, pas le moment de la prise. Elle se dissout mal dans l'eau mais disparaît dans un porridge ou un fromage blanc. À VERSER AU MOMENT DE MANGER, jamais la veille : en milieu acide — et un fromage blanc l'est — la créatine se dégrade lentement en créatinine, qui ne sert plus à rien. Au frigo la perte reste faible sur trois jours, mais le geste ne coûte rien.",
+        "items": [
+          {
+            "food": "creatine-monohydrate",
+            "g": 5
+          }
+        ]
+      },
+      {
+        "id": "col-aprem-repos",
+        "name": "Collation de l'après-midi",
+        "kind": "collation",
+        "batch": false,
+        "steps": "Vers 16 h - 17 h, quand la faim arrive. Le creux entre le déjeuner et le dîner est le moment où les plans déraillent. La whey est ici aussi, et pas seulement les jours de séance : le muscle se répare SURTOUT les jours de repos, et la cible protéique ne baisse pas parce qu'on n'est pas allé à la salle. Sans elle, cette collation tombait à 16 g de protéines contre 34 les jours d'entraînement — le manque tombait le mauvais jour.",
+        "items": [
+          {
+            "food": "fromage-blanc-0",
+            "g": 180
+          },
+          {
+            "food": "whey-poudre",
+            "g": 18
+          },
+          {
+            "food": "amandes",
+            "g": 27
+          }
+        ]
+      },
+      {
+        "id": "col-aprem-salle",
+        "name": "Collation + shaker de l'après-midi",
+        "kind": "collation",
+        "batch": false,
+        "steps": "Vers 16 h - 17 h, quand la faim arrive. Le creux entre le déjeuner et le dîner est le moment où les plans déraillent. C'est ici qu'est passé le shaker d'après-séance : de toutes tes prises de la journée, c'était la seule sous le seuil utile (16 g de protéines), les autres étaient déjà saturées. Avec la whey et les amandes elle monte à 34 g. Deux façons de faire, au choix : la poudre versée dans le fromage blanc et remuée, ou le shaker à l'eau bu à côté. Le sachet de whey reste au bureau, à côté de celui du petit-déjeuner — plus rien ne part dans le sac de sport. Les amandes ont rejoint cette collation : elles étaient au petit-déjeuner, où leurs lipides ralentissaient la digestion juste avant la séance. Ici, elles n'ont plus aucun effort à gêner.",
+        "items": [
+          {
+            "food": "fromage-blanc-0",
+            "g": 180
+          },
+          {
+            "food": "whey-poudre",
+            "g": 20
+          },
+          {
+            "food": "amandes",
+            "g": 25
+          }
+        ]
+      },
+      {
+        "id": "col-soir-salle",
+        "name": "Fromage blanc du soir",
+        "kind": "collation",
+        "batch": false,
+        "steps": "Caséine lente : elle ralentit la dégradation musculaire nocturne.",
+        "items": [
+          {
+            "food": "fromage-blanc-0",
+            "g": 150
+          }
+        ]
+      },
+      {
+        "id": "col-soir-repos",
+        "name": "Fromage blanc du soir",
+        "kind": "collation",
+        "batch": false,
+        "steps": "Caséine lente : elle ralentit la dégradation musculaire nocturne.",
+        "items": [
+          {
+            "food": "fromage-blanc-0",
+            "g": 150
+          },
+          {
+            "food": "amandes",
+            "g": 10
+          }
+        ]
+      },
+      {
+        "id": "pdj-overnight",
+        "keeps": 3,
+        "name": "Overnight oats fruits rouges",
+        "kind": "pdj",
+        "batch": true,
+        "steps": "LA VEILLE : avoine, fromage blanc, lait et cannelle dans un bocal, fruits rouges surgelés par-dessus. Le lait n'est pas facultatif — l'avoine absorbe plusieurs fois son poids en eau, et sans lui le mélange devient pâteux. LE MATIN, dans le bocal : la protéine en poudre et la créatine, puis on remue. La poudre mise la veille gélifie pendant la nuit. Se garde 3 jours au frigo. Si la texture ne te convient toujours pas, prends plutôt le bol cheesecake ou le smoothie : l'avoine crue trempée ne plaît pas à tout le monde, et ce n'est pas une question d'habitude à prendre.",
+        "items": [
+          {
+            "food": "flocons-d-avoine",
+            "g": 55
+          },
+          {
+            "food": "fromage-blanc-0",
+            "g": 200
+          },
+          {
+            "food": "whey-poudre",
+            "g": 10
+          },
+          {
+            "food": "fruits-rouges-surgeles",
+            "g": 100
+          },
+          {
+            "food": "lait-ecreme",
+            "g": 150
+          },
+          {
+            "food": "cannelle",
+            "g": 2
+          }
+        ]
+      },
+      {
+        "id": "pdj-croquant",
+        "keeps": 3,
+        "name": "Yaourt, fruits rouges et avoine croquante",
+        "kind": "pdj",
+        "batch": true,
+        "steps": "L'avoine ne trempe PAS : c'est tout l'intérêt. Les flocons sont déjà précuits à la vapeur avant d'être laminés, ils se mangent crus et secs — c'est le principe du muesli. LA VEILLE, ou trois pots d'un coup : fromage blanc et fruits rouges surgelés dans un bocal, rien d'autre. À CÔTÉ, dans un petit sachet : l'avoine, la protéine en poudre et la cannelle. AU MOMENT DE MANGER : tu verses le sachet, tu remues, tu manges tout de suite. Si tu mélanges à l'avance, l'avoine boit l'eau du fromage blanc et tu retombes exactement sur la texture molle que tu ne supportes pas.",
+        "items": [
+          {
+            "food": "fromage-blanc-0",
+            "g": 200
+          },
+          {
+            "food": "whey-poudre",
+            "g": 15
+          },
+          {
+            "food": "flocons-d-avoine",
+            "g": 60
+          },
+          {
+            "food": "fruits-rouges-surgeles",
+            "g": 120
+          },
+          {
+            "food": "cannelle",
+            "g": 2
+          }
+        ]
+      },
+      {
+        "id": "pdj-smoothie",
+        "name": "Smoothie du matin (à boire)",
+        "kind": "pdj",
+        "batch": false,
+        "steps": "Pour les matins où rien ne passe : un liquide se boit quand un bol ne s'avale pas. Lait écrémé, whey, avoine mixée, fruits rouges, cannelle. Trente secondes au blender, et ça se finit dans la voiture ou devant l'ordinateur.",
+        "items": [
+          {
+            "food": "lait-ecreme",
+            "g": 250
+          },
+          {
+            "food": "whey-poudre",
+            "g": 22
+          },
+          {
+            "food": "flocons-d-avoine",
+            "g": 58
+          },
+          {
+            "food": "fruits-rouges-surgeles",
+            "g": 100
+          },
+          {
+            "food": "cannelle",
+            "g": 2
+          }
+        ]
+      },
+      {
+        "id": "pdj-cheesecake",
+        "name": "Bol cheesecake pomme-cannelle",
+        "kind": "pdj",
+        "batch": false,
+        "steps": "Fromage blanc fouetté avec la whey pour qu'il devienne mousseux — c'est le fouet qui fait la texture, pas un ingrédient de plus. Pomme râpée avec la peau, avoine par-dessus, cannelle généreuse. Le goût de dessert pour les macros d'un petit-déjeuner.",
+        "items": [
+          {
+            "food": "fromage-blanc-0",
+            "g": 230
+          },
+          {
+            "food": "whey-poudre",
+            "g": 14
+          },
+          {
+            "food": "flocons-d-avoine",
+            "g": 50
+          },
+          {
+            "food": "pomme",
+            "g": 150
+          },
+          {
+            "food": "cannelle",
+            "g": 2
+          }
+        ]
+      },
+      {
+        "id": "pdj-sale",
+        "name": "Œufs brouillés, pain complet",
+        "kind": "pdj",
+        "batch": false,
+        "steps": "La version salée, pour les matins où le sucré écœure. Œufs brouillés à feu DOUX en remuant sans arrêt (le feu vif les rend caoutchouteux), pain complet grillé, fromage blanc à côté avec ciboulette et poivre. Huit minutes.",
+        "items": [
+          {
+            "food": "ufs-entiers",
+            "g": 165
+          },
+          {
+            "food": "pain-complet",
+            "g": 55
+          },
+          {
+            "food": "fromage-blanc-0",
+            "g": 150
+          },
+          {
+            "food": "ail",
+            "g": 2
+          },
+          {
+            "food": "whey-poudre",
+            "g": 5
+          }
+        ]
+      },
+      {
+        "id": "col-cacao",
+        "name": "Fromage blanc au cacao",
+        "kind": "collation",
+        "batch": false,
+        "steps": "Cacao NON SUCRÉ (pas du chocolat en poudre, qui est du sucre à 80 %), whey, un peu d'édulcorant si besoin. Délaie le cacao avec une cuillère d'eau chaude avant de l'incorporer, sinon il reste en grumeaux. Goût de mousse au chocolat pour 15 kcal de cacao.",
+        "items": [
+          {
+            "food": "fromage-blanc-0",
+            "g": 200
+          },
+          {
+            "food": "whey-poudre",
+            "g": 15
+          },
+          {
+            "food": "cacao-maigre",
+            "g": 5
+          }
+        ]
+      },
+      {
+        "id": "col-skyr",
+        "name": "Skyr et fruits rouges",
+        "kind": "collation",
+        "batch": false,
+        "steps": "Le skyr est plus épais et plus protéiné que le fromage blanc, donc plus rassasiant à calories égales. Fruits rouges surgelés sortis le matin : ils auront décongelé pour 17 h et rendu leur jus.",
+        "items": [
+          {
+            "food": "skyr",
+            "g": 200
+          },
+          {
+            "food": "fruits-rouges-surgeles",
+            "g": 100
+          },
+          {
+            "food": "cannelle",
+            "g": 1
+          }
+        ]
+      },
+      {
+        "id": "col-mousse",
+        "keeps": 2,
+        "name": "Mousse whey-aquafaba",
+        "kind": "collation",
+        "batch": true,
+        "steps": "L'eau d'une boîte de pois chiche montée en neige ferme au batteur (3 à 4 min, elle monte comme un blanc d'œuf), puis la whey et le cacao incorporés DÉLICATEMENT à la spatule pour ne pas la casser. Un volume énorme pour presque rien : c'est le meilleur rapport satiété/calories du plan. Se garde 48 h au frigo, elle retombe un peu, c'est normal.",
+        "items": [
+          {
+            "food": "aquafaba",
+            "g": 150
+          },
+          {
+            "food": "whey-poudre",
+            "g": 30
+          },
+          {
+            "food": "cacao-maigre",
+            "g": 4
+          }
+        ]
+      },
+      {
+        "id": "col-oeufs",
+        "keeps": 5,
+        "name": "Œufs durs et cornichons",
+        "kind": "collation",
+        "batch": true,
+        "steps": "La collation salée, à cuire par six le dimanche : 9 min dans l'eau bouillante, puis eau glacée pour qu'ils s'écalent sans arracher le blanc. Se gardent 5 jours en coquille. Les cornichons apportent le croquant et l'acide qui manquent à 17 h.",
+        "items": [
+          {
+            "food": "ufs-entiers",
+            "g": 110
+          },
+          {
+            "food": "cornichons",
+            "g": 50
+          }
+        ]
+      },
+      {
+        "id": "col-shaker",
+        "name": "Shaker lait-whey",
+        "kind": "collation",
+        "batch": false,
+        "steps": "La solution des jours pressés : poudre dans le shaker le matin, lait ajouté à 17 h. Aucune vaisselle, aucune excuse. Le lait ralentit la digestion par rapport à l'eau, donc ça cale mieux.",
+        "items": [
+          {
+            "food": "lait-ecreme",
+            "g": 250
+          },
+          {
+            "food": "whey-poudre",
+            "g": 22
+          }
+        ]
+      },
+      {
+        "id": "col-soir-cacahuete",
+        "name": "Fromage blanc, beurre de cacahuète",
+        "kind": "collation",
+        "batch": false,
+        "steps": "Pour le soir : la caséine du fromage blanc se digère lentement, le gras de la cacahuète ralentit encore le transit. Une cuillère À CAFÉ, pas à soupe — c'est 600 kcal aux 100 g, l'aliment le plus facile à sous-estimer de toute la table.",
+        "items": [
+          {
+            "food": "fromage-blanc-0",
+            "g": 180
+          },
+          {
+            "food": "beurre-de-cacahuete",
+            "g": 8
+          },
+          {
+            "food": "cannelle",
+            "g": 1
+          }
+        ]
+      },
+      {
+        "id": "sauce-blanche",
+        "name": "Sauce blanche citron-ail",
+        "kind": "sauce",
+        "batch": true,
+        "steps": "Yaourt grec, jus de citron, ail écrasé, herbes, sel, poivre. Fouette 30 secondes. Se garde 5 jours au frigo dans un pot fermé — fais-en pour toute la semaine d'un coup.",
+        "items": [
+          {
+            "food": "yaourt-grec-0",
+            "g": 100
+          },
+          {
+            "food": "citron",
+            "g": 10
+          },
+          {
+            "food": "ail",
+            "g": 5
+          },
+          {
+            "food": "herbes-de-provence",
+            "g": 1
+          }
+        ]
+      },
+      {
+        "id": "sauce-soja-gingembre",
+        "name": "Sauce soja-gingembre",
+        "kind": "sauce",
+        "batch": true,
+        "steps": "Sauce soja, gingembre râpé, ail, vinaigre balsamique, piment. Rien à cuire. Elle réveille n'importe quel riz et n'importe quelle volaille — et elle ne coûte presque rien.",
+        "items": [
+          {
+            "food": "sauce-soja",
+            "g": 20
+          },
+          {
+            "food": "gingembre-frais",
+            "g": 5
+          },
+          {
+            "food": "ail",
+            "g": 3
+          },
+          {
+            "food": "vinaigre-balsamique",
+            "g": 5
+          },
+          {
+            "food": "piment-en-poudre",
+            "g": 0.5
+          }
+        ]
+      },
+      {
+        "id": "sauce-curry",
+        "name": "Sauce curry-yaourt",
+        "kind": "sauce",
+        "batch": true,
+        "steps": "Yaourt grec, curry, un peu de citron, ail. Laisse reposer 10 min : le curry a besoin de ce temps pour se réhydrater, sinon il reste poudreux.",
+        "items": [
+          {
+            "food": "yaourt-grec-0",
+            "g": 90
+          },
+          {
+            "food": "curry-poudre",
+            "g": 3
+          },
+          {
+            "food": "citron",
+            "g": 10
+          },
+          {
+            "food": "ail",
+            "g": 3
+          }
+        ]
+      },
+      {
+        "id": "sauce-tomate-piquante",
+        "name": "Sauce tomate piquante",
+        "kind": "sauce",
+        "batch": true,
+        "steps": "Concentré de tomate détendu avec un peu d'eau, ail, paprika fumé, piment, vinaigre. Deux minutes à la casserole suffisent. C'est la sauce qui pardonne le plus : elle rattrape une viande un peu sèche.",
+        "items": [
+          {
+            "food": "concentre-tomate",
+            "g": 30
+          },
+          {
+            "food": "ail",
+            "g": 5
+          },
+          {
+            "food": "paprika-fume",
+            "g": 2
+          },
+          {
+            "food": "piment-en-poudre",
+            "g": 0.5
+          },
+          {
+            "food": "vinaigre-balsamique",
+            "g": 10
+          }
+        ]
+      },
+      {
+        "id": "vinaigrette-moutarde",
+        "name": "Vinaigrette moutarde sans huile",
+        "kind": "sauce",
+        "batch": true,
+        "steps": "Moutarde, vinaigre balsamique, une cuillère d'eau, herbes. Secoue dans un bocal. Vingt kcal au lieu de cent vingt : c'est l'huile qu'on retire, pas le goût.",
+        "items": [
+          {
+            "food": "moutarde-dijon",
+            "g": 10
+          },
+          {
+            "food": "vinaigre-balsamique",
+            "g": 15
+          },
+          {
+            "food": "herbes-de-provence",
+            "g": 1
+          }
+        ]
+      },
+      {
+        "id": "sauce-cesar",
+        "name": "Sauce césar allégée",
+        "kind": "sauce",
+        "batch": true,
+        "steps": "Yaourt grec, moutarde, levure maltée, citron, ail. La levure maltée fait le goût de parmesan — c'est elle qui rend la chose crédible.",
+        "items": [
+          {
+            "food": "yaourt-grec-0",
+            "g": 80
+          },
+          {
+            "food": "moutarde-dijon",
+            "g": 5
+          },
+          {
+            "food": "levure-maltee",
+            "g": 5
+          },
+          {
+            "food": "citron",
+            "g": 10
+          },
+          {
+            "food": "ail",
+            "g": 3
+          }
+        ]
+      },
+      {
+        "id": "sauce-basilic",
+        "name": "Sauce yaourt-basilic",
+        "kind": "sauce",
+        "batch": true,
+        "steps": "Basilic haché au couteau (le mixeur le fait noircir), yaourt grec, ail, citron, une cuillère d'huile. Celle-ci ne se garde que 3 jours, contre 5 pour les autres : le basilic frais ne tient pas plus. Fais-en moins, plus souvent.",
+        "items": [
+          {
+            "food": "yaourt-grec-0",
+            "g": 90
+          },
+          {
+            "food": "basilic-frais",
+            "g": 15
+          },
+          {
+            "food": "ail",
+            "g": 3
+          },
+          {
+            "food": "citron",
+            "g": 5
+          },
+          {
+            "food": "huile-d-olive",
+            "g": 2
+          }
+        ]
+      },
+      {
+        "id": "chimichurri",
+        "name": "Chimichurri",
+        "kind": "sauce",
+        "batch": true,
+        "steps": "Persil haché très fin, ail, vinaigre, huile d'olive, piment. Une seule cuillère d'huile pour toute la sauce : le persil et l'acide font le reste. Née pour la viande rouge, excellente sur les pommes de terre.",
+        "items": [
+          {
+            "food": "persil-frais",
+            "g": 20
+          },
+          {
+            "food": "ail",
+            "g": 5
+          },
+          {
+            "food": "vinaigre-balsamique",
+            "g": 10
+          },
+          {
+            "food": "huile-d-olive",
+            "g": 5
+          },
+          {
+            "food": "piment-en-poudre",
+            "g": 0.5
+          }
+        ]
+      }
+    ],
+    "menus": [
+      {
+        "id": "exemple-built-1",
+        "name": "Semaine A",
+        "days": [
+          {
+            "off": false,
+            "slots": {
+              "lunch": "boite-a",
+              "dinner": "din-poisson"
+            }
+          },
+          {
+            "off": false,
+            "slots": {
+              "lunch": "boite-b",
+              "dinner": "din-poulet"
+            }
+          },
+          {
+            "off": false,
+            "slots": {
+              "lunch": "boite-a",
+              "dinner": "din-omelette"
+            }
+          },
+          {
+            "off": false,
+            "slots": {
+              "lunch": "boite-a",
+              "dinner": "din-poisson"
+            }
+          },
+          {
+            "off": false,
+            "slots": {
+              "lunch": "boite-b",
+              "dinner": "din-saumon"
+            }
+          },
+          {
+            "off": false,
+            "slots": {
+              "lunch": "boite-b",
+              "dinner": "din-dinde"
+            }
+          },
+          {
+            "off": false,
+            "slots": {
+              "lunch": "boite-c",
+              "dinner": "din-poulet"
+            }
+          }
+        ]
+      },
+      {
+        "id": "exemple-built-2",
+        "name": "Semaine B",
+        "days": [
+          {
+            "off": false,
+            "slots": {
+              "lunch": "boite-a",
+              "dinner": "din-saumon"
+            }
+          },
+          {
+            "off": false,
+            "slots": {
+              "lunch": "boite-c",
+              "dinner": "din-dinde"
+            }
+          },
+          {
+            "off": false,
+            "slots": {
+              "lunch": "boite-c",
+              "dinner": "din-poulet"
+            }
+          },
+          {
+            "off": false,
+            "slots": {
+              "lunch": "boite-a",
+              "dinner": "din-poisson"
+            }
+          },
+          {
+            "off": false,
+            "slots": {
+              "lunch": "boite-c",
+              "dinner": "din-dinde"
+            }
+          },
+          {
+            "off": false,
+            "slots": {
+              "lunch": "boite-a",
+              "dinner": "din-omelette"
+            }
+          },
+          {
+            "off": false,
+            "slots": {
+              "lunch": "boite-b",
+              "dinner": "din-saumon"
+            }
+          }
+        ]
+      }
+    ],
+    "activeMenu": "exemple-built-1",
+    "week": {
+      "gym": [
+        true,
+        true,
+        false,
+        true,
+        true,
+        false,
+        false
+      ],
+      "tt": [
+        false,
+        true,
+        false,
+        false,
+        true,
+        false,
+        false
+      ]
+    }
+  }
+}
