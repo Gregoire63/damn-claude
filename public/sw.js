@@ -21,7 +21,23 @@ const NAV_TIMEOUT_MS = 3000
 // non un préfixe : `/` engloberait /api/**, et une réponse d'API figée dans le
 // cache est bien pire qu'une absence de cache.
 const ASSET_PREFIXES = ['/_nuxt/', '/exercises/', '/_fonts/']
-const ASSET_FILES = ['/icon-192.png', '/icon-512.png', '/manifest.webmanifest']
+const ASSET_FILES = ['/icon-192.png', '/icon-512.png']
+
+/**
+ * Le manifeste est RÉSEAU D'ABORD, comme la coque HTML — et pas cache d'abord.
+ *
+ * C'est lui qui décide de l'installabilité, et il change avec les déploiements. Mis
+ * en cache d'abord, il était figé sur l'appareil : quand Netlify l'a servi un temps
+ * en `application/octet-stream`, corriger le serveur ne suffisait plus. Il fallait
+ * changer la version du cache ET recharger DEUX fois — le premier chargement sert
+ * encore l'ancien pendant que le nouveau service worker s'installe.
+ *
+ * Deux chargements pour propager une correction, c'est déjà trop ; se le rappeler
+ * six mois plus tard, c'est impossible. Réseau d'abord, le cache ne sert que hors
+ * ligne, et une correction arrive au chargement suivant. Le fichier fait cinq cents
+ * octets : il n'y avait rien à économiser.
+ */
+const MANIFEST = '/manifest.webmanifest'
 
 function isAsset(pathname) {
   return ASSET_PREFIXES.some((p) => pathname.startsWith(p)) || ASSET_FILES.includes(pathname)
@@ -97,12 +113,24 @@ function navigate(request) {
   })
 }
 
+/** Réseau d'abord, cache en repli : pour ce qui doit rester frais mais survivre hors ligne. */
+function reseauDAbord(request) {
+  return fetch(request)
+    .then((res) => { put(request, res); return res })
+    .catch(() => caches.match(request).then((c) => c || Response.error()))
+}
+
 self.addEventListener('fetch', (e) => {
   const url = new URL(e.request.url)
   if (e.request.method !== 'GET' || url.origin !== self.location.origin) return
 
   if (e.request.mode === 'navigate') {
     e.respondWith(navigate(e.request))
+    return
+  }
+
+  if (url.pathname === MANIFEST) {
+    e.respondWith(reseauDAbord(e.request))
     return
   }
 
