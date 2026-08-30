@@ -16,3 +16,20 @@
   # Nuxt 4 exige ^22.12 || ^24.11 || >=26. On épingle : « 22 » tout court résout
   # vers la dernière 22.x, ce qui passe aujourd'hui sans que rien ne le garantisse.
   NODE_VERSION = "22.12.0"
+
+# ============================================================
+# Types MIME
+# ============================================================
+#
+# Netlify sert `.webmanifest` en `application/octet-stream` : son tableau
+# d'extensions ne connaît pas celle-là. Un manifeste servi sous ce type n'est pas
+# un manifeste — la spécification demande `application/manifest+json`, et un
+# navigateur qui refuse de le lire ne propose pas d'INSTALLER l'application : il
+# pose un raccourci, qui rouvre le navigateur.
+#
+# La panne est parfaite dans son genre : le fichier répond 200, son contenu est
+# juste, il s'ouvre à l'œil nu dans un onglet. Rien ne dit qu'il est ignoré.
+[[headers]]
+  for = "/manifest.webmanifest"
+  [headers.values]
+    Content-Type = "application/manifest+json; charset=utf-8"

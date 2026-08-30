@@ -1,7 +1,19 @@
 // Service worker de l'application — cache hors-ligne du suivi.
 // Servi depuis la racine du domaine, il a donc le scope racine par défaut :
 // aucun en-tête `Service-Worker-Allowed` n'est nécessaire.
-const CACHE = 'sport-v1'
+/*
+ * La VERSION du cache est le seul bouton qui purge un téléphone à distance.
+ *
+ * `activate` supprime tout cache `sport-*` qui n'est pas le courant : changer ce
+ * numéro jette d'un coup les coquilles HTML et les assets d'avant. À faire chaque
+ * fois qu'un changement doit atteindre un appareil qui a déjà visité le site et
+ * que le réseau seul ne suffirait pas à corriger — le manifeste et les icônes sont
+ * servis CACHE D'ABORD, donc figés jusqu'ici pour toujours.
+ *
+ * v2 : le manifeste avait été mis en cache alors que Netlify le servait en
+ * `application/octet-stream`, c'est-à-dire ignoré par le navigateur.
+ */
+const CACHE = 'sport-v2'
 const SHELL = '/'
 const NAV_TIMEOUT_MS = 3000
 
