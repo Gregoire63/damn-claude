@@ -1,0 +1,18 @@
+# ============================================================
+# van-claude
+# ============================================================
+
+[build]
+  # `nuxt build` et NON `nuxt generate`.
+  #
+  # `generate` prérend tout en fichiers statiques : il n'y a alors aucun serveur, et
+  # server/api/** n'existe tout simplement pas — donc ni connecteur Claude, ni
+  # passkey, ni synchronisation de balance. Avec `build`, Nitro détecte Netlify et
+  # déploie ces routes en fonctions, sur le même domaine.
+  command = "npm run build"
+  publish = "dist/"
+
+[build.environment]
+  # Nuxt 4 exige ^22.12 || ^24.11 || >=26. On épingle : « 22 » tout court résout
+  # vers la dernière 22.x, ce qui passe aujourd'hui sans que rien ne le garantisse.
+  NODE_VERSION = "22.12.0"

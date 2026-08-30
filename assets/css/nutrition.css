@@ -1,0 +1,1095 @@
+/* Styles du module nutrition. Imbriqués sous .sport-app comme sport.css : le module
+   est rendu à l'intérieur de la page /sport et réutilise son vocabulaire de classes
+   (.card, .stack, .stat-grid, .btn, .sheet…). Seules les classes préfixées nu- sont
+   définies ici, pour qu'il n'y ait aucun risque de collision avec l'app séances. */
+.sport-app {
+
+/* ─── Sous-navigation ───────────────────────────────────────────────────── */
+.nu-subnav {
+  display: flex; gap: 4px; padding: 12px 16px 0;
+}
+.nu-subtab {
+  flex: 1 1 0; min-width: 0;
+  display: flex; flex-direction: column; align-items: center; gap: 2px;
+  background: var(--bg-secondary); border: 1px solid var(--bg-accent);
+  border-radius: 12px; padding: 8px 4px; cursor: pointer;
+  color: var(--text-muted); transition: border-color 0.15s, color 0.15s, background 0.15s;
+}
+.nu-subtab:hover { border-color: var(--accent-secondary); }
+.nu-subtab.active {
+  color: var(--accent-primary); border-color: var(--accent-primary);
+  background: color-mix(in srgb, var(--accent-primary) 8%, var(--bg-primary));
+}
+/* Deux onglets au lieu de cinq : la place gagnée sert à dire ce qu'il y a dedans,
+   au lieu de laisser deviner derrière une icône de 15 px. */
+.nu-subtab.wide { flex-direction: row; flex-wrap: wrap; align-items: center; justify-content: flex-start; gap: 3px 8px; padding: 11px 12px; text-align: left; }
+.nu-subtab.wide .nu-sub-icon { font-size: 17px; }
+.nu-sub-hint { flex: 1 0 100%; font-size: 10px; opacity: 0.85; line-height: 1.3; }
+.nu-subtab.wide .nu-sub-label { font-size: 12px; letter-spacing: 0.02em; }
+.nu-sub-icon { font-size: 15px; line-height: 1; }
+.nu-sub-label { font-size: 10px; letter-spacing: 0.04em; }
+.nu-subtab.active .nu-sub-label { font-weight: 700; }
+
+/* ─── En-tête de journée ────────────────────────────────────────────────── */
+.nu-head { display: flex; flex-direction: column; gap: 10px; border-left: 4px solid var(--accent-primary); }
+.nu-head.rest { border-left-color: var(--text-muted); }
+.nu-mode { font-family: var(--font-display); font-size: 17px; font-weight: 700; margin-top: 2px; }
+.nu-note {
+  margin: 0; font-size: 13px; line-height: 1.55; color: var(--text-secondary, var(--text-primary));
+  background: var(--bg-secondary); border-radius: 10px; padding: 10px 12px;
+}
+/* D'où sort la cible protéique : une note discrète, en retrait du bilan lui-même. */
+.nu-basis {
+  margin: 0; font-size: 12px; line-height: 1.5; color: var(--text-muted);
+  border-left: 2px solid var(--bg-accent); padding-left: 10px;
+}
+.nu-basis b { color: var(--text-primary); }
+
+/* ─── Séances du jour + ajustement dynamique ────────────────────────────── */
+.nu-sessions { display: flex; flex-direction: column; gap: 4px; }
+.nu-session {
+  display: flex; align-items: center; gap: 10px; font-size: 12.5px;
+  background: var(--bg-secondary); border-radius: 8px; padding: 7px 10px;
+}
+.nu-session .mono { font-size: 11px; color: var(--text-muted); }
+
+/* Le bandeau qui porte la consigne du soir : c'est l'information la plus actionnable
+   de l'écran, donc il passe avant les compteurs. */
+.nu-adjust { display: flex; flex-direction: column; gap: 8px; border-left: 4px solid #b5502f; }
+.nu-adjust.up { border-left-color: #3f7a4f; }
+.nu-adjust.ok { border-left-color: var(--text-muted); }
+.nu-adjust-head { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+.nu-adjust-delta {
+  font-family: var(--font-display); font-size: 22px; font-weight: 800; color: #b5502f;
+}
+.nu-adjust.up .nu-adjust-delta { color: #3f7a4f; }
+.nu-adjust.ok .nu-adjust-delta { color: var(--text-muted); font-size: 18px; }
+.nu-adjust-title { font-size: 14px; font-weight: 600; }
+.nu-adjust-label {
+  margin: 0; font-size: 15px; line-height: 1.5; font-weight: 600;
+  background: var(--bg-secondary); border-radius: 10px; padding: 11px 13px;
+}
+.nu-adjust-steps {
+  margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 6px;
+}
+.nu-adjust-steps li {
+  font-size: 14.5px; line-height: 1.5; font-weight: 600;
+  background: var(--bg-secondary); border-radius: 10px; padding: 10px 12px;
+  border-left: 3px solid var(--accent-primary);
+}
+/* La confirmation de l'ajustement. Le conseil se lit d'abord, le geste se confirme
+   ensuite : l'app ne compte rien tant que le bouton n'a pas été pressé. */
+.nu-adjust-confirm { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.nu-adjust-confirm .btn-primary { flex: 0 0 auto; }
+.nu-adjust-hint { font-size: 11.5px; line-height: 1.4; color: var(--text-muted); flex: 1 1 140px; }
+.nu-adjust-ok { font-size: 13.5px; font-weight: 700; color: #3f7a4f; }
+.nu-adjust-undo { font-size: 12px; padding: 5px 10px; }
+.nu-prep { display: flex; flex-direction: column; gap: 8px; }
+.nu-prep .nav-row .btn { flex: 1 1 45%; font-size: 12px; line-height: 1.35; padding: 10px 10px; }
+
+.nu-tag {
+  font-family: var(--font-mono); font-size: 9px; text-transform: uppercase;
+  letter-spacing: 0.08em; font-weight: 700; color: var(--bg-primary);
+  background: #b5502f; border-radius: 5px; padding: 2px 6px;
+}
+
+/* ─── Barre de macros ───────────────────────────────────────────────────── */
+.nu-macros { display: flex; flex-direction: column; gap: 8px; }
+.nu-bar { display: flex; gap: 2px; height: 30px; border-radius: 8px; overflow: hidden; }
+.nu-seg {
+  display: flex; align-items: center; justify-content: center;
+  font-size: 12px; font-weight: 700; color: #fff; white-space: nowrap; overflow: hidden;
+}
+/* Trois teintes distinctes en vision normale comme en daltonisme (bleu / orange / vert). */
+.nu-seg.p, .nu-sw.p { background: #2a78d6; }
+.nu-seg.g, .nu-sw.g { background: #eb6834; }
+.nu-seg.l, .nu-sw.l { background: #1baf7a; }
+.nu-legend { display: flex; flex-wrap: wrap; gap: 12px; font-size: 11px; color: var(--text-muted); }
+.nu-legend span { display: flex; align-items: center; gap: 5px; }
+.nu-sw { width: 10px; height: 10px; border-radius: 3px; flex: 0 0 auto; display: inline-block; }
+
+/* ─── Repas de la journée ───────────────────────────────────────────────── */
+.nu-meals { display: flex; flex-direction: column; gap: 10px; }
+.nu-meal { display: flex; align-items: center; gap: 10px; padding: 12px 14px; transition: opacity 0.2s; flex-wrap: wrap; }
+.nu-meal.done { opacity: 0.55; }
+.nu-meal-main {
+  flex: 1; min-width: 0; text-align: left; background: none; border: none;
+  color: inherit; font: inherit; cursor: pointer; padding: 0;
+  display: flex; flex-direction: column; gap: 3px;
+}
+.nu-meal-top { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
+.nu-time { font-size: 12px; color: var(--accent-primary); font-weight: 700; }
+.nu-slot {
+  font-family: var(--font-mono); font-size: 10px; text-transform: uppercase;
+  letter-spacing: 0.08em; color: var(--text-muted);
+}
+.nu-kcal { margin-left: auto; font-size: 12px; color: var(--text-muted); }
+.nu-meal-name { font-family: var(--font-display); font-size: 15px; font-weight: 700; }
+.nu-meal .muted { font-size: 11.5px; line-height: 1.5; }
+.nu-meal-more { font-size: 11px !important; font-weight: 600; color: var(--accent-primary); }
+/* La photo prend enfin de la place : une vignette de 38 px ne se reconnaît pas, et
+   c'est pourtant le repère le plus rapide de toute la liste. */
+.nu-meal-photo { width: 84px; height: 84px; border-radius: 12px; }
+
+/* ─── Feuille recette ───────────────────────────────────────────────────── */
+.nu-ing {
+  display: flex; justify-content: space-between; gap: 12px; align-items: baseline;
+  padding: 7px 0; border-bottom: 1px dotted var(--bg-accent); font-size: 14px;
+}
+.nu-ing .mono { font-weight: 700; white-space: nowrap; }
+.nu-steps {
+  margin: 0; font-size: 13.5px; line-height: 1.6; color: var(--text-muted);
+  background: var(--bg-secondary); border-radius: 10px; padding: 11px 13px;
+}
+
+/* ─── Plan 14 jours ─────────────────────────────────────────────────────── */
+.nu-row {
+  width: 100%; display: flex; align-items: center; gap: 10px;
+  padding: 11px 14px; background: none; border: none; border-bottom: 1px solid var(--bg-accent);
+  color: inherit; font: inherit; text-align: left; cursor: pointer;
+  border-left: 3px solid var(--accent-primary);
+}
+.nu-row:last-child { border-bottom: none; }
+.nu-row:hover { background: var(--bg-secondary); }
+.nu-row.rest { border-left-color: var(--bg-accent); }
+.nu-row.now { background: color-mix(in srgb, var(--accent-primary) 9%, transparent); }
+.nu-row-day { font-family: var(--font-mono); font-size: 12px; font-weight: 700; width: 34px; flex: 0 0 auto; }
+.nu-row-meals { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 1px; font-size: 12.5px; }
+.nu-row-meals span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.nu-row-kcal { font-size: 13px; font-weight: 700; flex: 0 0 auto; }
+.nu-detail { padding: 8px 0; border-bottom: 1px dotted var(--bg-accent); font-size: 13px; }
+.nu-detail:last-child { border-bottom: none; }
+.nu-detail .muted { font-size: 11.5px; line-height: 1.5; margin-top: 2px; }
+
+/* ─── Courses ───────────────────────────────────────────────────────────── */
+.nu-shop-cat { overflow: hidden; }
+.nu-cat-title {
+  margin: 0; padding: 10px 14px; background: var(--bg-secondary);
+  font-family: var(--font-mono); font-size: 10px; font-weight: 700;
+  text-transform: uppercase; letter-spacing: 0.1em; color: var(--text-muted);
+}
+.nu-shop-line {
+  display: grid; grid-template-columns: 30px 1fr auto auto; align-items: center; gap: 8px;
+  padding: 9px 14px; border-bottom: 1px solid var(--bg-accent); transition: opacity 0.2s;
+}
+.nu-shop-line:last-child { border-bottom: none; }
+.nu-shop-line.done { opacity: 0.45; }
+.nu-shop-line.done .nu-shop-name { text-decoration: line-through; }
+.nu-shop-check {
+  background: none; border: none; font-size: 19px; line-height: 1; cursor: pointer;
+  color: var(--accent-primary); padding: 0;
+}
+.nu-shop-name { font-size: 13.5px; min-width: 0; display: flex; flex-direction: column; }
+.nu-shop-name .muted { font-size: 10.5px; }
+.nu-shop-qty { font-size: 13px; font-weight: 700; white-space: nowrap; }
+.nu-price { display: flex; flex-direction: column; align-items: flex-end; gap: 2px; }
+.nu-price input {
+  width: 74px; text-align: right; background: var(--bg-primary);
+  border: 1.5px solid var(--bg-accent); color: var(--text-primary);
+  border-radius: 9px; padding: 6px 8px; font-size: 13px; font-weight: 600;
+  transition: border-color 0.18s;
+}
+.nu-price input:focus { outline: none; border-color: var(--accent-primary); }
+/* Les flèches natives volent trop de place sur une colonne de 74 px. */
+.nu-price input::-webkit-outer-spin-button,
+.nu-price input::-webkit-inner-spin-button { appearance: none; margin: 0; }
+.nu-price input[type='number'] { appearance: textfield; }
+.nu-price-sum { font-size: 10.5px; color: var(--text-muted); }
+
+.nu-basket {
+  display: flex; align-items: center; gap: 10px; padding: 10px 14px;
+  border-bottom: 1px solid var(--bg-accent); font-size: 13px;
+}
+.nu-basket:last-child { border-bottom: none; }
+.nu-basket .muted { flex: 1; font-size: 11px; }
+.nu-del {
+  background: none; border: none; color: var(--text-muted); font-size: 18px;
+  line-height: 1; cursor: pointer; padding: 0 2px;
+}
+.nu-del:hover { color: #b5502f; }
+
+/* ─── Batch cooking ─────────────────────────────────────────────────────── */
+.nu-batch { display: flex; flex-direction: column; gap: 12px; }
+.nu-count { font-size: 13px; font-weight: 700; color: var(--accent-primary); }
+.nu-tasks { display: flex; flex-direction: column; gap: 2px; }
+.nu-task {
+  display: flex; align-items: flex-start; gap: 10px; padding: 8px 0;
+  border-bottom: 1px dotted var(--bg-accent); font-size: 13.5px; line-height: 1.5; cursor: pointer;
+}
+.nu-task:last-child { border-bottom: none; }
+.nu-task input { margin-top: 2px; width: 17px; height: 17px; accent-color: var(--accent-primary); flex: 0 0 auto; }
+.nu-task.done span { text-decoration: line-through; color: var(--text-muted); }
+.nu-sub {
+  font-family: var(--font-mono); font-size: 10px; text-transform: uppercase;
+  letter-spacing: 0.1em; font-weight: 700; color: var(--accent-primary); margin-top: 4px;
+}
+.nu-recipe { display: flex; flex-direction: column; gap: 6px; font-size: 13.5px; }
+.nu-fresh {
+  display: flex; gap: 10px; font-size: 13px; padding: 5px 0;
+  border-bottom: 1px dotted var(--bg-accent);
+}
+.nu-fresh:last-child { border-bottom: none; }
+.nu-fresh .mono { min-width: 68px; color: var(--text-muted); font-size: 11.5px; }
+/* ─── Micronutriments ───────────────────────────────────────────────────── */
+.nu-gap { border-left: 4px solid #b5502f; display: flex; flex-direction: column; gap: 8px; }
+.nu-gap-title { font-family: var(--font-display); font-size: 16px; font-weight: 700; }
+.nu-micro { padding: 10px 14px; border-bottom: 1px solid var(--bg-accent); }
+.nu-micro:last-child { border-bottom: none; }
+.nu-micro-top { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; margin-bottom: 6px; }
+.nu-micro-name { font-size: 13.5px; font-weight: 600; }
+.nu-micro-val { font-size: 11px; color: var(--text-muted); white-space: nowrap; }
+.nu-micro-val strong { color: var(--text-primary); margin-left: 4px; }
+.nu-micro-track { position: relative; height: 8px; border-radius: 999px; background: var(--bg-secondary); overflow: hidden; }
+.nu-micro-fill { height: 100%; border-radius: 999px; background: #3f7a4f; transition: width 0.3s var(--ease-out); }
+/* Repère des 100 % : l'échelle va jusqu'à 200 %, donc la référence tombe au milieu. */
+.nu-micro-ref { position: absolute; top: 0; bottom: 0; left: 50%; width: 1px; background: var(--text-muted); opacity: 0.5; }
+.nu-micro.fair .nu-micro-fill { background: #a97b1e; }
+.nu-micro.low .nu-micro-fill { background: #b5502f; }
+.nu-micro.low .nu-micro-name { color: #b5502f; font-weight: 700; }
+
+.nu-supp { display: flex; flex-direction: column; gap: 7px; border-left: 4px solid var(--accent-primary); }
+.nu-supp-name { font-family: var(--font-display); font-size: 16px; }
+.nu-supp-dose { font-size: 12px; color: var(--accent-primary); font-weight: 700; white-space: nowrap; }
+.nu-supp-why { margin: 0; font-size: 13.5px; line-height: 1.6; }
+.nu-warn { display: flex; flex-direction: column; gap: 10px; border-left: 4px solid #a97b1e; }
+
+/* ─── Bandeau d'accueil ─────────────────────────────────────────────────── */
+/* Grille nommée : c'est elle qui décide de l'ORDRE, et il n'est pas le même selon
+   la largeur. Sur téléphone la séance passe après le bouton des repas — on ouvre
+   l'appli pour manger cinq fois par jour et pour s'entraîner une. */
+.nu-hero {
+  display: grid; gap: 12px;
+  grid-template-areas:
+    "nutri"
+    "stats"
+    "note"
+    "actions"
+    "quick"
+    "sep"
+    "session";
+}
+.nu-hero-left { grid-area: nutri; }
+.nu-stats { grid-area: stats; }
+.nu-hero > .nu-note { grid-area: note; }
+.nu-hero-actions { grid-area: actions; }
+.nu-hero > .nu-quick { grid-area: quick; }
+.nu-hero-sep { grid-area: sep; }
+.nu-hero-right { grid-area: session; }
+
+@media (min-width: 620px) {
+  .nu-hero {
+    grid-template-columns: minmax(0, 1fr) 1px minmax(0, 1fr);
+    grid-template-areas:
+      "nutri   sep     session"
+      "stats   stats   stats"
+      "note    note    note"
+      "actions actions actions"
+      "quick   quick   quick";
+    column-gap: 18px;
+  }
+}
+.nu-hero-top { display: flex; align-items: center; gap: 16px; }
+.nu-donut { width: 128px; height: 128px; flex: 0 0 auto; }
+.nu-donut-bg { fill: none; stroke: var(--bg-secondary); stroke-width: 12; }
+/* Un arc par macro. Pas de stroke-linecap arrondi ici : des bouts arrondis se
+   chevaucheraient d'un arc à l'autre et donneraient de fausses frontières. */
+.nu-donut-arc {
+  fill: none; stroke-width: 12; stroke-linecap: butt;
+  transition: stroke-dasharray 0.4s var(--ease-out), stroke-dashoffset 0.4s var(--ease-out);
+}
+/* Vert pour les protéines : c'est le macro qui protège, et le seul dont un excès
+   n'est jamais reproché. Ambre pour les glucides, la variable d'ajustement. Brun
+   pour les lipides — délibérément neutre, une couleur d'alerte laisserait croire
+   qu'il faut les fuir, alors que c'est un plancher à atteindre. */
+.nu-donut-arc.p { stroke: #3f7a4f; }
+.nu-donut-arc.g { stroke: #c9922f; }
+.nu-donut-arc.l { stroke: #8b6f5c; }
+.nu-donut-arc.over { opacity: 0.9; }
+
+.nu-donut-btn {
+  background: none; border: none; padding: 0; cursor: pointer;
+  display: flex; flex-direction: column; align-items: center; gap: 4px;
+  flex: 0 0 auto; transition: transform 0.15s var(--ease-out);
+}
+.nu-donut-btn:hover { transform: scale(1.03); }
+.nu-donut-btn:active { transform: scale(0.98); }
+.nu-donut-legend { font-size: 9px; color: var(--text-muted); display: flex; align-items: center; gap: 3px; }
+.nu-donut-legend i { display: inline-block; width: 7px; height: 7px; border-radius: 2px; }
+.nu-donut-legend i.p { background: #3f7a4f; }
+.nu-donut-legend i.g { background: #c9922f; }
+.nu-donut-legend i.l { background: #8b6f5c; }
+
+/* ─── Feuille des écarts par macro ──────────────────────────────────────── */
+.macro-sheet .sheet-body { gap: 14px; }
+.ms-row { display: flex; flex-direction: column; gap: 5px; padding: 12px; border-radius: 12px; background: var(--bg-secondary); border-left: 3px solid var(--bg-accent); }
+.ms-row.p { border-left-color: #3f7a4f; }
+.ms-row.g { border-left-color: #c9922f; }
+.ms-row.l { border-left-color: #8b6f5c; }
+.ms-top { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
+.ms-name { font-family: var(--font-display); font-size: 15px; font-weight: 700; }
+.ms-state { font-size: 9.5px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted); }
+.ms-row.low .ms-state { color: #b5502f; }
+.ms-row.high .ms-state { color: #a97b1e; }
+.ms-row.ok .ms-state { color: #3f7a4f; }
+.ms-num { margin-left: auto; font-size: 12px; font-variant-numeric: tabular-nums; }
+.ms-track { position: relative; height: 8px; border-radius: 999px; background: var(--bg-primary); overflow: hidden; }
+/* Repère des 100 %. L'échelle va jusqu'à 150 %, donc la cible tombe aux deux tiers :
+   un dépassement doit se voir dépasser, pas s'écraser contre le bord droit. */
+.ms-ref { position: absolute; top: 0; bottom: 0; left: 66.6%; width: 1px; background: var(--text-muted); opacity: 0.55; z-index: 1; }
+.ms-fill { height: 100%; border-radius: 999px; transition: width 0.35s var(--ease-out); }
+.ms-row.p .ms-fill { background: #3f7a4f; }
+.ms-row.g .ms-fill { background: #c9922f; }
+.ms-row.l .ms-fill { background: #8b6f5c; }
+.ms-row.low .ms-fill { opacity: 0.5; }
+.ms-foot { font-size: 10.5px; color: var(--text-muted); }
+.ms-advice { margin: 3px 0 0; font-size: 12.5px; line-height: 1.5; }
+.ms-caveat { font-size: 11.5px; line-height: 1.5; }
+.nu-donut-v {
+  text-anchor: middle; font-family: var(--font-display); font-size: 26px; font-weight: 800;
+  fill: var(--text-primary);
+}
+.nu-donut-l { text-anchor: middle; font-family: var(--font-mono); font-size: 9px; fill: var(--text-muted); }
+.nu-donut-s { text-anchor: middle; font-family: var(--font-mono); font-size: 9px; fill: var(--text-muted); }
+.nu-donut-empty { display: flex; align-items: center; justify-content: center; color: var(--text-muted); font-size: 30px; border: 2px dashed var(--bg-accent); border-radius: 50%; }
+.nu-hero-side { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px; }
+
+/* Le prochain repas est la seule chose à faire dans l'immédiat : il prend la place
+   qu'occupaient trois lignes de compteurs, que le camembert dit déjà. */
+.nu-hero-next-big { display: flex; flex-direction: column; gap: 2px; margin-top: 2px; }
+.nu-hero-next-t { font-size: 11px; color: var(--accent-primary); font-weight: 700; }
+.nu-hero-next-l { font-family: var(--font-display); font-size: 17px; font-weight: 700; line-height: 1.25; }
+.nu-hero-eat { align-self: flex-start; margin-top: 6px; padding: 8px 14px; font-size: 13px; }
+.nu-hero-warn { font-size: 12px; line-height: 1.45; margin-top: 4px; }
+
+.nu-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
+.nu-stat {
+  display: flex; flex-direction: column; align-items: center; gap: 1px;
+  background: var(--bg-secondary); border-radius: 10px; padding: 9px 4px;
+  border-top: 2px solid transparent;
+}
+.nu-stat.good { border-top-color: #3f7a4f; }
+.nu-stat-v { font-family: var(--font-display); font-size: 17px; font-weight: 800; line-height: 1.1; }
+.nu-stat.good .nu-stat-v { color: #3f7a4f; }
+.nu-stat-u { font-size: 9.5px; color: var(--text-muted); font-family: var(--font-mono); }
+.nu-stat-l { font-size: 9.5px; color: var(--text-muted); margin-top: 2px; }
+
+.nu-hero-actions { display: flex; gap: 8px; }
+.nu-hero-actions .btn { flex: 0 0 auto; }
+
+/* La feuille reprend l'habillage de la vue Jour telle quelle : pas de second jeu de
+   styles à maintenir pour le même contenu. */
+.eat-sheet .sheet-body { padding-top: 2px; }
+.eat-sheet .stack { padding-top: 0; }
+
+.nu-timeline { display: flex; flex-direction: column; gap: 2px; }
+.nu-tl {
+  display: flex; align-items: center; gap: 10px; padding: 7px 0;
+  border-bottom: 1px dotted var(--bg-accent); font-size: 13.5px;
+}
+.nu-tl:last-child { border-bottom: none; }
+.nu-tl.done { opacity: 0.55; }
+.nu-tl.done .nu-tl-label { text-decoration: line-through; }
+.nu-tl.extra .nu-tl-label { font-style: italic; }
+.nu-tl-time { font-size: 11px; color: var(--accent-primary); min-width: 46px; font-weight: 700; }
+.nu-tl-label { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.nu-tl-kcal { font-size: 12px; color: var(--text-muted); }
+.nu-tl-check {
+  width: 30px; height: 30px; border-radius: 8px; flex: 0 0 auto;
+  background: var(--bg-secondary); border: 1px solid var(--bg-accent);
+  color: var(--text-muted); font-size: 14px; cursor: pointer;
+}
+.nu-tl-check.ok { background: #e7f0e2; border-color: #bcd8ae; color: #3f7a4f; }
+
+/* ─── Compteur de la vue Jour ───────────────────────────────────────────── */
+.nu-counter { display: flex; flex-direction: column; gap: 10px; }
+.nu-counter-big { text-align: right; }
+.nu-counter-big .mono { font-family: var(--font-display); font-size: 30px; font-weight: 800; display: block; line-height: 1; }
+.nu-counter-big small { font-size: 10px; font-family: var(--font-mono); color: var(--text-muted); }
+.nu-progress { height: 10px; border-radius: 999px; background: var(--bg-secondary); overflow: hidden; }
+.nu-progress-fill { height: 100%; border-radius: 999px; background: var(--accent-primary); transition: width 0.35s var(--ease-out); }
+.nu-progress-fill.over { background: #b5502f; }
+.nu-progress-legend { display: flex; justify-content: space-between; font-size: 11px; color: var(--text-muted); }
+.nu-energy {
+  display: flex; flex-wrap: wrap; gap: 4px 12px; font-size: 12px; color: var(--text-muted);
+  background: var(--bg-secondary); border-radius: 10px; padding: 9px 11px;
+}
+.nu-energy b { color: var(--text-primary); font-variant-numeric: tabular-nums; }
+.nu-energy-eq { color: var(--accent-primary); font-weight: 700; }
+
+/* ─── Interrupteurs de la journée ───────────────────────────────────────── */
+.nu-toggles { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; padding: 12px; }
+/* Un seul réglage restant : il prend toute la largeur et peut donc s'expliquer. */
+.nu-toggles.single { grid-template-columns: 1fr; }
+.nu-toggles.single .nu-toggle { flex-direction: row; justify-content: flex-start; gap: 10px; padding: 12px 14px; }
+.nu-toggles.single .nu-toggle small { margin-left: auto; text-align: right; }
+.nu-toggle {
+  display: flex; flex-direction: column; align-items: center; gap: 2px;
+  background: var(--bg-secondary); border: 1.5px solid var(--bg-accent); border-radius: 12px;
+  padding: 10px 6px; cursor: pointer; color: var(--text-muted); font-size: 12px; font-weight: 600;
+  transition: border-color 0.15s, color 0.15s;
+}
+.nu-toggle.on { border-color: var(--accent-primary); color: var(--accent-primary); }
+.nu-toggle small { font-size: 9.5px; font-family: var(--font-mono); font-weight: 400; }
+.nu-toggle-icon { font-size: 18px; line-height: 1; }
+.nu-steps-field input {
+  width: 100%; text-align: center; background: var(--bg-primary); border: 1px solid var(--bg-accent);
+  border-radius: 8px; padding: 3px 4px; font-size: 13px; font-weight: 700; color: var(--text-primary);
+}
+.nu-steps-field input::-webkit-outer-spin-button,
+.nu-steps-field input::-webkit-inner-spin-button { appearance: none; margin: 0; }
+
+/* ─── Extras et saisie rapide ───────────────────────────────────────────── */
+.nu-extra {
+  display: flex; align-items: center; gap: 10px; padding: 10px 14px;
+  border-bottom: 1px solid var(--bg-accent); font-size: 13.5px;
+}
+.nu-extra:last-child { border-bottom: none; }
+.nu-addbox { display: flex; flex-direction: column; gap: 8px; }
+.nu-quick { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+.nu-quick input, .nu-quick select {
+  flex: 1 1 90px; min-width: 0; background: var(--bg-primary); border: 1.5px solid var(--bg-accent);
+  color: var(--text-primary); border-radius: 10px; padding: 9px 10px; font-size: 13.5px;
+}
+.nu-quick input[type='number'] { flex: 0 0 78px; text-align: right; }
+.nu-quick input[type='time'] { flex: 0 0 96px; }
+.nu-pick { display: flex; flex-wrap: wrap; gap: 6px; }
+.nu-pick .btn { font-size: 12px; padding: 7px 10px; }
+
+/* ─── Planning ──────────────────────────────────────────────────────────── */
+.nu-week { display: flex; flex-direction: column; gap: 10px; }
+.nu-weekgrid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 5px; }
+.nu-weekday { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+.nu-weekday-name { font-size: 10px; color: var(--text-muted); }
+.nu-chip {
+  width: 100%; aspect-ratio: 1; border-radius: 9px; font-size: 15px; cursor: pointer;
+  background: var(--bg-secondary); border: 1.5px solid var(--bg-accent); opacity: 0.35;
+  transition: opacity 0.15s, border-color 0.15s;
+}
+.nu-chip.on { opacity: 1; border-color: var(--accent-primary); }
+.nu-chip.tt.on { border-color: #4a6fa5; }
+.nu-weeksum { font-size: 10px; line-height: 1.6; }
+
+.nu-pday { padding: 10px 14px; border-bottom: 1px solid var(--bg-accent); border-left: 3px solid transparent; }
+.nu-pday:last-child { border-bottom: none; }
+.nu-pday.now { background: color-mix(in srgb, var(--accent-primary) 9%, transparent); border-left-color: var(--accent-primary); }
+.nu-pday.over { border-left-color: #a97b1e; }
+.nu-pday-head { display: flex; align-items: center; gap: 6px; }
+.nu-pday-name { font-size: 12px; font-weight: 700; min-width: 58px; }
+.nu-pday-tags { display: flex; gap: 4px; flex: 1; flex-wrap: wrap; }
+/* Interrupteurs directement sur la ligne : corriger un jour ne doit pas demander
+   d'ouvrir une feuille. Éteints, ils restent visibles pour rester découvrables. */
+.nu-mini-btn {
+  width: 28px; height: 28px; border-radius: 8px; flex: 0 0 auto; font-size: 13px;
+  background: var(--bg-secondary); border: 1.5px solid var(--bg-accent);
+  cursor: pointer; opacity: 0.32; transition: opacity 0.15s, border-color 0.15s;
+}
+.nu-mini-btn:hover { opacity: 0.7; }
+.nu-mini-btn.on { opacity: 1; border-color: var(--accent-primary); }
+.nu-mini-btn.tt.on { border-color: #4a6fa5; background: color-mix(in srgb, #4a6fa5 10%, var(--bg-primary)); }
+.nu-weeklegend {
+  display: flex; flex-wrap: wrap; gap: 3px 10px; font-size: 10px; color: var(--text-muted);
+}
+.nu-mini {
+  font-size: 10px; background: var(--bg-secondary); border-radius: 6px; padding: 2px 6px;
+  font-family: var(--font-mono);
+}
+.nu-mini.done { background: #e7f0e2; color: #3f7a4f; }
+.nu-pday-kcal { font-size: 14px; font-weight: 800; }
+.nu-pday-edit {
+  background: none; border: none; color: var(--text-muted); font-size: 15px;
+  cursor: pointer; padding: 0 2px; opacity: 0.55;
+}
+.nu-pday-edit:hover { opacity: 1; }
+.nu-pday-meals { font-size: 11.5px; margin-top: 3px; }
+
+/* ─── Bibliothèque ──────────────────────────────────────────────────────── */
+.nu-libitem { display: flex; flex-direction: column; gap: 8px; }
+.nu-libitem.off { opacity: 0.5; }
+.nu-libname { font-family: var(--font-display); font-size: 15.5px; font-weight: 700; }
+.nu-libmacros { font-size: 12px; text-align: right; white-space: nowrap; }
+.nu-libmacros b { font-size: 16px; }
+.nu-libitems { font-size: 11.5px; line-height: 1.5; }
+.nu-tag.mine { background: #4a6fa5; }
+.nu-foodline {
+  display: flex; align-items: center; gap: 10px; padding: 8px 14px;
+  border-bottom: 1px solid var(--bg-accent); font-size: 13px;
+}
+.nu-foodline:last-child { border-bottom: none; }
+.nu-foodline .mono { font-size: 11px; white-space: nowrap; }
+.nu-quad { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.nu-errors {
+  background: #f7e8e3; border: 1px solid #e0b8a8; color: #b5502f; border-radius: 10px;
+  padding: 10px 12px; font-size: 13px; display: flex; flex-direction: column; gap: 4px;
+}
+.field textarea {
+  width: 100%; background: var(--bg-primary); border: 1.5px solid var(--bg-accent);
+  color: var(--text-primary); border-radius: 12px; padding: 10px 12px; font-size: 14px;
+  font-family: inherit; resize: vertical;
+}
+
+/* ─── Onglet Corps (balance Withings) ───────────────────────────────────── */
+.nu-wi-connect { display: flex; flex-direction: column; gap: 12px; border-left: 4px solid var(--accent-primary); }
+.nu-wi-connect .btn { align-self: flex-start; }
+.nu-wi-bar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; }
+.nu-wi-state { font-size: 11px; color: #3f7a4f; font-weight: 700; letter-spacing: 0.04em; }
+.nu-wi-sub { font-size: 12px; color: var(--text-muted); }
+.nu-wi-actions { display: flex; flex-wrap: wrap; gap: 6px; }
+.nu-wi-actions .btn { padding: 6px 10px; font-size: 12px; }
+.nu-wi-err { border-left: 4px solid #b5502f; color: #b5502f; }
+
+.nu-wi-head { display: flex; align-items: center; gap: 16px; }
+.nu-wi-kg { display: flex; align-items: baseline; gap: 3px; }
+.nu-wi-num { font-family: var(--font-display); font-size: 40px; font-weight: 800; line-height: 1; }
+.nu-wi-kg small { font-size: 13px; color: var(--text-muted); }
+.nu-wi-meta { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px; }
+.nu-wi-meta .mono { font-size: 11px; color: var(--text-muted); }
+.nu-wi-slope { font-size: 15px; font-weight: 700; font-variant-numeric: tabular-nums; }
+.nu-wi-slope.good { color: #3f7a4f; }
+.nu-wi-slope.warn { color: #a97b1e; }
+.nu-wi-slope.bad { color: #b5502f; }
+.nu-tone-good { border-left: 4px solid #3f7a4f; }
+.nu-tone-warn { border-left: 4px solid #a97b1e; }
+.nu-tone-bad { border-left: 4px solid #b5502f; }
+
+.nu-wi-chart { width: 100%; display: block; margin-top: 6px; }
+.nu-wi-ax { font-family: var(--font-mono); font-size: 9px; fill: var(--text-muted); }
+.nu-wi-legend { font-size: 10px; color: var(--text-muted); margin: 4px 0 0; }
+
+.nu-wi-comp { display: flex; flex-direction: column; gap: 10px; border-left: 4px solid var(--text-muted); }
+.nu-wi-comp.good { border-left-color: #3f7a4f; }
+.nu-wi-comp.mixed { border-left-color: #a97b1e; }
+.nu-wi-comp.poor { border-left-color: #b5502f; }
+/* Une seule barre : la part de gras remplit par la gauche, le reste (masse maigre)
+   est le fond. Deux barres côte à côte laisseraient croire à deux mesures séparées. */
+.nu-wi-bar-track { height: 14px; border-radius: 999px; background: #d9cfc6; overflow: hidden; }
+.nu-wi-bar-fat { height: 100%; border-radius: 999px; background: #3f7a4f; transition: width 0.35s var(--ease-out); }
+.nu-wi-split-legend { display: flex; justify-content: space-between; font-size: 11.5px; color: var(--text-muted); margin-top: 5px; }
+.nu-wi-split-legend b { color: var(--text-primary); }
+.nu-wi-deltas { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+.nu-wi-deltas > div { display: flex; flex-direction: column; gap: 1px; background: var(--bg-secondary); border-radius: 10px; padding: 8px; }
+.nu-wi-deltas .mono { font-size: 9.5px; color: var(--text-muted); letter-spacing: 0.04em; }
+.nu-wi-deltas b { font-size: 13px; font-variant-numeric: tabular-nums; }
+
+.nu-wi-metrics { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 4px; }
+.nu-wi-metric {
+  display: flex; flex-direction: column; gap: 1px; padding: 9px 10px;
+  background: var(--bg-secondary); border-radius: 10px; border-left: 3px solid var(--bg-accent);
+}
+.nu-wi-metric.good { border-left-color: #3f7a4f; }
+.nu-wi-metric.bad { border-left-color: #b5502f; }
+.nu-wi-metric-l { font-size: 9.5px; color: var(--text-muted); letter-spacing: 0.03em; }
+.nu-wi-metric-v { font-family: var(--font-display); font-size: 17px; font-weight: 700; }
+.nu-wi-metric-d { font-size: 10.5px; color: var(--text-muted); font-variant-numeric: tabular-nums; }
+
+.nu-wi-steps { display: flex; flex-direction: column; gap: 3px; margin-top: 6px; }
+.nu-wi-step { display: flex; align-items: center; gap: 8px; font-size: 12px; }
+.nu-wi-step .mono { font-size: 10px; color: var(--text-muted); width: 38px; flex: 0 0 auto; }
+.nu-wi-step-bar { height: 8px; border-radius: 999px; background: var(--accent-primary); opacity: 0.75; min-width: 2px; }
+.nu-wi-step b { margin-left: auto; font-variant-numeric: tabular-nums; font-size: 11.5px; }
+
+.nu-wi-manual { display: flex; flex-direction: column; gap: 10px; }
+/* Saisie de pesée : mêmes champs habillés que le profil (`.field`), au lieu du
+   contrôle de date natif brut qui ne ressemblait à rien d'autre dans l'appli. */
+.nu-wi-form { display: flex; flex-wrap: wrap; gap: 10px; align-items: flex-end; }
+.nu-datefield { flex: 1 1 150px; min-width: 0; }
+.nu-kgfield { flex: 0 1 110px; min-width: 0; }
+.nu-wi-form .field input { padding: 11px 12px; font-size: 14px; }
+.nu-wi-form .field input[type="date"] { font-family: var(--font-mono); }
+.nu-wi-go { flex: 0 0 auto; padding: 12px 16px; }
+.nu-wi-shortcuts { display: flex; gap: 6px; }
+.nu-wi-shortcuts .btn { padding: 6px 12px; font-size: 12px; }
+.nu-wi-list { display: flex; flex-direction: column; gap: 1px; }
+.nu-wi-item { display: flex; align-items: center; gap: 10px; font-size: 12.5px; padding: 6px 0; border-bottom: 1px dotted var(--bg-accent); }
+.nu-wi-item:last-child { border-bottom: none; }
+.nu-wi-item .mono { font-size: 10.5px; color: var(--text-muted); }
+.nu-wi-item b { margin-left: auto; font-variant-numeric: tabular-nums; }
+.nu-wi-src { font-size: 10px; color: var(--text-muted); background: var(--bg-secondary); border-radius: 6px; padding: 2px 6px; }
+.nu-wi-del { background: none; border: none; color: var(--text-muted); font-size: 17px; cursor: pointer; line-height: 1; padding: 0 4px; }
+.nu-wi-del:hover { color: #b5502f; }
+
+@media (max-width: 480px) {
+  .nu-wi-metrics { grid-template-columns: repeat(2, 1fr); }
+  .nu-wi-deltas { grid-template-columns: repeat(2, 1fr); }
+}
+
+/* Pesées en quarantaine : visible sans être alarmant, c'est un cas courant. */
+.nu-wi-quar { display: flex; flex-direction: column; gap: 10px; border-left: 4px solid #a97b1e; }
+.nu-wi-quar .nu-wi-item b { margin-left: auto; }
+.nu-wi-quar .btn { padding: 5px 9px; font-size: 11.5px; }
+.nu-wi-item.quar { opacity: 0.6; }
+.nu-wi-item.quar b { text-decoration: line-through; }
+
+/* ─── Onglet Préparer : trois étapes ────────────────────────────────────── */
+.nu-wizard { display: flex; gap: 6px; }
+.nu-step {
+  flex: 1 1 0; min-width: 0; display: flex; align-items: center; gap: 6px;
+  padding: 9px 10px; border-radius: 12px; cursor: pointer; font-size: 11.5px; font-weight: 600;
+  background: var(--bg-secondary); border: 1.5px solid var(--bg-accent); color: var(--text-muted);
+  text-align: left;
+}
+.nu-step.on { border-color: var(--accent-primary); color: var(--accent-primary); background: color-mix(in srgb, var(--accent-primary) 8%, var(--bg-primary)); }
+.nu-step:disabled { opacity: 0.45; cursor: not-allowed; }
+.nu-step-n {
+  width: 18px; height: 18px; border-radius: 50%; flex: 0 0 auto;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--bg-accent); color: var(--text-primary); font-size: 10px; font-weight: 700;
+}
+.nu-step.on .nu-step-n { background: var(--accent-primary); color: #fff; }
+.nu-step-b { margin-left: auto; font-size: 10px; }
+/* Un état, pas un ratio : « 31/31 » débordait de la pastille et ne disait rien de
+   plus que « c'est fait ». */
+.nu-step-ok { margin-left: auto; font-size: 12px; font-weight: 700; color: var(--accent-primary); }
+.nu-step-dot {
+  margin-left: auto; width: 7px; height: 7px; border-radius: 50%; flex: 0 0 auto;
+  background: var(--accent-secondary);
+}
+
+.nu-selsum { display: flex; flex-direction: column; gap: 10px; border-left: 4px solid var(--accent-primary); }
+.nu-launch-note { font-size: 11px; line-height: 1.45; margin: 0; }
+.btn-primary.done { background: var(--bg-secondary); color: var(--accent-primary); border: 1.5px solid var(--accent-primary); }
+
+/* ─── La semaine type : sept jours, un par carte ─────────────────────────── */
+.nu-weeks { display: flex; flex-direction: column; }
+.nu-week-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.nu-week-chip {
+  display: flex; align-items: center; gap: 6px; cursor: pointer;
+  padding: 7px 12px; border-radius: 999px; font-size: 12.5px; font-weight: 600;
+  background: var(--bg-secondary); border: 1.5px solid var(--bg-accent); color: var(--text-muted);
+}
+.nu-week-chip:hover { border-color: var(--accent-secondary); }
+.nu-week-chip.on {
+  border-color: var(--accent-primary); color: var(--accent-primary);
+  background: color-mix(in srgb, var(--accent-primary) 8%, var(--bg-primary));
+}
+.nu-week-lock { font-size: 9.5px; letter-spacing: 0.04em; text-transform: uppercase; opacity: 0.7; }
+
+.nu-wk { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 12px; }
+.nu-day { display: flex; flex-direction: column; gap: 8px; }
+/* Un jour d'absence reste lisible : il ne disparaît pas, il s'efface. */
+.nu-day.off { opacity: 0.55; }
+.nu-day-head { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; }
+.nu-day-name { font-family: var(--font-display); font-size: 15px; font-weight: 700; }
+.nu-day-tag {
+  font-size: 9.5px; letter-spacing: 0.05em; text-transform: uppercase;
+  padding: 2px 7px; border-radius: 999px; background: var(--bg-secondary); color: var(--text-muted);
+}
+.nu-day-tag.gym { background: color-mix(in srgb, var(--accent-primary) 14%, var(--bg-primary)); color: var(--accent-primary); }
+.nu-day-kcal { font-size: 10px; }
+.nu-day-off {
+  margin-left: auto; cursor: pointer; font-size: 10.5px; font-weight: 600;
+  padding: 4px 9px; border-radius: 999px;
+  background: var(--bg-secondary); border: 1.5px solid var(--bg-accent); color: var(--text-muted);
+}
+.nu-day-off:hover { border-color: var(--accent-secondary); }
+.nu-day-off.on { border-color: var(--accent-primary); color: var(--accent-primary); }
+.nu-day-empty { font-size: 12px; margin: 0; }
+
+.nu-mslot { display: grid; grid-template-columns: 46px 1fr; gap: 3px 8px; align-items: center; }
+.nu-mslot-time { font-size: 10.5px; color: var(--text-muted); }
+.nu-mslot-label { font-size: 11.5px; color: var(--text-muted); }
+.nu-mslot-select {
+  grid-column: 1 / -1; width: 100%; padding: 8px 10px; font-size: 12.5px; cursor: pointer;
+  border-radius: 10px; background: var(--bg-primary); color: var(--text-primary);
+  border: 1.5px solid var(--bg-accent); font-family: inherit;
+}
+.nu-mslot-select:focus { outline: none; border-color: var(--accent-primary); }
+.nu-day-more {
+  align-self: flex-start; cursor: pointer; font-size: 11px; font-weight: 600;
+  padding: 5px 0; background: none; border: none; color: var(--text-muted);
+}
+.nu-day-more:hover { color: var(--accent-primary); }
+
+/* ─── Les sessions de cuisine ────────────────────────────────────────────── */
+.nu-cook { display: flex; flex-direction: column; gap: 10px; border-left: 4px solid var(--accent-primary); }
+/* Le soir même n'est pas une session de préparation : il ne se met pas en avant. */
+.nu-cook.minute { border-left-color: var(--bg-accent); }
+.nu-cook-head { display: flex; align-items: baseline; gap: 8px; }
+.nu-cook-min { margin-left: auto; font-size: 11.5px; color: var(--accent-primary); font-weight: 700; }
+.nu-cook-when { font-size: 11px; margin: -6px 0 0; }
+.nu-cook-dishes { display: flex; flex-direction: column; gap: 6px; }
+.nu-cook-dish { display: flex; align-items: center; gap: 9px; }
+.nu-cook-thumb { width: 34px; height: 34px; flex: 0 0 auto; border-radius: 9px; }
+.nu-cook-dish-txt {
+  display: flex; flex-direction: column; align-items: flex-start; text-align: left;
+  min-width: 0; flex: 1; background: none; border: none; padding: 0; cursor: pointer; color: inherit;
+}
+.nu-cook-dish-txt:hover strong { text-decoration: underline; }
+.nu-cook-dish-txt strong { font-size: 13px; }
+.nu-cook-dish-txt .muted { font-size: 10.5px; }
+.nu-cook-n { font-size: 13px; font-weight: 700; white-space: nowrap; }
+/* La sortie par le congélateur : un conseil, pas une alerte. */
+.nu-freeze {
+  font-size: 12px; line-height: 1.55; padding: 10px 12px; border-radius: 12px;
+  background: color-mix(in srgb, var(--accent-secondary) 10%, var(--bg-primary));
+  border-left: 3px solid var(--accent-secondary);
+}
+.nu-freeze-btn { display: block; margin-top: 8px; font-size: 11.5px; padding: 6px 10px; }
+
+/* Le choix du congélateur : deux options franches, pas une case à cocher perdue. */
+.nu-freezer { display: flex; flex-direction: column; }
+.nu-freezer-opts { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 8px; }
+.nu-freezer-opt {
+  display: flex; flex-direction: column; gap: 4px; text-align: left; cursor: pointer;
+  padding: 10px 12px; border-radius: 12px; font-size: 12.5px;
+  background: var(--bg-secondary); border: 1.5px solid var(--bg-accent); color: var(--text-primary);
+}
+.nu-freezer-opt:hover { border-color: var(--accent-secondary); }
+.nu-freezer-opt.on {
+  border-color: var(--accent-primary);
+  background: color-mix(in srgb, var(--accent-primary) 8%, var(--bg-primary));
+}
+.nu-freezer-opt .muted { font-size: 11px; line-height: 1.45; }
+.nu-gel {
+  margin-left: 6px; font-size: 9px; letter-spacing: 0.05em; text-transform: uppercase;
+  padding: 2px 6px; border-radius: 999px; vertical-align: middle;
+  background: color-mix(in srgb, var(--accent-secondary) 18%, var(--bg-primary)); color: var(--accent-secondary);
+}
+
+/* Les ingrédients, avant la préparation — comme dans n'importe quelle recette. */
+.nu-rec-head { border-top: 1px solid var(--bg-accent); padding-top: 10px; }
+.nu-rec-ing { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 4px; }
+.nu-rec-ing-l { display: grid; grid-template-columns: 74px 1fr; gap: 10px; align-items: baseline; font-size: 13px; }
+.nu-rec-ing-q { font-weight: 700; text-align: right; color: var(--accent-primary); }
+.nu-rec-ing-n { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px; }
+.nu-rec-ing-n .muted { font-size: 10.5px; }
+.nu-rec-ing-raw {
+  font-size: 9px; letter-spacing: 0.05em; text-transform: uppercase; padding: 1px 5px;
+  border-radius: 999px; background: var(--bg-secondary); color: var(--text-muted);
+}
+
+/* Filtres de la bibliothèque : deux rangées de pastilles, pas un menu déroulant.
+   On veut voir les options sans les ouvrir. */
+.nu-filters { display: flex; flex-direction: column; gap: 8px; }
+.nu-search {
+  width: 100%; padding: 9px 12px; border-radius: 10px; font-size: 13px; font-family: inherit;
+  background: var(--bg-primary); color: var(--text-primary); border: 1.5px solid var(--bg-accent);
+}
+.nu-search:focus { outline: none; border-color: var(--accent-primary); }
+.nu-filt-row { display: flex; flex-wrap: wrap; gap: 6px; }
+.nu-filt {
+  display: inline-flex; align-items: center; gap: 5px; cursor: pointer;
+  padding: 6px 11px; border-radius: 999px; font-size: 12px; font-weight: 600;
+  background: var(--bg-secondary); border: 1.5px solid var(--bg-accent); color: var(--text-muted);
+}
+.nu-filt:hover { border-color: var(--accent-secondary); }
+.nu-filt.on {
+  border-color: var(--accent-primary); color: var(--accent-primary);
+  background: color-mix(in srgb, var(--accent-primary) 8%, var(--bg-primary));
+}
+.nu-filt-n { font-size: 10px; opacity: 0.7; }
+.nu-filt.clear { border-style: dashed; }
+
+/* Le corps de la carte est un bouton : lire une recette ne doit pas demander
+   d'ouvrir son formulaire d'édition. */
+.nu-plat-open {
+  display: flex; flex-direction: column; gap: 4px; align-items: flex-start; text-align: left;
+  background: none; border: none; padding: 0; cursor: pointer; color: inherit; flex: 1; width: 100%;
+}
+.nu-plat-more { font-size: 11px; font-weight: 600; color: var(--accent-primary); }
+.nu-plat-open:hover .nu-plat-more { text-decoration: underline; }
+
+/* Pas de photo : une place franche et deux boutons, plutôt qu'un décor flou. */
+.nu-photo-empty {
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px;
+  width: 100%; aspect-ratio: 16 / 10; padding: 16px;
+  background: var(--bg-secondary); border: 1.5px dashed var(--bg-accent);
+}
+.nu-photo-empty-ico { font-size: 30px; opacity: 0.35; }
+.nu-photo-empty-acts { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; }
+.nu-photo-empty-acts .btn { font-size: 12px; padding: 8px 12px; }
+
+/* La fiche d'un plat, ouverte depuis n'importe quelle carte. */
+/* La fiche d'un plat. La photo au bord haut et la poignée par-dessus sont portées
+   par le composant Sheet (`.sheet-cover`) : ici il ne reste que la mise en forme de
+   la photo elle-même. */
+.rs { padding-top: 0 !important; }
+.sheet-cover .nu-photo { display: block; width: 100%; }
+.sheet-cover .nu-photo-thumb, .sheet-cover .nu-photo-add {
+  width: 100%; height: auto; aspect-ratio: 16 / 10; border-radius: 0; border: none;
+}
+.sheet-cover .nu-photo-thumb img { width: 100%; height: 100%; object-fit: cover; }
+.rs-kind { font-size: 9.5px; letter-spacing: 0.05em; text-transform: uppercase; color: var(--text-muted); }
+.rs-items { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 5px; }
+.rs-item { display: grid; grid-template-columns: 62px 1fr; gap: 10px; align-items: baseline; font-size: 13.5px; }
+.rs-q { font-weight: 700; text-align: right; color: var(--accent-primary); }
+.rs-n { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px; }
+.rs-n .muted { font-size: 10.5px; }
+/* La part d'un ingrédient qui va dans la sauce. Discrète mais lisible : elle répond
+   à « combien dans le pot » sans qu'on ait à chercher une seconde liste. */
+.rs-raw { font-size: 11px; margin: 2px 0 0; }
+.rs-steps { margin: 0; }
+/* Un second bouton de fermeture en bas : celui de la photo est parti hors champ
+   dès qu'on a fait défiler, et on se retrouvait à chercher comment sortir. */
+.rs-done { margin-top: 6px; }
+
+/* La recette guidée : des étapes numérotées, dans l'ordre où on les fait. */
+.nu-cook-steps { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 14px; border-top: 1px solid var(--bg-accent); padding-top: 12px; }
+.nu-rstep { display: flex; gap: 10px; align-items: flex-start; }
+.nu-rstep-n {
+  width: 24px; height: 24px; flex: 0 0 auto; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--accent-primary); color: #fff; font-size: 11.5px; font-weight: 700;
+}
+.nu-rstep-body { display: flex; flex-direction: column; gap: 4px; min-width: 0; flex: 1; }
+.nu-rstep-title { font-family: var(--font-display); font-size: 14.5px; font-weight: 700; margin: 0; line-height: 1.3; }
+.nu-rstep-hint { font-size: 11.5px; line-height: 1.5; color: var(--text-muted); margin: 0; }
+.nu-rstep-lines { margin: 3px 0 0; padding-left: 16px; display: flex; flex-direction: column; gap: 3px; font-size: 12.5px; line-height: 1.45; }
+
+/* Le mode d'emploi de l'onglet. Il se lit une fois, il ne doit donc pas crier. */
+.nu-how { border-left: 4px solid var(--accent-secondary); display: flex; flex-direction: column; gap: 8px; }
+.nu-how-title { font-family: var(--font-display); font-size: 15px; font-weight: 700; margin: 0; }
+.nu-how-list { margin: 0; padding-left: 18px; display: flex; flex-direction: column; gap: 6px; font-size: 12.5px; line-height: 1.5; }
+
+
+.nu-selsum-main { display: flex; align-items: baseline; gap: 8px; }
+.nu-selsum-v { font-family: var(--font-display); font-size: 32px; font-weight: 800; line-height: 1; }
+.nu-selsum-l { font-size: 13px; color: var(--text-muted); }
+.nu-start { display: flex; flex-direction: column; }
+.nu-fridge { display: flex; flex-direction: column; }
+.nu-fridge-list { display: flex; flex-wrap: wrap; gap: 6px; }
+.nu-fridge-item { font-size: 12px; background: var(--bg-secondary); border-radius: 999px; padding: 5px 11px; }
+
+/* Un plat retenu se voit dans la grille sans avoir à lire son compteur. */
+.nu-plat.picked { border-color: var(--accent-primary); box-shadow: 0 0 0 1.5px var(--accent-primary) inset; }
+.nu-plat-cover { width: 100%; height: auto; aspect-ratio: 16 / 10; border-radius: 0; border: none; border-bottom: 1px solid var(--bg-accent); }
+.nu-plat-steps {
+  font-size: 11px; line-height: 1.45; margin: 0; font-style: italic;
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+}
+.nu-stepper { display: flex; align-items: center; gap: 6px; margin-top: 8px; }
+.nu-stepper-b {
+  width: 30px; height: 30px; border-radius: 9px; flex: 0 0 auto; cursor: pointer;
+  background: var(--bg-secondary); border: 1.5px solid var(--bg-accent);
+  color: var(--text-primary); font-size: 16px; line-height: 1;
+}
+.nu-stepper-b:hover:not(:disabled) { border-color: var(--accent-primary); color: var(--accent-primary); }
+.nu-stepper-b:disabled { opacity: 0.35; cursor: not-allowed; }
+.nu-stepper-v {
+  width: 46px; text-align: center; padding: 6px 2px; font-size: 14px; font-weight: 700;
+  background: var(--bg-primary); border: 1.5px solid var(--bg-accent); border-radius: 9px;
+  color: var(--text-primary);
+}
+.nu-stepper-l { font-size: 10px; }
+
+.nu-prep-title { font-family: var(--font-display); font-size: 16px; font-weight: 700; margin: 0; }
+.nu-prep-steps { margin: 0; padding-left: 18px; display: flex; flex-direction: column; gap: 4px; font-size: 13px; }
+.nu-prep-recipe { border-top: 1px solid var(--bg-accent); padding-top: 8px; }
+.nu-prep-recipe:first-of-type { border-top: none; padding-top: 0; }
+
+/* ─── Photos des plats ──────────────────────────────────────────────────── */
+/* ─── Grille des plats ──────────────────────────────────────────────────── */
+.nu-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(178px, 1fr)); gap: 12px; }
+.nu-plat { padding: 0 !important; overflow: hidden; display: flex; flex-direction: column; }
+.nu-plat.off { opacity: 0.5; }
+.nu-plat-body { display: flex; flex-direction: column; gap: 4px; padding: 10px 12px 12px; flex: 1; }
+.nu-plat-kind { font-size: 9.5px; letter-spacing: 0.05em; text-transform: uppercase; color: var(--text-muted); display: flex; flex-wrap: wrap; align-items: center; gap: 5px; }
+.nu-plat-name { font-family: var(--font-display); font-size: 15px; font-weight: 700; margin: 0; line-height: 1.25; }
+.nu-plat-macros { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
+.nu-plat-kcal { font-family: var(--font-display); font-size: 18px; font-weight: 800; color: var(--accent-primary); }
+.nu-plat-macros .mono { font-size: 10px; }
+.nu-plat-items {
+  font-size: 11px; line-height: 1.45; margin: 2px 0 0; flex: 1;
+  /* Trois lignes puis coupe : les ingrédients situent le plat, la recette complète
+     est dans l'éditeur. Sans limite, une carte sur deux faisait le double des autres. */
+  display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;
+}
+.nu-sw.f { background: #6b8f5e; }
+.nu-fib.low { color: #a97b1e; font-weight: 700; }
+.nu-fib.high { color: #4a6fa5; font-weight: 700; }
+
+.nu-plat-sauce { font-size: 11px; margin: 2px 0 0; color: var(--accent-secondary); font-weight: 600; }
+.nu-plat-acts { display: flex; gap: 5px; margin-top: 8px; }
+/* Le bouton « ce plat est modifié » : il ne s'affiche que sur les plats qui portent
+   une modification locale, et il doit se voir — c'est le seul indice qu'un plat ne
+   suit plus le programme après une mise à jour. */
+.nu-plat-acts .btn.warn { color: #a97b1e; border-color: #e8d5a8; background: #fdf4e3; }
+.nu-plat-acts .btn { padding: 6px 8px; font-size: 11px; flex: 0 0 auto; }
+.nu-plat-acts .btn:nth-child(2) { flex: 1; }
+
+.nu-thumb {
+  width: 38px; height: 38px; flex: 0 0 auto; border-radius: 10px; overflow: hidden;
+  background: var(--bg-secondary); border: 1px solid var(--bg-accent);
+  display: flex; align-items: center; justify-content: center;
+}
+.nu-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.nu-thumb-empty { font-size: 15px; opacity: 0.45; }
+
+.nu-photo { flex: 0 0 auto; position: relative; }
+.nu-photo-input { display: none; }
+.nu-photo-add, .nu-photo-thumb {
+  width: 38px; height: 38px; flex: 0 0 auto; padding: 0; cursor: pointer;
+  border-radius: 10px; border: 1.5px dashed var(--bg-accent); background: var(--bg-secondary);
+  color: var(--text-muted); font-size: 15px; line-height: 1;
+  display: flex; align-items: center; justify-content: center;
+  transition: border-color 0.15s, transform 0.12s;
+}
+.nu-photo.md .nu-photo-add, .nu-photo.md .nu-photo-thumb { width: 56px; height: 56px; border-radius: 12px; }
+/* Bandeau : l'image occupe toute la largeur de la carte, en 16/10. */
+.nu-photo.cover { width: 100%; }
+.nu-photo.cover .nu-photo-thumb, .nu-photo.cover .nu-photo-add {
+  width: 100%; height: auto; aspect-ratio: 16 / 10; border-radius: 0; border: none;
+  border-bottom: 1px solid var(--bg-accent);
+}
+.nu-photo.cover .nu-photo-thumb:hover { transform: none; }
+.nu-photo.cover .nu-photo-thumb:hover img { transform: scale(1.05); }
+.nu-photo.cover .nu-photo-add { font-size: 22px; background: var(--bg-secondary); }
+.nu-photo-thumb img { transition: transform 0.35s var(--ease-out); }
+/* L'illustration livrée est légèrement en retrait : elle ne doit pas se faire
+   passer pour une photo du plat réellement cuisiné. */
+.nu-photo-badge {
+  position: absolute; right: 6px; bottom: 6px; width: 24px; height: 24px;
+  display: flex; align-items: center; justify-content: center;
+  border-radius: 8px; background: rgba(255, 253, 250, 0.92); font-size: 12px;
+  box-shadow: 0 2px 6px rgba(20, 14, 10, 0.18);
+}
+.nu-photo-add:hover { border-color: var(--accent-primary); color: var(--accent-primary); }
+.nu-photo-add:disabled { opacity: 0.5; cursor: progress; }
+.nu-photo-thumb { border-style: solid; border-color: var(--bg-accent); overflow: hidden; }
+.nu-photo-thumb:hover { transform: scale(1.06); border-color: var(--accent-primary); }
+.nu-photo-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.nu-photo-err { margin: 4px 0 0; font-size: 11px; color: #b5502f; max-width: 220px; line-height: 1.4; }
+
+.nu-photo-usage {
+  display: flex; align-items: center; gap: 10px; font-size: 12px; color: var(--text-muted);
+  background: var(--bg-secondary); border-radius: 10px; padding: 9px 12px;
+}
+.nu-photo-usage.warn { color: #a97b1e; background: #fdf4e3; }
+.nu-photo-usage .btn { padding: 5px 9px; font-size: 11px; }
+
+/* Aperçu plein format. Téléporté dans <body> : à l'intérieur d'une carte, un
+   overflow ou un transform d'un parent rognerait l'overlay. Il porte aussi
+   .sport-app (voir .sport-portal), sans quoi il sortirait de la portée du CSS
+   du module et s'afficherait sans habillage. */
+.nu-photo-overlay {
+  position: fixed; inset: 0; z-index: 200; background: rgba(24, 20, 17, 0.86);
+  display: flex; align-items: center; justify-content: center; padding: 16px;
+  animation: nu-fade 0.15s ease-out;
+}
+.nu-photo-box {
+  background: var(--bg-primary); border-radius: 16px; overflow: hidden;
+  max-width: 560px; width: 100%; max-height: 92vh; display: flex; flex-direction: column;
+}
+.nu-photo-box img { width: 100%; max-height: 66vh; object-fit: contain; display: block; background: #17140f; }
+.nu-photo-meta { padding: 12px 14px; display: flex; flex-wrap: wrap; gap: 10px; align-items: center; justify-content: space-between; }
+.nu-photo-name { font-family: var(--font-display); font-size: 16px; font-weight: 700; }
+.nu-photo-meta .mono { font-size: 10.5px; color: var(--text-muted); }
+.nu-photo-acts { display: flex; gap: 6px; flex-wrap: wrap; }
+.nu-photo-acts .btn { padding: 6px 10px; font-size: 12px; }
+.nu-photo-acts .btn.danger { color: #b5502f; }
+
+/* « J'ai pris autre chose » : le plat est proposé, jamais imposé. */
+.nu-swap {
+  width: 30px; height: 30px; border-radius: 8px; flex: 0 0 auto; cursor: pointer;
+  background: var(--bg-secondary); border: 1px solid var(--bg-accent);
+  color: var(--text-muted); font-size: 13px;
+}
+.nu-swap:hover { border-color: var(--accent-primary); color: var(--accent-primary); }
+/* La colonne de droite d'un repas : photo au-dessus de la coche. */
+.nu-meal-side { display: flex; flex-direction: column; align-items: center; gap: 6px; flex: 0 0 auto; }
+
+/* Les cartes du module respirent un peu plus que celles de l'app séances. */
+.nu-panel .stack { padding-top: 12px; }
+}
+
+/* Animations sorties du bloc .sport-app : le nom d'un @keyframes est TOUJOURS
+   global, l'imbriquer n'apportait aucune portée — et lightningcss, utilisé par
+   Vite 8 pour minifier, rejette une at-rule autre que @media/@supports/@container
+   à l'intérieur d'une règle (« Unknown at rule: @keyframes »). */
+@keyframes nu-fade { from { opacity: 0; } to { opacity: 1; } }
+
+/* ─── Fiche d'un repas hors plan qui porte une composition ────────────────── */
+/* Un repas libre n'a pas de recette de catalogue derrière lui : ses grammages ne
+   valent que pour ce jour-là. La fiche le dit visuellement — pas de photo, pas de
+   conservation, pas de bouton « modifier le plat » — pour qu'on ne la confonde pas
+   avec la fiche du plat d'origine, qui est à un lien de là. */
+.nu-free-base { background: var(--bg-secondary); border: 1px dashed var(--bg-accent); border-radius: 10px; padding: 10px 12px; font-size: 13px; color: var(--text-secondary); }
+.nu-free-link { background: none; border: none; padding: 0 0 0 8px; font: inherit; font-size: 12.5px; color: var(--accent-secondary); text-decoration: underline; cursor: pointer; }
+.nu-free-macros { display: flex; flex-direction: column; gap: 6px; padding: 12px 0 2px; }
+.nu-free-kcal { font-family: var(--font-display); font-size: 26px; font-weight: 700; }
+.nu-free-split { display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: 12.5px; color: var(--text-muted); }
+.nu-free-m b { color: var(--text-primary); }
+.nu-free-items { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+.nu-free-items th { text-align: left; font-weight: 400; padding: 8px 0; border-bottom: 1px dotted var(--bg-accent); }
+.nu-free-items td { text-align: right; padding: 8px 0 8px 10px; border-bottom: 1px dotted var(--bg-accent); white-space: nowrap; }
+.nu-free-items tr:last-child th, .nu-free-items tr:last-child td { border-bottom: none; }
+/* Un CONSTAT, pas une alerte : l'écart a deux causes également probables, et une
+   seule mérite correction. La couleur reste celle des remarques, pas des erreurs. */
+.nu-free-ecart { background: #f6ecd6; border: 1px solid #e6d3a8; border-radius: 10px; padding: 10px 12px; font-size: 12.5px; color: #7a5c1e; line-height: 1.5; margin-top: 10px; }
+.nu-free-steps { font-size: 14px; line-height: 1.6; white-space: pre-line; }
+
+/* Taux de matière grasse des laitiers — le rayon ne suit pas toujours le plan */
+.nu-fat-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; padding: 9px 0; border-top: 1px dashed var(--bg-accent); }
+.nu-fat-row:first-of-type { border-top: none; }
+.nu-fat-name { flex: 1 1 150px; min-width: 0; font-size: 13.5px; font-weight: 600; color: var(--text-primary); display: flex; flex-direction: column; gap: 1px; }
+.nu-fat-name small { font-size: 11px; font-weight: 400; color: var(--text-muted); }
+.nu-fat-steps { display: flex; gap: 4px; flex: 0 0 auto; }
+.nu-fat-step { min-width: 44px; background: var(--bg-secondary); border: 1px solid var(--bg-accent); color: var(--text-muted); border-radius: 8px; padding: 7px 6px; font-family: var(--font-mono); font-size: 12px; cursor: pointer; transition: all 0.15s; }
+.nu-fat-step:hover { border-color: var(--accent-secondary); color: var(--text-primary); }
+.nu-fat-step.on { background: #4a6fa5; border-color: transparent; color: #fff; font-weight: 700; }
+.nu-fat-cost { margin-top: 10px; background: #f6ecd6; border-left: 3px solid #a97b1e; border-radius: 10px; padding: 10px 12px; display: flex; flex-direction: column; gap: 6px; }
+.nu-fat-cost b { font-size: 13px; }
+.nu-fat-cost small { font-size: 11.5px; line-height: 1.45; color: var(--text-muted); }
+.nu-fat-cost-grid { display: grid; grid-template-columns: 1fr auto; gap: 2px 12px; font-size: 12.5px; }
+.nu-fat-cost-grid span:nth-child(odd) { color: var(--text-muted); }
+.nu-fat-cost-grid span:nth-child(even) { text-align: right; font-weight: 700; color: var(--text-primary); }
+
+/* Autorisation Withings à renouveler : un état, pas un message d'erreur de plus */
+.nu-wi-reco { border-left: 3px solid #b5502f; background: #fbeee9; display: flex; flex-direction: column; gap: 8px; }
+.nu-wi-reco .nu-mode { color: #b5502f; }
+
+/* Le taux de MG se règle sur l'ingrédient lui-même, dans la fiche du plat.
+   Le réglage global existe toujours dans Plats → Aliments ; celui-ci est le même,
+   posé là où on en a besoin : le pot à la main, au moment de peser. */
+.rs-fat { display: inline-block; margin-top: 3px; background: none; border: 1px dashed var(--bg-accent); border-radius: 7px; padding: 2px 8px; font-family: var(--font-body); font-size: 11.5px; color: var(--text-muted); cursor: pointer; transition: all 0.15s; }
+.rs-fat:hover { border-color: var(--accent-secondary); color: var(--text-primary); }
+.rs-fat.set { border-style: solid; border-color: #4a6fa5; background: #eef2f9; color: #4a6fa5; font-weight: 600; }
+.rs-fat-steps { display: flex; gap: 4px; margin-top: 4px; flex-wrap: wrap; }
+.rs-fat-step { min-width: 42px; background: var(--bg-secondary); border: 1px solid var(--bg-accent); border-radius: 7px; padding: 5px 6px; font-family: var(--font-mono); font-size: 11.5px; color: var(--text-muted); cursor: pointer; }
+.rs-fat-step:hover { border-color: var(--accent-secondary); color: var(--text-primary); }
+.rs-fat-step.on { background: #4a6fa5; border-color: transparent; color: #fff; font-weight: 700; }
+
+/* Feuille de choix d'un plat — partagée par l'accueil et le calendrier */
+.pk-list { display: flex; flex-direction: column; gap: 6px; }
+.pk-opt { display: flex; align-items: center; gap: 10px; width: 100%; box-sizing: border-box; text-align: left; background: var(--bg-secondary); border: 1px solid var(--bg-accent); border-radius: 10px; padding: 8px 11px 8px 8px; font-family: var(--font-body); font-size: 13.5px; color: var(--text-primary); cursor: pointer; transition: border-color 0.15s; }
+.pk-opt:hover { border-color: var(--accent-secondary); }
+.pk-opt.on { border-color: #4a6fa5; background: #eef2f9; font-weight: 600; }
+.pk-thumb { flex: 0 0 auto; width: 44px; height: 44px; border-radius: 8px; overflow: hidden; }
+.pk-name { flex: 1 1 auto; min-width: 0; }
+.pk-left { flex: 0 0 auto; font-size: 11px; color: var(--text-muted); }
+.pk-check { flex: 0 0 auto; color: #4a6fa5; font-weight: 700; }
+.pk-reset { width: 100%; margin-top: 10px; }
+
+/* ─── Repas du dehors ─────────────────────────────────────────────────────── */
+/* Préfixe `fm-` : `nu-` est déjà pris par toute la nutrition et `pk-` par la
+   feuille de choix, dont ce formulaire réutilise les lignes d'option. */
+.nu-tag-free { background: #8b6f5c; }
+.fm-new { align-items: flex-start; gap: 12px; border-style: dashed; border-color: var(--accent-secondary); margin-bottom: 10px; }
+.fm-plus { flex: 0 0 auto; font-size: 20px; line-height: 1.1; color: var(--accent-secondary); }
+.fm-new .pk-name { display: flex; flex-direction: column; gap: 2px; }
+.fm-new small { font-size: 11.5px; font-weight: 400; }
+.fm-opt { cursor: pointer; }
+/* La zone « choisir ce repas » occupe toute la carte sauf la croix. Sans styles
+   propres : elle doit se fondre dans la carte, pas ressembler à un bouton posé
+   dedans. C'est .pk-opt qui porte le cadre, comme pour les autres listes. */
+.fm-pick { flex: 1 1 auto; min-width: 0; display: flex; align-items: center; gap: 10px; background: none; border: none; padding: 0; margin: 0; font: inherit; color: inherit; text-align: left; cursor: pointer; }
+.fm-toggle { width: 100%; background: none; border: none; padding: 8px 0; font-family: var(--font-body); font-size: 12.5px; color: var(--text-muted); cursor: pointer; text-align: left; }
+.fm-note { font-size: 11.5px; line-height: 1.45; margin: 4px 0 8px; }
+.fm-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; margin-top: 8px; }
+.fm-num { display: flex; flex-direction: column; gap: 4px; font-size: 12px; color: var(--text-muted); }
+.fm-num input { width: 100%; box-sizing: border-box; }
+.fm-save { width: 100%; margin-top: 12px; }
+
+/* ─── Cru → cuit ──────────────────────────────────────────────────────────── */
+/* Préfixe `nu-cuit-` : la répartition d'après cuisson, dans l'écran Préparation. */
+.rs-cuit { display: block; font-size: 10.5px; font-weight: 400; color: var(--text-muted); margin-top: 2px; white-space: nowrap; }
+.nu-cuit { margin-top: 10px; padding-top: 10px; border-top: 1px dashed var(--bg-accent); }
+.nu-cuit-l { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; padding: 4px 0; font-size: 13px; }
+.nu-cuit-n { flex: 0 0 auto; color: var(--text-primary); }
+.nu-cuit-v { flex: 1 1 auto; font-size: 12px; color: var(--text-muted); }
+.nu-cuit-v b { color: var(--text-primary); font-size: 13px; }
+.nu-cuit-v small { display: block; font-size: 10.5px; }
+.nu-cuit-btn { flex: 0 0 auto; background: none; border: 1px solid var(--bg-accent); border-radius: 999px; padding: 2px 9px; font-family: var(--font-body); font-size: 10.5px; color: var(--text-muted); cursor: pointer; }
+.nu-cuit-btn.set { border-color: #4a6fa5; color: #4a6fa5; }
+.nu-cuit-note { font-size: 11px; margin: 0 0 4px; font-style: italic; }
+.nu-cuit-form { background: var(--bg-secondary); border-radius: 10px; padding: 10px; margin: 6px 0 10px; }
+.nu-cuit-form p { font-size: 11.5px; line-height: 1.45; margin: 0 0 8px; }

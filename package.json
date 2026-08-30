@@ -1,0 +1,48 @@
+{
+  "name": "van-claude",
+  "type": "module",
+  "private": true,
+  "license": "AGPL-3.0-only",
+  "scripts": {
+    "build": "nuxt build",
+    "dev": "nuxt dev",
+    "preview": "nuxt preview",
+    "postinstall": "nuxt prepare",
+    "start": "node .output/server/index.mjs",
+    "test": "vitest run",
+    "test:watch": "vitest --watch",
+    "test:nuxt": "vitest run --project nuxt",
+    "test:coverage": "vitest run --coverage",
+    "check:css": "node scripts/check-css-dupes.mjs",
+    "check:data": "node scripts/check-data-dupes.mjs",
+    "check": "npm run check:css && npm run check:data && npm run check:vue",
+    "check:vue": "node scripts/check-vue-markup.mjs",
+    "exemple": "tsx scripts/exporter-exemple.mjs"
+  },
+  "dependencies": {
+    "@netlify/blobs": "^10.7.13",
+    "@nuxt/fonts": "^0.13.0",
+    "@simplewebauthn/browser": "^13.3.0",
+    "@simplewebauthn/server": "^13.3.2",
+    "nuxt": "^4.5.2",
+    "vue": "^3.5.27",
+    "vue-router": "^4.6.4"
+  },
+  "devDependencies": {
+    "@nuxt/test-utils": "^4.1.0",
+    "@types/node": "^25.2.1",
+    "@vitest/coverage-v8": "^4.1.10",
+    "@vue/test-utils": "^2.4.6",
+    "happy-dom": "^20.9.0",
+    "tsx": "^4.23.13",
+    "typescript": "^5.7.2",
+    "vitest": "^4.1.10"
+  },
+  "overrides": {
+    "esbuild": "^0.28.1",
+    "postcss": "^8.5.26"
+  },
+  "engines": {
+    "node": ">=22.12.0"
+  }
+}
