@@ -23,7 +23,7 @@ export function origin(event: H3Event): string {
  * l'identifiant sous lequel les jetons sont signés.
  *
  * Ils étaient écrits en dur avec mon prénom. Quelqu'un qui héberge ce code voyait
- * donc « Van Claude — Grégoire » dans la fenêtre de son propre téléphone, et
+ * donc « Damn Claude — Grégoire » dans la fenêtre de son propre téléphone, et
  * signait ses jetons sous `sub: 'gregoire'`. Rien ne cassait — `sub` n'est lu nulle
  * part, seul le `scope` autorise — mais c'est le genre de détail qui dit à celui qui
  * fork que le code n'était pas écrit pour lui.
@@ -50,7 +50,7 @@ export async function ownerName(): Promise<string> {
 /** Le nom sans lire le coffre : pour l'inscription, où le passkey n'existe pas encore. */
 export const ownerNameSync = (): string => propre(useRuntimeConfig().ownerName) || 'Moi'
 
-export const RP_NAME = async () => `Van Claude — ${await ownerName()}`
+export const RP_NAME = async () => `Damn Claude — ${await ownerName()}`
 /** L'identifiant du sujet dans les jetons. Une constante suffit : il n'y a qu'un
  *  compte par instance, et rien ne lit cette valeur — c'est le `scope` qui autorise. */
 export const OWNER_SUB = 'owner'

@@ -46,7 +46,7 @@ useHead({
     { name: 'mobile-web-app-capable', content: 'yes' },
     { name: 'apple-mobile-web-app-capable', content: 'yes' },
     { name: 'apple-mobile-web-app-status-bar-style', content: 'default' },
-    { name: 'apple-mobile-web-app-title', content: 'Van Claude' },
+    { name: 'apple-mobile-web-app-title', content: 'Damn Claude' },
     { name: 'robots', content: 'noindex' },
   ],
 })
@@ -339,7 +339,7 @@ onUnmounted(() => {
           marque sur un écran étroit.
         -->
         <span class="header-txt">
-          <span class="brand-eyebrow">Van Claude · Recomp</span>
+          <span class="brand-eyebrow">Damn Claude · Recomp</span>
           <span class="header-titre">{{ pageTitle }}</span>
         </span>
       </div>

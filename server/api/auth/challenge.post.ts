@@ -29,7 +29,7 @@ export default defineEventHandler(async (event) => {
     // c'est précisément l'instant où on le déclare.
     const qui = String(nom ?? '').trim().slice(0, 40) || ownerNameSync()
     const options = await generateRegistrationOptions({
-      rpName: `Van Claude — ${qui}`,
+      rpName: `Damn Claude — ${qui}`,
       rpID: id,
       userID: new TextEncoder().encode(OWNER_SUB),
       userName: qui,

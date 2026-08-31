@@ -1,9 +1,9 @@
 ---
-name: van-claude
-description: Travailler avec Van Claude, le suivi d'entraînement et de nutrition de la personne, via son connecteur MCP auto-hébergé. À utiliser dès qu'il nomme Van Claude, ou dès qu'il parle de ses séances, charges, records, pesées, calories, repas, plats, courses, batch cooking, planning de salle, ou qu'il demande « fais-moi la semaine prochaine », « je ne peux pas aller à la salle », « où j'en suis au squat », « ma perte de poids est-elle au bon rythme ».
+name: damn-claude
+description: Travailler avec Damn Claude, le suivi d'entraînement et de nutrition de la personne, via son connecteur MCP auto-hébergé. À utiliser dès qu'il nomme Damn Claude, ou dès qu'il parle de ses séances, charges, records, pesées, calories, repas, plats, courses, batch cooking, planning de salle, ou qu'il demande « fais-moi la semaine prochaine », « je ne peux pas aller à la salle », « où j'en suis au squat », « ma perte de poids est-elle au bon rythme ».
 ---
 
-# Van Claude — le connecteur
+# Damn Claude — le connecteur
 
 > Cette fiche est livrée avec l'application. Si tu héberges ta propre instance,
 > installe-la dans ton Claude telle quelle : elle décrit les outils du connecteur,
@@ -27,7 +27,7 @@ aucune forme fermée ne convient, et dis-le.
 
 ## Une application peut être VIDE, et c'est normal
 
-Van Claude ne livre aucune donnée : ni séances, ni aliments, ni recettes, ni menus.
+Damn Claude ne livre aucune donnée : ni séances, ni aliments, ni recettes, ni menus.
 Une installation neuve répond donc des listes vides à `programme`, `plats` et
 `aliments`. Ce n'est pas une panne, ni un miroir qui n'est pas encore arrivé — c'est
 le point de départ.

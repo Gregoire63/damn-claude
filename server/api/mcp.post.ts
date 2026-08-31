@@ -79,7 +79,7 @@ export default defineEventHandler(async (event) => {
         return reply({
           protocolVersion: SUPPORTED.includes(asked) ? asked : PROTOCOL_FALLBACK,
           capabilities: { tools: { listChanged: false } },
-          serverInfo: { name: 'van-claude', version: '1.0.0' },
+          serverInfo: { name: 'damn-claude', version: '1.0.0' },
           instructions: await instructions(),
         })
       }

@@ -50,7 +50,7 @@ export default defineNuxtConfig({
 
   app: {
     head: {
-      title: 'Van Claude',
+      title: 'Damn Claude',
       charset: 'utf-8',
       viewport: 'width=device-width, initial-scale=1, viewport-fit=cover',
       meta: [
@@ -78,7 +78,7 @@ export default defineNuxtConfig({
         { name: 'mobile-web-app-capable', content: 'yes' },
         { name: 'apple-mobile-web-app-capable', content: 'yes' },
         { name: 'apple-mobile-web-app-status-bar-style', content: 'default' },
-        { name: 'apple-mobile-web-app-title', content: 'Van Claude' },
+        { name: 'apple-mobile-web-app-title', content: 'Damn Claude' },
       ],
       link: [
         { rel: 'manifest', href: '/manifest.webmanifest' },

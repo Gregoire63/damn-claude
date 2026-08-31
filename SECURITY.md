@@ -2,7 +2,7 @@
 
 ## Ce que ce projet protège, et ce qu'il ne protège pas
 
-Van Claude est une application **mono-utilisateur auto-hébergée**. Une instance
+Damn Claude est une application **mono-utilisateur auto-hébergée**. Une instance
 appartient à une personne, et le modèle de menace est celui-là : un site public dont
 l'accès en écriture doit rester réservé à son propriétaire.
 
