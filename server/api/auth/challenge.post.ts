@@ -1,6 +1,6 @@
 import { generateAuthenticationOptions, generateRegistrationOptions } from '@simplewebauthn/server'
 import { OWNER_SUB, ownerNameSync, rpId, session } from './_auth'
-import { CHALLENGE_TTL, readCredential, signToken } from '../../utils/vault'
+import { CHALLENGE_TTL, readCredentials, signToken } from '../../utils/vault'
 
 /**
  * Le défi, et pourquoi il repart dans un cookie signé.
@@ -17,13 +17,23 @@ import { CHALLENGE_TTL, readCredential, signToken } from '../../utils/vault'
  */
 export default defineEventHandler(async (event) => {
   const { mode, nom } = await readBody<{ mode?: 'register' | 'login', nom?: string }>(event) ?? {}
-  const cred = await readCredential()
+  const creds = await readCredentials()
   const id = rpId(event)
 
   if (mode === 'register') {
-    // Un seul passkey. Une fois posé, l'enregistrement est CLOS : sans cela,
-    // n'importe qui passant sur le portfolio pourrait s'en créer un.
-    if (cred) throw createError({ statusCode: 409, statusMessage: 'Un passkey est déjà enregistré' })
+    /*
+     * Deux cas légitimes, et un seul refus.
+     *
+     * Aucun passkey : c'est l'installation, `register.post` exigera le code de
+     * démarrage. Déjà connecté : c'est un passkey de SECOURS, et il ne demande
+     * aucun secret — une session valide prouve déjà qu'on tient le coffre.
+     *
+     * Le refus, c'est le visiteur non connecté d'une instance déjà installée. Sans
+     * lui, n'importe qui posant son propre passkey deviendrait propriétaire.
+     */
+    if (creds.length && !session(event)) {
+      throw createError({ statusCode: 409, statusMessage: 'Un passkey est déjà enregistré — connecte-toi pour en ajouter un second' })
+    }
     // Le nom voyage AVEC la demande de défi : la fenêtre du système l'affiche au
     // moment même où l'on pose le passkey, et il n'existe encore nulle part —
     // c'est précisément l'instant où on le déclare.
@@ -34,6 +44,9 @@ export default defineEventHandler(async (event) => {
       userID: new TextEncoder().encode(OWNER_SUB),
       userName: qui,
       attestationType: 'none',
+      // Les passkeys DÉJÀ posés : sans cette liste, le même appareil en créerait un
+      // second, et la sauvegarde de secours serait un doublon du téléphone.
+      excludeCredentials: creds.map(c => ({ id: c.id })),
       authenticatorSelection: {
         residentKey: 'preferred',
         userVerification: 'required', // biométrie ou code : la simple présence ne suffit pas
@@ -43,10 +56,12 @@ export default defineEventHandler(async (event) => {
     return options
   }
 
-  if (!cred) throw createError({ statusCode: 404, statusMessage: 'Aucun passkey enregistré' })
+  if (!creds.length) throw createError({ statusCode: 404, statusMessage: 'Aucun passkey enregistré' })
   const options = await generateAuthenticationOptions({
     rpID: id,
-    allowCredentials: [{ id: cred.id }],
+    // TOUS : c'est l'authentificateur qui choisit celui qu'il présente, et le
+    // passkey de secours ne servirait à rien s'il n'était pas proposé.
+    allowCredentials: creds.map(c => ({ id: c.id })),
     userVerification: 'required',
   })
   setChallenge(event, options.challenge)

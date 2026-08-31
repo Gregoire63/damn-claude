@@ -37,7 +37,9 @@ describe('le nom du propriétaire', () => {
   it('se range à côté du passkey, et reste facultatif', () => {
     // Facultatif : une instance posée avant ce champ doit continuer de fonctionner.
     expect(VAULT).toMatch(/ownerName\?: string/)
-    expect(REGISTER).toContain('...(qui ? { ownerName: qui } : {})')
+    // Et seulement sur le PREMIER passkey : un passkey de secours posé six mois plus
+    // tard ne redéclare pas à qui appartient l'instance.
+    expect(REGISTER).toContain('...(qui && !creds.length ? { ownerName: qui } : {})')
   })
 
   it('voyage avec la demande de défi, pour la fenêtre du système', () => {

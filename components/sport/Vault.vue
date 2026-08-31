@@ -27,6 +27,25 @@ const emit = defineEmits<{ flash: [msg: string] }>()
 
 const v = useVault()
 const bootstrap = ref('')
+const labelSecours = ref('')
+
+/**
+ * La liste des appareils, jamais indéfinie.
+ *
+ * `/api/auth/me` peut répondre une forme ANTÉRIEURE — pendant un déploiement, le
+ * temps que les fonctions basculent, ou depuis une page restée ouverte. Un
+ * `undefined.length` dans un gabarit ne se rattrape pas : tout l'écran disparaît,
+ * y compris le bouton qui aurait permis de recharger.
+ */
+const appareils = computed(() => v.state.value.appareils ?? [])
+
+/** Un passkey de plus, depuis l'appareil qu'on veut autoriser. */
+async function doSecours() {
+  if (await v.ajouterSecours(labelSecours.value.trim())) {
+    labelSecours.value = ''
+    emit('flash', 'Passkey de secours ajouté ✓')
+  }
+}
 const showDetail = ref<string | null>(null)
 const showReset = ref(false)
 /** La boîte de réception s'ouvre en carte : voir le commentaire du bouton. */
@@ -401,11 +420,14 @@ async function doRefuse(p: RawProposal) {
     <!-- 1. Poser le premier passkey -->
     <template v-if="statut === 'a-poser'">
       <p class="muted vt-txt">
-        Pose ton passkey pour ouvrir le coffre. Il n’y en a qu’un, et une fois posé cette
-        étape se ferme définitivement — le code de démarrage vient de tes variables Netlify.
+        Pose ton passkey pour ouvrir le coffre. Le code de démarrage vient de tes variables
+        Netlify, et il ne sert <b>qu'une fois</b> : une fois posé, il est consommé. Tu
+        pourras ensuite ajouter un passkey de secours depuis cet écran, sans aucun code.
       </p>
       <div v-if="!v.state.value.bootstrapReady" class="vt-warn">
-        ⚠️ <b>NUXT_VAULT_BOOTSTRAP</b> n’est pas configuré côté serveur. Ajoute-le dans Netlify avant.
+        ⚠️ Aucun code de démarrage utilisable. Soit <b>NUXT_VAULT_BOOTSTRAP</b> n'est pas
+        configuré dans Netlify, soit il a <b>déjà servi</b> — dans ce cas, pose-y une
+        nouvelle valeur pour rouvrir l'enregistrement.
       </div>
       <template v-else>
         <!-- Le prénom est demandé ICI, et pas dans une variable d'hébergement : c'est
@@ -452,18 +474,54 @@ async function doRefuse(p: RawProposal) {
         <button class="btn flex-1" @click="v.loadPending()">↻ Relever</button>
         <button class="btn flex-1" @click="v.logout()">Verrouiller</button>
       </div>
-      <!-- Le double des clés. Sans lui, un téléphone perdu ferme le coffre pour
-           toujours : il n'y a qu'un passkey et rien ne sait le supprimer. -->
+      <!-- Le double des clés, et c'est un PASSKEY, plus un mot de passe.
+           Tant qu'il n'y en avait qu'un, perdre son téléphone imposait de garder
+           valide pour toujours un code capable de tout rouvrir. Le second passkey
+           supprime ce besoin : le code de démarrage redevient un code d'installation. -->
+      <div class="vt-keys mt-6">
+        <div class="row-between">
+          <span class="muted">Appareils autorisés</span>
+          <span class="mono">{{ appareils.length || v.state.value.passkeys || 1 }}</span>
+        </div>
+        <ul v-if="appareils.length" class="vt-keys-l">
+          <li v-for="a in appareils" :key="a.id">
+            <span>{{ a.label || 'Appareil' }} <small class="muted mono">· {{ a.at.slice(0, 10) }}</small></span>
+            <button
+              v-if="appareils.length > 1"
+              class="vt-p-toggle"
+              :disabled="v.busy.value"
+              @click="v.revoquer(a.id)"
+            >retirer</button>
+          </li>
+        </ul>
+        <div v-if="appareils.length < 2" class="vt-warn mt-6">
+          <b>Un seul appareil.</b> Si tu le perds, il faudra passer par ton hébergeur pour
+          rouvrir le coffre. Pose un passkey de secours sur ton ordinateur — ça prend dix
+          secondes et ça supprime ce risque.
+        </div>
+        <input v-model="labelSecours" class="note-input mt-6" type="text" placeholder="Nom de cet appareil (ex. Portable)" maxlength="30">
+        <button class="btn vt-go mt-6" :disabled="v.busy.value" @click="doSecours">
+          ➕ Ajouter un passkey de secours
+        </button>
+        <p class="muted vt-txt">
+          Aucun code demandé : tu es déjà déverrouillé, ça suffit à prouver que le coffre
+          est le tien. Fais-le depuis l'appareil que tu veux autoriser.
+        </p>
+      </div>
+
+      <!-- Le dernier recours, quand TOUS les passkeys sont perdus. -->
       <button class="vt-p-toggle mt-6" @click="showReset = !showReset">
-        {{ showReset ? '▲ Annuler' : 'Téléphone perdu ? Reposer un passkey' }}
+        {{ showReset ? '▲ Annuler' : 'Tout perdu ? Repartir de zéro' }}
       </button>
       <template v-if="showReset">
         <p class="muted vt-txt">
-          Efface le passkey enregistré pour pouvoir en poser un nouveau. Demande le code
-          de démarrage de tes variables Netlify — c'est le même que la première fois.
+          Efface <b>tous</b> les passkeys pour pouvoir en reposer un. Le code de démarrage
+          de l'installation a été consommé : il faut poser une <b>nouvelle valeur</b> dans
+          <b>NUXT_VAULT_BOOTSTRAP</b> chez ton hébergeur, puis la saisir ici. C'est
+          délibéré — se rouvrir la porte doit demander l'accès au déploiement.
         </p>
-        <input v-model="bootstrap" class="note-input mt-6" type="password" placeholder="Code de démarrage" autocomplete="off">
-        <button class="btn mt-6 vt-go" :disabled="!bootstrap.trim()" @click="doReset">🗝 Effacer le passkey</button>
+        <input v-model="bootstrap" class="note-input mt-6" type="password" placeholder="Nouveau code de démarrage" autocomplete="off">
+        <button class="btn mt-6 vt-go" :disabled="!bootstrap.trim()" @click="doReset">🗝 Effacer les passkeys</button>
       </template>
 
       <!-- Boîte de réception : un BOUTON, pas une liste dépliée.
