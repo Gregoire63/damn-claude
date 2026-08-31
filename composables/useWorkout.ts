@@ -699,7 +699,7 @@ export function useWorkout() {
     const blob = new Blob([payload], { type: 'application/json' })
     const a = document.createElement('a')
     a.href = URL.createObjectURL(blob)
-    a.download = `van-claude-${localDate()}.json`
+    a.download = `damn-claude-${localDate()}.json`
     a.click()
     URL.revokeObjectURL(a.href)
     // Mémorise la date de sauvegarde pour pouvoir alerter quand elle vieillit

@@ -3,7 +3,7 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/Gregoire63/van-claude/actions/workflows/ci.yml"><img src="https://github.com/Gregoire63/van-claude/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
+  <a href="https://github.com/Gregoire63/damn-claude/actions/workflows/ci.yml"><img src="https://github.com/Gregoire63/damn-claude/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
   <img src="https://img.shields.io/badge/tests-1045-3f7a4f" alt="1045 tests">
   <img src="https://img.shields.io/badge/Nuxt-4-00DC82" alt="Nuxt 4">
   <a href="LICENSE"><img src="https://img.shields.io/badge/licence-AGPL--3.0-8b6f5c" alt="AGPL-3.0"></a>
@@ -12,7 +12,7 @@
 
 <p align="center"><a href="README.md">Français</a> · <b>English</b></p>
 
-# Van Claude
+# Damn Claude
 
 A training and nutrition tracker that fits in a browser tab, and that **your** Claude
 can read — without ever writing on its own.

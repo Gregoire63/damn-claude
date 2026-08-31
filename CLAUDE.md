@@ -1,4 +1,4 @@
-# Van Claude — repères pour travailler dans ce dépôt
+# Damn Claude — repères pour travailler dans ce dépôt
 
 Fiche destinée à un agent (Claude Code, Cowork) ou à quelqu'un qui ouvre le projet
 pour la première fois. Elle dit ce qui n'est pas devinable en lisant les fichiers :

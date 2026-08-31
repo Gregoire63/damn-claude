@@ -1,4 +1,4 @@
-# Héberger sa propre instance de Van Claude
+# Héberger sa propre instance de Damn Claude
 
 Ce suivi est fait pour tourner **chez toi**, sur ton hébergement, avec ton compte
 Anthropic. Il n'y a pas de compte à créer chez moi, pas de serveur central, pas de

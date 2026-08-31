@@ -24,7 +24,7 @@ import { phraseBilan, useRestauration } from '~/composables/useRestauration'
  */
 const emit = defineEmits<{ flash: [msg: string, ton?: 'ok' | 'echec'] }>()
 
-const PROMPT = `Tu as accès à mon application de suivi sportif et nutritionnel par le connecteur « Van Claude ». Elle est VIDE : aucune séance, aucun aliment, aucune recette, aucun menu.
+const PROMPT = `Tu as accès à mon application de suivi sportif et nutritionnel par le connecteur « Damn Claude ». Elle est VIDE : aucune séance, aucun aliment, aucune recette, aucun menu.
 
 Aide-moi à la remplir, dans cet ordre — chaque étape a besoin de la précédente.
 
@@ -69,7 +69,7 @@ async function charger() {
     <div class="card dem-hero">
       <h2 class="dem-t">Ton programme est vide</h2>
       <p class="dem-p">
-        C'est voulu. Van Claude ne livre ni séances, ni aliments, ni menus : tu ne
+        C'est voulu. Damn Claude ne livre ni séances, ni aliments, ni menus : tu ne
         commences pas par effacer ceux de quelqu'un d'autre.
       </p>
     </div>

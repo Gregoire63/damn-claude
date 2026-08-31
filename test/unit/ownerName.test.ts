@@ -44,7 +44,7 @@ describe('le nom du propriétaire', () => {
     // Au moment de poser le passkey, le nom n'existe encore nulle part : s'il ne
     // partait qu'à l'enregistrement, la fenêtre afficherait « Moi » juste avant.
     expect(CHALLENGE).toContain('nom?: string')
-    expect(CHALLENGE).toContain('rpName: `Van Claude — ${qui}`')
+    expect(CHALLENGE).toContain('rpName: `Damn Claude — ${qui}`')
   })
 
   it('est borné, et nettoyé de ses espaces', () => {
