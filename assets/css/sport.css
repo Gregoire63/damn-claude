@@ -1384,5 +1384,19 @@ input::-webkit-outer-spin-button, input::-webkit-inner-spin-button { -webkit-app
 .dem-body { padding: 0 14px 16px; }
 .dem-head:disabled { opacity: 0.45; cursor: default; }
 .dem-manque { color: var(--accent-strong); }
+/* ─── Liste des connecteurs, dans le parcours ─────────────────────────────── */
+.dem-conn { list-style: none; margin: 12px 0 0; padding: 0; }
+.dem-conn li { display: flex; align-items: center; gap: 11px; padding: 10px 0; border-bottom: 1px dotted var(--bg-accent); }
+.dem-conn li:last-child { border-bottom: 0; }
+/* Une marque non configurée reste VISIBLE : la masquer ferait croire que
+   l'application ne la connaît pas, et on chercherait l'intégration ailleurs. */
+.dem-conn li.off { opacity: 0.5; }
+.dem-conn-i { flex: 0 0 26px; font-size: 20px; text-align: center; }
+.dem-conn-t { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 1px; }
+.dem-conn-t small { color: var(--text-muted); font-size: 11.5px; line-height: 1.35; }
+.dem-conn-ok { flex: 0 0 auto; font-size: 11px; color: var(--text-muted); }
+.dem-conn li.on .dem-conn-ok { color: #3f7a4f; }
+.dem-conn-b { flex: 0 0 auto; padding: 7px 13px; font-size: 13px; }
+
 
 .dem-body .field { margin-top: 10px; }
