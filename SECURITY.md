@@ -9,8 +9,15 @@ l'accès en écriture doit rester réservé à son propriétaire.
 Ce qui est en place :
 
 - **Passkey (WebAuthn)** pour l'accès au coffre. Lié au domaine, donc non rejouable
-  ailleurs. Le premier passkey exige un code de démarrage (`NUXT_VAULT_BOOTSTRAP`)
-  posé en variable d'environnement.
+  ailleurs. Le coffre en accepte **plusieurs** : un passkey de secours se pose depuis
+  un second appareil sans aucun secret, la session en cours suffisant à prouver qu'on
+  tient déjà le coffre. Chacun se révoque, sauf le dernier.
+- **Un code de démarrage à usage unique**, fabriqué à chaque build et imprimé dans le
+  journal de déploiement — lisible du seul propriétaire du site. Il est consommé dès
+  qu'il sert : on range son empreinte, jamais sa valeur, et le réarmer suppose un
+  redéploiement. Verrou de quinze minutes après cinq échecs, le bon code compris.
+  Aucun secret permanent n'est nécessaire ; `NUXT_VAULT_BOOTSTRAP` reste acceptée en
+  repli et constitue l'option la plus faible.
 - **OAuth 2.1 + PKCE (S256 obligatoire)** pour le connecteur MCP. Un seul client,
   dont l'identifiant et le secret sont des variables d'environnement. Pas
   d'enregistrement dynamique de client : c'est une porte de moins à surveiller pour

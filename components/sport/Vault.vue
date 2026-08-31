@@ -420,14 +420,22 @@ async function doRefuse(p: RawProposal) {
     <!-- 1. Poser le premier passkey -->
     <template v-if="statut === 'a-poser'">
       <p class="muted vt-txt">
-        Pose ton passkey pour ouvrir le coffre. Le code de démarrage vient de tes variables
-        Netlify, et il ne sert <b>qu'une fois</b> : une fois posé, il est consommé. Tu
-        pourras ensuite ajouter un passkey de secours depuis cet écran, sans aucun code.
+        Pose ton passkey pour ouvrir le coffre. Le code de démarrage ne sert
+        <b>qu'une fois</b> : une fois posé, il est consommé. Tu pourras ensuite ajouter un
+        passkey de secours depuis cet écran, sans aucun code.
+      </p>
+      <p v-if="v.state.value.bootstrapSource !== 'env'" class="muted vt-txt">
+        <b>Où le trouver :</b> il est fabriqué à chaque déploiement et imprimé dans le
+        <b>journal du build</b> — Netlify → Deploys → le dernier déploiement. Cherche
+        « Code de démarrage de ce déploiement ». Il n'y a rien à configurer.
+      </p>
+      <p v-else class="muted vt-txt">
+        <b>Où le trouver :</b> c'est la valeur de <b>NUXT_VAULT_BOOTSTRAP</b> dans les
+        variables de ton hébergeur, que tu as posée à la main.
       </p>
       <div v-if="!v.state.value.bootstrapReady" class="vt-warn">
-        ⚠️ Aucun code de démarrage utilisable. Soit <b>NUXT_VAULT_BOOTSTRAP</b> n'est pas
-        configuré dans Netlify, soit il a <b>déjà servi</b> — dans ce cas, pose-y une
-        nouvelle valeur pour rouvrir l'enregistrement.
+        ⚠️ Aucun code de démarrage utilisable — il a <b>déjà servi</b>. Relance un
+        déploiement : le journal du nouveau build en contiendra un neuf.
       </div>
       <template v-else>
         <!-- Le prénom est demandé ICI, et pas dans une variable d'hébergement : c'est
@@ -515,12 +523,12 @@ async function doRefuse(p: RawProposal) {
       </button>
       <template v-if="showReset">
         <p class="muted vt-txt">
-          Efface <b>tous</b> les passkeys pour pouvoir en reposer un. Le code de démarrage
-          de l'installation a été consommé : il faut poser une <b>nouvelle valeur</b> dans
-          <b>NUXT_VAULT_BOOTSTRAP</b> chez ton hébergeur, puis la saisir ici. C'est
-          délibéré — se rouvrir la porte doit demander l'accès au déploiement.
+          Efface <b>tous</b> les passkeys pour pouvoir en reposer un. Le code de
+          l'installation a été consommé : relance un déploiement et lis le code du
+          nouveau build dans son journal. C'est délibéré — se rouvrir la porte doit
+          demander l'accès au déploiement.
         </p>
-        <input v-model="bootstrap" class="note-input mt-6" type="password" placeholder="Nouveau code de démarrage" autocomplete="off">
+        <input v-model="bootstrap" class="note-input mt-6" type="password" placeholder="Code du dernier déploiement" autocomplete="off">
         <button class="btn mt-6 vt-go" :disabled="!bootstrap.trim()" @click="doReset">🗝 Effacer les passkeys</button>
       </template>
 

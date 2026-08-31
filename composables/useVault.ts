@@ -44,6 +44,8 @@ export interface VaultState {
    * faute de frappe qui n'existe pas.
    */
   bootstrapReady: boolean
+  /** D'où il vient : « build » = journal de déploiement, « env » = variable posée à la main. */
+  bootstrapSource?: 'build' | 'env'
   /** Combien de passkeys. Un seul veut dire : aucun secours en cas de perte. */
   passkeys: number
   appareils: VaultAppareil[]

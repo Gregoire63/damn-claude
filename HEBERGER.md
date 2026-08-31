@@ -53,7 +53,35 @@ mêmes, pour le développement local.
 | Variable | À quoi ça sert | Comment la fabriquer |
 |---|---|---|
 | `NUXT_VAULT_SECRET` | Signe les jetons de session et du connecteur | `openssl rand -base64 48` |
-| `NUXT_VAULT_BOOTSTRAP` | Le code qui autorise à poser le **premier** passkey | Ce que tu veux, ≥ 8 caractères |
+
+### Et le code de démarrage ?
+
+**Il n'y a rien à poser.** Il est fabriqué à chaque build et imprimé dans le journal
+de déploiement :
+
+```
+  ┌─ Code de démarrage de ce déploiement ─────────────
+  │  fc09d64f5471eed6
+  │  À saisir une fois, pour poser le premier passkey.
+  └───────────────────────────────────────────────────
+```
+
+Netlify → **Deploys** → le dernier déploiement. Ce journal n'est lisible que par le
+propriétaire du site : le canal est déjà authentifié, exactement comme les variables
+d'environnement, mais sans rien à configurer.
+
+Le code ne sert **qu'une fois** — il est consommé dès que le premier passkey est
+posé. Chaque build en fabrique un neuf, donc l'ancien ne vaut plus rien. « Tout
+perdu » se règle par un redéploiement : c'est délibéré, se rouvrir la porte doit
+demander l'accès au déploiement.
+
+`NUXT_VAULT_BOOTSTRAP` reste acceptée et l'emporte, pour qui préfère tout décrire
+dans sa configuration. C'est l'option la plus faible : elle redevient un secret
+permanent, qui ne tourne que si on y pense.
+
+**Une fois entré, pose un passkey de secours** sur ton ordinateur (Profil →
+Connecteur). Il ne demande aucun code, et c'est lui qui répond à « j'ai perdu mon
+téléphone » — sans quoi tu dépends d'un redéploiement.
 
 ### Pour le connecteur Claude
 
@@ -105,8 +133,8 @@ installation saine où l'on n'a rien fait.
 ## 4. Poser ton passkey
 
 Ouvre `https://ton-domaine` → onglet **Profil** → carte **Connecteur Claude** →
-« Poser un passkey ». On te demandera ton prénom (facultatif) et le
-`NUXT_VAULT_BOOTSTRAP`.
+« Poser un passkey ». On te demandera ton prénom (facultatif) et le code de démarrage
+lu dans le journal du déploiement.
 
 Le prénom est rangé à côté du passkey, pas dans la configuration : il s'affiche dans
 la fenêtre de ton téléphone, et dans ce que le connecteur raconte à Claude. Tu peux
