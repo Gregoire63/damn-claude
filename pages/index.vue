@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, onMounted } from 'vue'
 import { sessionMuscles } from '~/lib/muscles'
 import { shiftIso } from '~/utils/sportStats'
 import { useProgram } from '~/composables/useProgram'
@@ -8,6 +8,7 @@ import { useWorkout } from '~/composables/useWorkout'
 import { useJour } from '~/composables/useJour'
 import { useSeance } from '~/composables/useSeance'
 import { useFlash } from '~/composables/useFlash'
+import { useDemarrage } from '~/composables/useDemarrage'
 
 // L'accueil : la semaine en cours, la séance du jour, et de quoi en démarrer une.
 // Tout ce qui se superpose — la feuille, la mini-barre, les confirmations — vit dans
@@ -18,6 +19,8 @@ const { sessionLog } = useWorkout()
 const { todayISO, todayDow, todayIndex } = useJour()
 const { activeSession, deloadAdvised, startSession, editSession } = useSeance()
 const { showFlash } = useFlash()
+const demarrage = useDemarrage()
+onMounted(demarrage.hydrate)
 
 /**
  * Le libellé court d'un jour de la bande hebdomadaire.
@@ -81,18 +84,21 @@ const todayRecord = computed(() => {
 
 <template>
   <!--
-    Programme vide = première ouverture. Tout le reste de cet écran — la séance du
-    jour, la grille des séances, la bande de la semaine — n'aurait rien à montrer, et
-    trois cadres vides ressemblent à une panne bien plus qu'à un départ.
+    Le parcours d'installation reste tant qu'il reste une étape ; l'accueil, lui, ne
+    disparaît que si le PROFIL manque. C'est la seule étape qui barre la route, parce
+    que sans taille, sexe et année de naissance il n'y a pas de métabolisme de base :
+    tout l'écran n'aurait que des tirets à montrer, et trois cadres vides ressemblent
+    à une panne bien plus qu'à un départ. Les trois autres étapes sont des
+    invitations — on peut se servir de l'application sans elles.
 
     `ClientOnly` parce que le programme vit dans `localStorage` : rendu côté serveur,
     l'écran d'accueil annoncerait « ton programme est vide » à quelqu'un qui a des
     séances, l'espace d'un battement.
   -->
   <ClientOnly>
-    <SportDemarrage v-if="!prog.length" @flash="showFlash" />
+    <SportDemarrage v-if="!demarrage.fini.value" @flash="showFlash" />
   </ClientOnly>
-  <div v-if="prog.length" class="stack">
+  <div v-if="!demarrage.bloque.value" class="stack">
     <!-- La séance du jour est passée EN SLOT du bandeau nutrition : les deux
          partagent la première ligne, et les compteurs s'étalent en dessous. -->
     <ClientOnly>

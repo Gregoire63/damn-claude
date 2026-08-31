@@ -54,6 +54,11 @@ const HORS_SAUVEGARDE: Record<string, string> = {
   // rouvrirait une séance commencée ailleurs, un autre jour, avec un chrono parti
   // d'une heure qui n'a plus de sens.
   DRAFT_KEY: 'brouillon de la séance en cours — transitoire, et propre à l\'appareil',
+  // L'avancement d'une installation n'est pas une donnée : sur une instance neuve,
+  // chaque étape se réévalue d'elle-même à partir de l'état réel. Restaurer « j'ai
+  // passé l'étape balance » masquerait une étape qu'on n'a jamais vue sur CET
+  // appareil, et la seule chose qui s'y stocke est justement ce qui ne se déduit pas.
+  PASSEES_KEY: 'étapes explicitement passées du parcours d\'installation, propres à l\'appareil',
 }
 
 describe('l’aller-retour de sauvegarde', () => {

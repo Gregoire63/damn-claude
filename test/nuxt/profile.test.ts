@@ -25,16 +25,20 @@ const load = async () => {
 }
 
 describe('profil', () => {
-  it('retient taille, sexe et année de naissance', async () => {
+  it('retient prénom, taille, sexe et année de naissance', async () => {
     const p = await load()
+    p.setPrenom('  Grégoire  ')
     p.setHeight(179)
     p.setSex('h')
     p.setBirthYear(1997)
-    expect(p.profile.value).toEqual({ heightCm: 179, sex: 'h', birthYear: 1997 })
+    // Le prénom vit ICI et pas seulement à côté du passkey : le parcours d'installation
+    // le demande AVANT d'en poser un, quand le coffre n'existe pas encore.
+    expect(p.profile.value).toEqual({ prenom: 'Grégoire', heightCm: 179, sex: 'h', birthYear: 1997 })
 
     vi.resetModules()
     const again = await load()
     expect(again.profile.value.heightCm).toBe(179)
+    expect(again.profile.value.prenom).toBe('Grégoire')
   })
 
   it('refuse les valeurs impossibles en les ramenant à « inconnu »', async () => {
