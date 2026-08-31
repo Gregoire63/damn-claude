@@ -35,7 +35,16 @@ describe('le code de démarrage', () => {
 
   it('n’est pas imprimé quand une variable a été posée à la main', () => {
     // Sinon le journal de déploiement recopierait le secret de l'utilisateur.
-    expect(CONFIG).toContain("if (!(process.env.NUXT_VAULT_BOOTSTRAP || '').trim()) {")
+    expect(CONFIG).toContain("if ((process.env.NUXT_VAULT_BOOTSTRAP || '').trim()) {")
+    expect(CONFIG).toContain('publier ton secret')
+  })
+
+  it('dit POURQUOI il ne l’imprime pas, au lieu de se taire', () => {
+    // Un journal muet ne se lit pas comme « rien à dire », il se lit comme une
+    // panne : on cherche le code, on ne le trouve pas, on relit le build ligne par
+    // ligne. C'est exactement ce qui s'est produit.
+    expect(CONFIG).toContain('fourni par NUXT_VAULT_BOOTSTRAP')
+    expect(CONFIG).toContain('Retire la variable')
   })
 
   it('laisse la variable d’environnement l’emporter', () => {
