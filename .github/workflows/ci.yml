@@ -36,15 +36,15 @@ jobs:
       - name: Garde-fous
         run: npm run check
 
-      - name: Tests
-        run: npm test
-
-      # Le build en dernier : il est le plus long, et il n'a d'intérêt que si le
-      # reste passe. Il vérifie aussi ce qu'aucun test ne couvre — que les gabarits
-      # compilent et que le bundle se construit.
+      # Le build AVANT les tests, et c'est délibéré : `test/unit/demarrage.test.ts`
+      # cherche le code de démarrage dans le bundle du navigateur, donc il lui faut
+      # un `.output`. Le construire ici évite de le construire deux fois.
       - name: Build
         run: npm run build
         env:
           # Le build ne doit pas dépendre de secrets. S'il en réclame un, c'est un
           # bug à corriger, pas une variable à ajouter ici.
           NODE_ENV: production
+
+      - name: Tests
+        run: npm test

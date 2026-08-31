@@ -25,7 +25,12 @@ propositions que Claude dépose et que l'utilisateur valide à la main.
 | `npm run check` | Trois garde-fous : sélecteurs CSS en double, clés de données en double, balisage Vue invalide |
 | `npm run exemple` | Régénère `public/exemple.json` depuis `data/exemple/` |
 
-Avant de proposer un changement : `npm run check && npm test && npm run build`.
+Avant de proposer un changement : `npm run check && npm run build && npm test`.
+
+Le build **avant** les tests, et pas l'inverse : `test/unit/demarrage.test.ts` cherche
+le code de démarrage dans le bundle du navigateur, donc il lui faut un `.output`. Il
+le construit lui-même s'il n'en trouve pas, mais c'est une minute payée deux fois. La
+CI suit le même ordre.
 
 ## Les règles qui mordent
 
@@ -71,6 +76,13 @@ disparaît en production et nulle part ailleurs.
 est injecté par invocation avec un jeton de courte durée ; le mémoïser au niveau du
 module fige un jeton qui expire, et l'écriture échoue au bout d'une vingtaine de
 minutes d'instance chaude — donc jamais en test, toujours en production.
+
+**`vaultBootstrap` ne doit JAMAIS passer sous `runtimeConfig.public`.** Le code de
+démarrage est fabriqué pendant `nuxt build` et cuit dans la configuration serveur.
+Nuxt sérialise `public` dans le bundle du navigateur : l'y déplacer d'une ligne
+publierait le code en clair sur la page d'accueil, et l'application marcherait
+exactement pareil. `test/unit/demarrage.test.ts` construit le projet et cherche la
+valeur dans les fichiers servis.
 
 **Aucun secret dans le dépôt.** Ni dans `.env` (ignoré), ni dans un fichier de notes.
 Un dépôt public garde tout dans son historique : effacer le fichier ne répare rien,
@@ -124,6 +136,42 @@ Conséquence directe : une sauvegarde ne contient que la couche 2. C'est pourquo
 `programme.sessions`) et remet le pack d'exemple dessous. Sans ce rattrapage, elles
 restauraient une application vide en affichant « importé ✓ ».
 
+## L'authentification
+
+Une instance appartient à une personne, et le seul moment délicat est le premier :
+prouver qu'on est celui qui a déployé le site. Trois pièces s'articulent.
+
+**Le coffre tient une LISTE de passkeys** (`server/utils/vault.ts`). Il n'en tenait
+qu'un, et c'est ce qui imposait un secret permanent : sans second passkey, perdre son
+téléphone fermait le coffre, donc il fallait un double valide indéfiniment. L'ancienne
+forme — un objet à la racine de `credential.json` — est migrée **à la lecture**, jamais
+au déploiement : on ne touche pas à l'authentification en écriture pendant que
+personne ne regarde.
+
+**Le passkey de secours** se pose depuis un second appareil sans aucun code : une
+session valide prouve déjà qu'on tient le coffre. `challenge.post` l'autorise quand
+`session(event)` répond, `register.post` n'exige alors ni code ni coffre vide. La
+révocation vient avec, sauf le dernier — se verrouiller dehors d'un tap est un geste
+qu'aucune confirmation ne rattrape.
+
+**Le code de démarrage est fabriqué au build** (`nuxt.config.ts`) et imprimé dans le
+journal de déploiement, lisible du seul propriétaire du site. Il n'y a donc rien à
+configurer, il tourne à chaque build, et il se **brûle à l'usage** : on range son
+empreinte dans le coffre, jamais sa valeur. Le réarmer, c'est redéployer — autrement
+dit, se rouvrir la porte exige l'accès au déploiement, qui est la vraie racine de
+confiance ici. `NUXT_VAULT_BOOTSTRAP` reste acceptée et l'emporte (Nuxt écrase de
+lui-même la clé de `runtimeConfig` qui porte le nom de la variable) ; c'est l'option
+la plus faible, elle redevient un secret permanent.
+
+Verrou de quinze minutes après cinq échecs, **le bon code compris** : sinon il
+suffirait d'essayer jusqu'à tomber juste. Et « code déjà consommé » se distingue de
+« code invalide », parce que le premier dit quoi faire et le second envoie chercher
+une faute de frappe qui n'existe pas.
+
+Tout ça est couvert par `test/unit/passkeys.test.ts`, en comportement et non en
+lecture de source : un code qui redeviendrait valide après usage ne se remarquerait
+jamais autrement.
+
 ## Le connecteur
 
 JSON-RPC sur `POST /api/mcp`, OAuth 2.1 + PKCE, jetons HMAC sans état. Il ne modifie
@@ -140,7 +188,7 @@ Deux invariants tenus par des tests :
 
 ## Les tests
 
-1045 tests, 46 fichiers, deux projets. La plupart tournent sur le **pack d'exemple**,
+1063 tests, 48 fichiers, deux projets. La plupart tournent sur le **pack d'exemple**,
 déclaré fichier par fichier (`vi.mock('../../data/nutritionProgram', …)`, voir
 `test/exemple.ts`) : vérifier que la modulation des féculents ne touche pas aux
 protéines demande des aliments aux vraies macros, pas trois objets fabriqués.

@@ -1,5 +1,5 @@
 import { ownerName, session } from './_auth'
-import { bootstrapArme, readCredentials } from '../../utils/vault'
+import { bootstrapArme, origineBootstrap, readCredentials } from '../../utils/vault'
 
 /**
  * L'état de la connexion, pour que l'écran sache quoi proposer.
@@ -19,6 +19,8 @@ export default defineEventHandler(async (event) => {
     passkeys: creds.length,
     appareils: creds.map(c => ({ id: c.id, label: c.label ?? '', at: c.at })),
     bootstrapReady: await bootstrapArme(),
+    /** « build » = à lire dans le journal de déploiement ; « env » = variable posée à la main. */
+    bootstrapSource: origineBootstrap(),
     ownerName: await ownerName(),
   }
 })

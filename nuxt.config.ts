@@ -1,5 +1,38 @@
+import { randomBytes } from 'node:crypto'
 import { defineNuxtConfig } from 'nuxt/config'
 import { CHEMINS } from './lib/onglets'
+
+/**
+ * Le code de démarrage, fabriqué AU BUILD et imprimé dans le journal de déploiement.
+ *
+ * Il ne servait qu'à répondre une seule question — « es-tu la personne qui a déployé
+ * ce site ? » — et une variable d'environnement y répondait avec un SECRET PERMANENT :
+ * la pire forme de preuve, celle qui se recopie, se photographie et survit à l'usage.
+ *
+ * Ce fichier est évalué pendant `nuxt build`. La valeur tirée ici est cuite dans la
+ * configuration serveur, jamais dans le bundle du navigateur — elle est hors de
+ * `public`, et un test le vérifie. Elle est affichée dans la sortie du build, dont
+ * le journal n'est lisible que par le propriétaire du site : le canal de livraison
+ * est déjà authentifié, exactement comme les variables d'environnement, mais il n'y
+ * a plus rien à configurer.
+ *
+ * Trois propriétés en découlent, et aucune ne demande un geste :
+ *  · chaque build en fabrique un neuf, donc l'ancien ne vaut plus rien ;
+ *  · rien de permanent ne traîne — la valeur n'existe que dans un journal privé ;
+ *  · « tout perdu » se règle par un redéploiement, ce qui EST la preuve qu'on
+ *    cherchait : se rouvrir la porte exige l'accès au déploiement.
+ *
+ * `NUXT_VAULT_BOOTSTRAP` reste acceptée et l'emporte — Nuxt le fait tout seul, une
+ * variable d'environnement écrase la valeur de `runtimeConfig` qui porte son nom.
+ * C'est le repli pour qui préfère tout décrire dans sa configuration, et c'est
+ * l'option la plus faible : elle redevient un secret permanent.
+ */
+const codeDeDemarrage = randomBytes(8).toString('hex')
+// Affiché seulement s'il va réellement servir : imprimer par-dessus une variable
+// posée par l'utilisateur reviendrait à recopier SON secret dans le journal.
+if (!(process.env.NUXT_VAULT_BOOTSTRAP || '').trim()) {
+  console.log(`\n  ┌─ Code de démarrage de ce déploiement ─────────────\n  │  ${codeDeDemarrage}\n  │  À saisir une fois, pour poser le premier passkey.\n  └───────────────────────────────────────────────────\n`)
+}
 
 // https://nuxt.com/docs/api/configuration/nuxt-config
 export default defineNuxtConfig({
@@ -27,6 +60,15 @@ export default defineNuxtConfig({
   sourcemap: { server: false, client: false },
 
   runtimeConfig: {
+    /**
+     * Le code de démarrage. HORS de `public` : il ne doit jamais partir dans le
+     * bundle du navigateur, et `test/unit/demarrage.test.ts` le vérifie.
+     *
+     * Nuxt mappe cette clé sur `NUXT_VAULT_BOOTSTRAP` : poser la variable écrase la
+     * valeur fabriquée au build, sans une ligne de code de plus.
+     */
+    vaultBootstrap: codeDeDemarrage,
+
     /**
      * À QUI appartient cette instance.
      *

@@ -386,10 +386,45 @@ function memeChaine(a: string, b: string): boolean {
 export type VerdictBootstrap = 'ok' | 'absent' | 'faux' | 'consomme' | 'verrouille'
 
 /**
- * Le code de démarrage attendu, ou `''` s'il n'est pas configuré.
- * Lu à chaque appel : une variable d'environnement change sans redéploiement.
+ * Le code de démarrage attendu, ou `''` s'il n'y en a pas.
+ *
+ * Il vient d'abord de la configuration Nuxt, où il est FABRIQUÉ AU BUILD et imprimé
+ * dans le journal de déploiement (voir `nuxt.config.ts`). Il n'y a donc plus rien à
+ * poser chez l'hébergeur, et chaque build en produit un neuf — l'ancien ne vaut plus
+ * rien sans qu'on ait à s'en occuper.
+ *
+ * `NUXT_VAULT_BOOTSTRAP` continue de fonctionner et l'emporte : Nuxt écrase de
+ * lui-même la valeur de `runtimeConfig` qui porte le nom de la variable. C'est le
+ * repli pour qui préfère tout décrire dans sa configuration, et c'est l'option la
+ * plus faible — elle redevient un secret permanent.
+ *
+ * Le repli sur `process.env` sert aux tests unitaires, qui importent ce module en
+ * Node pur : `useRuntimeConfig` n'y existe pas, et une référence non résolue ferait
+ * échouer l'appel au lieu de retomber sur la variable.
  */
-const codeAttendu = () => (process.env.NUXT_VAULT_BOOTSTRAP || '').trim()
+function codeAttendu(): string {
+  try {
+    // @ts-expect-error auto-importé par Nitro, absent hors du serveur Nuxt
+    if (typeof useRuntimeConfig === 'function') {
+      // @ts-expect-error idem
+      const v = String(useRuntimeConfig().vaultBootstrap ?? '').trim()
+      if (v) return v
+    }
+  }
+  catch { /* hors contexte Nitro : on retombe sur l'environnement */ }
+  return (process.env.NUXT_VAULT_BOOTSTRAP || '').trim()
+}
+
+/**
+ * D'où vient le code : du build, ou d'une variable posée à la main ?
+ *
+ * L'écran d'installation en a besoin pour dire OÙ le chercher. « Code de démarrage »
+ * sans plus d'indication envoyait fouiller les variables Netlify — alors qu'il est
+ * désormais dans le journal du dernier déploiement, à un autre endroit de la même
+ * interface.
+ */
+export const origineBootstrap = (): 'env' | 'build' =>
+  ((process.env.NUXT_VAULT_BOOTSTRAP || '').trim() ? 'env' : 'build')
 
 /** Le code peut-il encore servir ? Sans révéler s'il existe un code, ni lequel. */
 export async function bootstrapArme(): Promise<boolean> {
