@@ -31,15 +31,27 @@ import { createAt, pushAt, removeAt, setAt as setPointer } from '~/lib/pointer'
 // accepte ou refuse. Il n'existe donc aucun cas où deux versions d'une séance
 // doivent être arbitrées.
 
+export interface VaultAppareil { id: string, label: string, at: string }
+
 export interface VaultState {
   connected: boolean
   registered: boolean
+  /**
+   * Le code de démarrage est-il encore ARMÉ ?
+   *
+   * Ce n'est plus « la variable existe-t-elle » : le code se brûle à l'usage. Un
+   * écran qui propose de le saisir alors qu'il est consommé envoie chercher une
+   * faute de frappe qui n'existe pas.
+   */
   bootstrapReady: boolean
+  /** Combien de passkeys. Un seul veut dire : aucun secours en cas de perte. */
+  passkeys: number
+  appareils: VaultAppareil[]
   /** À qui appartient cette instance. Vide = anonyme, ce qui est un état valable. */
   ownerName: string
 }
 
-const state = ref<VaultState>({ connected: false, registered: false, bootstrapReady: false, ownerName: '' })
+const state = ref<VaultState>({ connected: false, registered: false, bootstrapReady: false, passkeys: 0, appareils: [], ownerName: '' })
 const pending = ref<RawProposal[]>([])
 const recent = ref<RawProposal[]>([])
 const mirrorAt = ref<string | null>(null)
@@ -119,6 +131,43 @@ export function useVault() {
       const options = await $fetch('/api/auth/challenge', { method: 'POST', body: { mode: 'register', nom } })
       const response = await startRegistration({ optionsJSON: options as never })
       await $fetch('/api/auth/register', { method: 'POST', body: { bootstrap, nom, response } })
+      await refresh()
+      return true
+    }
+    catch (e) { error.value = message(e); return false }
+    finally { busy.value = false }
+  }
+
+  /**
+   * Un passkey de SECOURS, posé depuis un second appareil.
+   *
+   * C'est ce qui a permis de retirer le mot de passe permanent. Tant qu'il n'y en
+   * avait qu'un, perdre son téléphone imposait de garder valide pour toujours un
+   * code de démarrage capable de tout rouvrir — un secret permanent, sans
+   * expiration ni révocation. Avec un second passkey, ce double n'a plus lieu
+   * d'être : le code redevient un code d'installation, utilisable une fois.
+   *
+   * Aucun secret demandé ici, et c'est voulu : la session en cours prouve déjà
+   * qu'on tient le coffre. Exiger en plus un code déjà consommé serait absurde.
+   */
+  async function ajouterSecours(label = ''): Promise<boolean> {
+    busy.value = true; error.value = null
+    try {
+      const options = await $fetch('/api/auth/challenge', { method: 'POST', body: { mode: 'register' } })
+      const response = await startRegistration({ optionsJSON: options as never })
+      await $fetch('/api/auth/register', { method: 'POST', body: { label, response } })
+      await refresh()
+      return true
+    }
+    catch (e) { error.value = message(e); return false }
+    finally { busy.value = false }
+  }
+
+  /** Retirer un passkey : l'ordinateur revendu, le téléphone perdu. Jamais le dernier. */
+  async function revoquer(id: string): Promise<boolean> {
+    busy.value = true; error.value = null
+    try {
+      await $fetch('/api/auth/revoke', { method: 'POST', body: { id } })
       await refresh()
       return true
     }
@@ -348,6 +397,6 @@ export function useVault() {
 
   return {
     state, pending, recent, mirrorAt, busy, error, pendingCount,
-    hydrate, refresh, register, rename, login, logout, loadPending, push, apply, resolve, applicable, ctx, restoreAll,
+    hydrate, refresh, register, ajouterSecours, revoquer, rename, login, logout, loadPending, push, apply, resolve, applicable, ctx, restoreAll,
   }
 }

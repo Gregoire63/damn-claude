@@ -1,5 +1,5 @@
 import { requireSession } from './_auth'
-import { readCredential, writeCredential } from '../../utils/vault'
+import { addCredential, readCredential } from '../../utils/vault'
 
 /**
  * Corriger le nom du propriétaire.
@@ -21,6 +21,8 @@ export default defineEventHandler(async (event) => {
 
   const propre = String(nom ?? '').trim().slice(0, 40)
   const { ownerName: _, ...reste } = cred
-  await writeCredential(propre ? { ...reste, ownerName: propre } : reste)
+  // Le nom vit sur le PREMIER passkey — celui posé à l'installation. `addCredential`
+  // remplace l'entrée de même identifiant sans toucher aux autres.
+  await addCredential(propre ? { ...reste, ownerName: propre } : reste)
   return { ok: true, ownerName: propre }
 })

@@ -1339,3 +1339,9 @@ input::-webkit-outer-spin-button, input::-webkit-inner-spin-button { -webkit-app
   white-space: pre-wrap; word-break: break-word; color: var(--text-primary);
 }
 .dem-btn { width: 100%; }
+
+/* ─── Appareils autorisés (passkeys) ──────────────────────────────────────── */
+.vt-keys { border-top: 1px dotted var(--bg-accent); padding-top: 10px; }
+.vt-keys-l { list-style: none; margin: 8px 0 0; padding: 0; font-size: 13px; }
+.vt-keys-l li { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 5px 0; border-bottom: 1px dotted var(--bg-accent); }
+.vt-keys-l li:last-child { border-bottom: 0; }

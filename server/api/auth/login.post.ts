@@ -1,9 +1,15 @@
 import { verifyAuthenticationResponse } from '@simplewebauthn/server'
-import { origin, rpId, setSession } from './_auth'
-import { SESSION_TTL, readCredential, signToken, verifyToken, writeCredential } from '../../utils/vault'
+import { OWNER_SUB, origin, rpId, setSession } from './_auth'
+import { SESSION_TTL, readCredentials, setCredentialCounter, signToken, verifyToken } from '../../utils/vault'
 
 /**
  * La connexion : le téléphone signe le défi, le serveur vérifie.
+ *
+ * Le coffre peut contenir PLUSIEURS passkeys — le téléphone, et celui de secours
+ * posé sur l'ordinateur. C'est l'authentificateur qui choisit lequel il présente,
+ * et il le dit dans `response.id` : on vérifie donc contre CELUI-LÀ. Chercher au
+ * hasard, ou ne regarder que le premier, ferait échouer la connexion depuis le
+ * second appareil — c'est-à-dire exactement le jour où on en a besoin.
  *
  * Le compteur mérite un mot. Un authentificateur incrémente un compteur à chaque
  * signature ; s'il revient en arrière, c'est le signe d'une clé clonée. On le
@@ -13,8 +19,12 @@ import { SESSION_TTL, readCredential, signToken, verifyToken, writeCredential } 
  */
 export default defineEventHandler(async (event) => {
   const body = await readBody<{ response?: Record<string, unknown> }>(event)
-  const cred = await readCredential()
-  if (!cred) throw createError({ statusCode: 404, statusMessage: 'Aucun passkey enregistré' })
+  const creds = await readCredentials()
+  if (!creds.length) throw createError({ statusCode: 404, statusMessage: 'Aucun passkey enregistré' })
+
+  const presente = String(body?.response?.id ?? '')
+  const cred = creds.find(c => c.id === presente)
+  if (!cred) throw createError({ statusCode: 401, statusMessage: 'Passkey inconnu' })
 
   const challenge = verifyToken(getCookie(event, 'gr-challenge'), Date.now())
   if (!challenge || challenge.scope !== 'challenge') {
@@ -35,7 +45,7 @@ export default defineEventHandler(async (event) => {
   })
   if (!verification.verified) throw createError({ statusCode: 401, statusMessage: 'Signature refusée' })
 
-  await writeCredential({ ...cred, counter: verification.authenticationInfo.newCounter })
+  await setCredentialCounter(cred.id, verification.authenticationInfo.newCounter)
   deleteCookie(event, 'gr-challenge', { path: '/' })
   setSession(event, signToken({ sub: OWNER_SUB, scope: 'app' }, SESSION_TTL, Date.now()))
   return { ok: true }

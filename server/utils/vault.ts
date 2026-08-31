@@ -1,4 +1,4 @@
-import { createHmac, randomBytes, timingSafeEqual } from 'node:crypto'
+import { createHash, createHmac, randomBytes, timingSafeEqual } from 'node:crypto'
 import { mkdir, readFile, writeFile } from 'node:fs/promises'
 import { dirname, join } from 'node:path'
 
@@ -247,12 +247,14 @@ export async function takeHandover(nonce: string, nowMs: number): Promise<Record
   return trouve.tokens
 }
 
-// ─── Passkey enregistré ──────────────────────────────────────────────────────
+// ─── Passkeys enregistrés ────────────────────────────────────────────────────
 export interface StoredCredential {
   id: string
   publicKey: string
   counter: number
   at: string
+  /** Où il a été posé — « iPhone », « Portable ». Sert à savoir lequel révoquer. */
+  label?: string
   /**
    * Le prénom du propriétaire, saisi au moment de poser le passkey.
    *
@@ -267,13 +269,169 @@ export interface StoredCredential {
   ownerName?: string
 }
 
-/** Un enregistrement vide vaut « aucun passkey » : c'est ce qu'écrit la remise à
- *  zéro, faute d'opération de suppression dans le stockage. */
-export async function readCredential(): Promise<StoredCredential | null> {
-  const c = await readJson<StoredCredential | null>(KEY_CREDENTIAL, null)
-  return c && c.id && c.publicKey ? c : null
+/**
+ * Le coffre en contient PLUSIEURS, et c'est ce qui supprime le mot de passe permanent.
+ *
+ * Il n'y en avait qu'un. Perdre le téléphone, c'était donc perdre l'accès — d'où un
+ * code de démarrage gardé valide pour toujours dans les variables d'environnement,
+ * qui servait de double. Un secret permanent qui rouvre tout, sans expiration ni
+ * révocation : c'est le maillon faible de toute l'authentification, et il ne tenait
+ * qu'à l'absence d'un second passkey.
+ *
+ * Avec une liste, « téléphone perdu » se règle par le passkey de secours posé sur
+ * l'ordinateur, et le code de démarrage redevient ce qu'il aurait toujours dû être :
+ * un code d'INSTALLATION, utilisable une fois.
+ */
+interface CredentialStore {
+  credentials: StoredCredential[]
+  /**
+   * L'empreinte du code de démarrage déjà consommé.
+   *
+   * On range l'empreinte et non le code : lire le coffre ne doit rien apprendre.
+   * Le réarmement tombe alors tout seul — changer `NUXT_VAULT_BOOTSTRAP` change
+   * l'empreinte, donc le code redevient valide. Autrement dit, rouvrir la porte
+   * exige l'accès au DÉPLOIEMENT, qui est la vraie racine de confiance d'une
+   * application auto-hébergée.
+   */
+  bootstrapUsed?: string
+  /** Échecs consécutifs sur le code de démarrage, et l'instant du premier. */
+  tentatives?: { n: number, depuis: number }
 }
-export const writeCredential = (c: StoredCredential) => writeJson(KEY_CREDENTIAL, c)
+
+const VIDE: CredentialStore = { credentials: [] }
+
+/**
+ * Lit le coffre, en acceptant l'ANCIENNE forme : un seul passkey à la racine.
+ *
+ * Une instance déjà installée a un `credential.json` qui est l'objet lui-même. La
+ * migrer à la lecture plutôt qu'au déploiement évite l'écriture la plus dangereuse
+ * qui soit — celle qui touche à l'authentification pendant que personne ne regarde.
+ */
+export async function readCredentialStore(): Promise<CredentialStore> {
+  const brut = await readJson<Record<string, unknown> | null>(KEY_CREDENTIAL, null)
+  if (!brut || typeof brut !== 'object') return { ...VIDE }
+  if (Array.isArray((brut as CredentialStore).credentials)) {
+    const s = brut as unknown as CredentialStore
+    return { ...s, credentials: s.credentials.filter(c => c?.id && c?.publicKey) }
+  }
+  const seul = brut as unknown as StoredCredential
+  return { credentials: seul.id && seul.publicKey ? [seul] : [] }
+}
+
+export const writeCredentialStore = (s: CredentialStore) => writeJson(KEY_CREDENTIAL, s)
+
+/** Tous les passkeys valides. Un enregistrement vide n'en est pas un. */
+export async function readCredentials(): Promise<StoredCredential[]> {
+  return (await readCredentialStore()).credentials
+}
+
+/** Le premier passkey, ou `null`. C'est lui qui porte le nom du propriétaire. */
+export async function readCredential(): Promise<StoredCredential | null> {
+  const [premier] = await readCredentials()
+  return premier ?? null
+}
+
+/** Ajoute un passkey sans toucher aux autres, ni au drapeau de démarrage. */
+export async function addCredential(c: StoredCredential): Promise<void> {
+  const s = await readCredentialStore()
+  await writeCredentialStore({ ...s, credentials: [...s.credentials.filter(x => x.id !== c.id), c] })
+}
+
+/** Réécrit le compteur anti-clonage d'un passkey après une connexion réussie. */
+export async function setCredentialCounter(id: string, counter: number): Promise<void> {
+  const s = await readCredentialStore()
+  await writeCredentialStore({
+    ...s,
+    credentials: s.credentials.map(c => (c.id === id ? { ...c, counter } : c)),
+  })
+}
+
+/** Retire un passkey. Rend `false` si c'était le dernier — on ne se verrouille pas dehors. */
+export async function removeCredential(id: string): Promise<boolean> {
+  const s = await readCredentialStore()
+  if (s.credentials.length <= 1) return false
+  const reste = s.credentials.filter(c => c.id !== id)
+  if (reste.length === s.credentials.length) return false
+  await writeCredentialStore({ ...s, credentials: reste })
+  return true
+}
+
+/** Efface tous les passkeys. Le drapeau de démarrage reste : le code est consommé. */
+export async function clearCredentials(): Promise<void> {
+  const s = await readCredentialStore()
+  await writeCredentialStore({ ...s, credentials: [] })
+}
+
+// ─── Code de démarrage ───────────────────────────────────────────────────────
+//
+// Il ouvrait la porte à tout moment, pour toujours. Ce n'était pas un code
+// d'installation, c'était une clé maîtresse : connue une fois — capture d'écran,
+// message collé, épaule regardée — elle donnait accès au coffre indéfiniment, sans
+// révocation autre que changer la variable, et sans rien pour ralentir un essai
+// systématique si le code était court.
+//
+// Trois règles le ramènent à ce qu'il doit être.
+
+/** Cinq essais, puis un quart d'heure de silence. De quoi rendre inutile la force brute. */
+const ESSAIS_MAX = 5
+const VERROU_MS = 15 * 60 * 1000
+
+const empreinte = (code: string) => createHash('sha256').update(code).digest('hex')
+
+function memeChaine(a: string, b: string): boolean {
+  const x = Buffer.from(a), y = Buffer.from(b)
+  return x.length === y.length && timingSafeEqual(x, y)
+}
+
+export type VerdictBootstrap = 'ok' | 'absent' | 'faux' | 'consomme' | 'verrouille'
+
+/**
+ * Le code de démarrage attendu, ou `''` s'il n'est pas configuré.
+ * Lu à chaque appel : une variable d'environnement change sans redéploiement.
+ */
+const codeAttendu = () => (process.env.NUXT_VAULT_BOOTSTRAP || '').trim()
+
+/** Le code peut-il encore servir ? Sans révéler s'il existe un code, ni lequel. */
+export async function bootstrapArme(): Promise<boolean> {
+  const attendu = codeAttendu()
+  if (!attendu) return false
+  const s = await readCredentialStore()
+  return s.bootstrapUsed !== empreinte(attendu)
+}
+
+/**
+ * Vérifie un code, en comptant les échecs.
+ *
+ * `consomme` se distingue de `faux` volontairement : « ce code a déjà servi » dit
+ * quoi faire (changer la variable), là où « code invalide » envoie chercher une
+ * faute de frappe qui n'existe pas.
+ */
+export async function verifierBootstrap(code: string, nowMs = Date.now()): Promise<VerdictBootstrap> {
+  const attendu = codeAttendu()
+  if (!attendu) return 'absent'
+  const s = await readCredentialStore()
+
+  const t = s.tentatives
+  if (t && t.n >= ESSAIS_MAX && nowMs - t.depuis < VERROU_MS) return 'verrouille'
+  const compteur = t && nowMs - t.depuis < VERROU_MS ? t : { n: 0, depuis: nowMs }
+
+  if (!memeChaine(String(code ?? ''), attendu)) {
+    await writeCredentialStore({ ...s, tentatives: { n: compteur.n + 1, depuis: compteur.depuis } })
+    return 'faux'
+  }
+  // Le bon code, mais déjà consommé : on ne compte pas d'échec — ce n'est pas une
+  // tentative d'intrusion, c'est quelqu'un qui ignore que la porte s'est refermée.
+  if (s.bootstrapUsed === empreinte(attendu)) return 'consomme'
+  return 'ok'
+}
+
+/** Brûle le code courant. Le réarmer, c'est changer la variable d'environnement. */
+export async function brulerBootstrap(): Promise<void> {
+  const attendu = codeAttendu()
+  if (!attendu) return
+  const s = await readCredentialStore()
+  await writeCredentialStore({ ...s, bootstrapUsed: empreinte(attendu), tentatives: undefined })
+}
 
 // ─── Jetons signés ───────────────────────────────────────────────────────────
 // Ni base de sessions, ni bibliothèque JWT : un seul utilisateur, un seul secret,
