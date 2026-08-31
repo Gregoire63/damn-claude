@@ -28,10 +28,39 @@ import { CHEMINS } from './lib/onglets'
  * l'option la plus faible : elle redevient un secret permanent.
  */
 const codeDeDemarrage = randomBytes(8).toString('hex')
-// Affiché seulement s'il va réellement servir : imprimer par-dessus une variable
-// posée par l'utilisateur reviendrait à recopier SON secret dans le journal.
-if (!(process.env.NUXT_VAULT_BOOTSTRAP || '').trim()) {
-  console.log(`\n  ┌─ Code de démarrage de ce déploiement ─────────────\n  │  ${codeDeDemarrage}\n  │  À saisir une fois, pour poser le premier passkey.\n  └───────────────────────────────────────────────────\n`)
+
+/*
+ * Le journal DIT ce qu'il fait, y compris quand il ne fait rien.
+ *
+ * La première version se taisait quand `NUXT_VAULT_BOOTSTRAP` était posée — pour ne
+ * pas recopier le secret de l'utilisateur dans un journal, ce qui reste la bonne
+ * décision. Mais un journal muet ne se lit pas comme « il n'y avait rien à dire » :
+ * il se lit comme une panne. On cherche le code, on ne le trouve pas, on relit le
+ * build ligne par ligne, et rien n'explique pourquoi.
+ *
+ * Le silence est donc remplacé par la raison du silence.
+ */
+const cadre = (lignes: string[]) =>
+  console.log(`\n  ┌${'─'.repeat(56)}\n${lignes.map(l => `  │  ${l}`).join('\n')}\n  └${'─'.repeat(56)}\n`)
+
+if ((process.env.NUXT_VAULT_BOOTSTRAP || '').trim()) {
+  cadre([
+    'Code de démarrage : fourni par NUXT_VAULT_BOOTSTRAP.',
+    'Aucun code n\'est fabriqué ici — la variable l\'emporte, et',
+    'la recopier dans ce journal reviendrait à publier ton secret.',
+    '',
+    'Retire la variable chez ton hébergeur pour qu\'un code neuf',
+    'soit fabriqué et imprimé ici à chaque déploiement.',
+  ])
+}
+else {
+  cadre([
+    'Code de démarrage de ce déploiement :',
+    '',
+    `    ${codeDeDemarrage}`,
+    '',
+    'À saisir une fois, pour poser le premier passkey.',
+  ])
 }
 
 // https://nuxt.com/docs/api/configuration/nuxt-config

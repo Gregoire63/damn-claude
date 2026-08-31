@@ -75,9 +75,13 @@ posé. Chaque build en fabrique un neuf, donc l'ancien ne vaut plus rien. « Tou
 perdu » se règle par un redéploiement : c'est délibéré, se rouvrir la porte doit
 demander l'accès au déploiement.
 
-`NUXT_VAULT_BOOTSTRAP` reste acceptée et l'emporte, pour qui préfère tout décrire
+`NUXT_VAULT_BOOTSTRAP` reste acceptée et **l'emporte**, pour qui préfère tout décrire
 dans sa configuration. C'est l'option la plus faible : elle redevient un secret
 permanent, qui ne tourne que si on y pense.
+
+> **Si tu as déjà posé cette variable**, aucun code n'est fabriqué et le journal ne
+> t'en montrera pas — il te dira pourquoi. Retire-la chez ton hébergeur et
+> redéploie : le code apparaîtra dans le journal du build suivant.
 
 **Une fois entré, pose un passkey de secours** sur ton ordinateur (Profil →
 Connecteur). Il ne demande aucun code, et c'est lui qui répond à « j'ai perdu mon
