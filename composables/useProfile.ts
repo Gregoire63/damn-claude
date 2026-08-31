@@ -6,6 +6,15 @@ export interface Profile {
   heightCm: number | null
   sex: 'h' | 'f' | null
   birthYear: number | null
+  /**
+   * Le prénom, demandé au tout début du parcours d'installation.
+   *
+   * Il vit ICI et pas seulement à côté du passkey, parce qu'on le demande AVANT
+   * d'en poser un : le coffre n'existe pas encore, et il n'y aurait nulle part où
+   * le ranger. Le passkey en garde ensuite sa propre copie — c'est elle que lit le
+   * serveur — et le parcours la préremplit à partir de celle-ci.
+   */
+  prenom?: string
 }
 // Planning : 7 entrées (index 0 = Lundi … 6 = Dimanche), valeur = id de séance ou null (repos)
 export type WeekPlan = (string | null)[]
@@ -30,7 +39,7 @@ const PLAN_KEY = 'gr-weekplan-v1'
 // — il dérivait, et au bout d'un mois plus personne ne savait quel était le plan.
 const PLANDAYS_KEY = 'gr-plan-days-v1'
 
-const profile = ref<Profile>({ heightCm: null, sex: null, birthYear: null })
+const profile = ref<Profile>({ heightCm: null, sex: null, birthYear: null, prenom: '' })
 const weekPlan = ref<WeekPlan>([...DEFAULT_PLAN])
 // null = repos ce jour-là malgré la semaine type. Absent = pas d'exception.
 const planDays = ref<Record<string, string | null>>({})
@@ -93,6 +102,11 @@ export function useProfile() {
     persistDays()
   }
 
+  /** Le prénom : borné et nettoyé comme partout ailleurs. */
+  function setPrenom(v: string) {
+    profile.value.prenom = String(v ?? '').trim().slice(0, 40)
+    persistProfile()
+  }
   function setHeight(cm: number | null) { profile.value.heightCm = cm && cm > 0 ? cm : null; persistProfile() }
   function setSex(sex: 'h' | 'f' | null) { profile.value.sex = sex; persistProfile() }
   function setBirthYear(y: number | null) { profile.value.birthYear = y && y > 1900 ? y : null; persistProfile() }
@@ -121,7 +135,7 @@ export function useProfile() {
   }
 
   return {
-    profile, weekPlan, planDays, hydrate, setHeight, setSex, setBirthYear, setDay, resetPlan, restore,
+    profile, weekPlan, planDays, hydrate, setPrenom, setHeight, setSex, setBirthYear, setDay, resetPlan, restore,
     sessionIdFor, isPlanMoved, setDayPlan, clearDayPlan,
   }
 }

@@ -1,29 +1,96 @@
 <script setup lang="ts">
-import { ref } from 'vue'
-import { phraseBilan, useRestauration } from '~/composables/useRestauration'
+import { computed, onMounted, ref } from 'vue'
+import { useDemarrage } from '~/composables/useDemarrage'
+import type { EtapeId } from '~/composables/useDemarrage'
+import { useProfile } from '~/composables/useProfile'
+import { useRestauration, phraseBilan } from '~/composables/useRestauration'
+import { useVault } from '~/composables/useVault'
+import { useWorkout } from '~/composables/useWorkout'
 
 /**
- * Le premier écran, celui d'une application qui ne contient rien.
+ * Le premier écran : ce qu'il faut avoir posé pour que l'application dise vrai.
  *
- * Elle ne livre plus aucune donnée — ni séances, ni aliments, ni recettes, ni menus.
- * C'était le programme et les courses d'une personne, servis à quiconque installait
- * l'application : on ne commençait pas, on effaçait.
+ * Il proposait deux boutons — faire remplir par Claude, ou charger l'exemple. Ils
+ * règlent le CONTENU et laissent de côté tout ce dont les calculs dépendent. Sans
+ * taille, sexe et année de naissance, il n'y a pas de métabolisme de base, donc pas
+ * de cible calorique : l'application en affichait une quand même, fausse, sans le
+ * dire. Une cible trop haute ne se remarque pas — elle se mange.
  *
- * Mais une application vide sans porte de sortie est pire qu'une application pleine.
- * D'où ces deux chemins, et rien d'autre :
- *
- *  · faire remplir par Claude, parce que c'est ce que ce projet sait faire de
- *    singulier — le message est prêt à coller, avec l'ORDRE des étapes, parce que
- *    créer une recette avant ses aliments échoue et décourage ;
- *  · charger l'exemple, pour voir à quoi ressemble l'application pleine avant de
- *    décider quoi que ce soit.
- *
- * L'exemple passe par `restore()`, comme une sauvegarde : tout arrive en contenu
- * PERSONNEL, donc modifiable et supprimable. Un exemple qu'on ne peut pas retirer
- * n'est pas un exemple, c'est le programme de quelqu'un d'autre.
+ * D'où un parcours, et une seule étape qui barre la route. Les trois autres sont des
+ * invitations : brancher Claude, brancher une balance, remplir le programme. On peut
+ * s'en passer et se servir de l'application, ce qui n'est pas vrai du profil.
  */
 const emit = defineEmits<{ flash: [msg: string, ton?: 'ok' | 'echec'] }>()
 
+const d = useDemarrage()
+const { profile, setPrenom, setHeight, setSex, setBirthYear } = useProfile()
+const { addBodyWeight } = useWorkout()
+const v = useVault()
+
+/** L'étape ouverte : la première non réglée, sauf si on en a choisi une autre. */
+const choisie = ref<EtapeId | null>(null)
+const ouverte = computed<EtapeId | null>(() => choisie.value ?? d.restantes.value[0]?.id ?? null)
+const basculer = (id: EtapeId) => { choisie.value = choisie.value === id ? null : id }
+
+onMounted(() => { d.hydrate(); void chargerSante() })
+
+// ─── 1. Toi ──────────────────────────────────────────────────────────────────
+const poids = ref('')
+function poserPoids() {
+  // `String(...)` d'abord : Vue convertit tout seul un `v-model` posé sur un
+  // `<input type="number">`, si bien que `poids.value` est un NOMBRE dès qu'il est
+  // saisissable — et `.replace` sur un nombre casse la fonction entière.
+  const kg = parseFloat(String(poids.value).replace(',', '.'))
+  if (!kg || kg < 25 || kg > 350) { emit('flash', 'Un poids entre 25 et 350 kg', 'echec'); return }
+  addBodyWeight(kg)
+  poids.value = ''
+  emit('flash', 'Poids enregistré ✓')
+}
+const aPoids = computed(() => useWorkout().bodyWeight.value.length > 0)
+
+// ─── 2. Claude ───────────────────────────────────────────────────────────────
+/**
+ * L'état du serveur, dit ICI plutôt que laissé à deviner.
+ *
+ * Une variable oubliée se manifestait par « Aucun passkey » — c'est-à-dire par ce
+ * qu'affiche une installation parfaitement saine où l'on n'a rien fait. On cherchait
+ * donc côté navigateur un problème qui était côté serveur.
+ */
+interface Sante {
+  pret: boolean
+  env: Record<string, boolean>
+  store: string
+  driver: string
+}
+const sante = ref<Sante | null>(null)
+async function chargerSante() {
+  try { sante.value = await $fetch<Sante>('/api/vault/health') }
+  catch { sante.value = null }
+}
+const manquantes = computed(() => Object.entries(sante.value?.env ?? {}).filter(([, ok]) => !ok).map(([k]) => k))
+
+const codeDemarrage = ref('')
+async function poserPasskey() {
+  if (await v.register(codeDemarrage.value.trim(), profile.value.prenom || '')) {
+    codeDemarrage.value = ''
+    emit('flash', 'Passkey posé ✓ — le code de démarrage est consommé')
+    void chargerSante()
+  }
+  else emit('flash', v.error.value ?? 'Enregistrement refusé', 'echec')
+}
+
+const urlConnecteur = computed(() => (import.meta.client ? `${location.origin}/api/mcp` : '/api/mcp'))
+const copie = ref(false)
+async function copierUrl() {
+  try {
+    await navigator.clipboard.writeText(urlConnecteur.value)
+    copie.value = true
+    setTimeout(() => { copie.value = false }, 2500)
+  }
+  catch { emit('flash', 'Copie impossible — sélectionne l’adresse à la main', 'echec') }
+}
+
+// ─── 4. Remplir ──────────────────────────────────────────────────────────────
 const PROMPT = `Tu as accès à mon application de suivi sportif et nutritionnel par le connecteur « Damn Claude ». Elle est VIDE : aucune séance, aucun aliment, aucune recette, aucun menu.
 
 Aide-moi à la remplir, dans cet ordre — chaque étape a besoin de la précédente.
@@ -40,17 +107,14 @@ Aide-moi à la remplir, dans cet ordre — chaque étape a besoin de la précéd
 
 Deux règles : n'invente aucune valeur que je n'aie confirmée, et attends que j'aie validé une étape avant de passer à la suivante. Chaque proposition arrive dans ma boîte de réception — rien n'est écrit tant que je n'ai pas appuyé sur « Appliquer ».`
 
-const copie = ref(false)
-async function copier() {
+const copiePrompt = ref(false)
+async function copierPrompt() {
   try {
     await navigator.clipboard.writeText(PROMPT)
-    copie.value = true
-    setTimeout(() => { copie.value = false }, 2500)
-  } catch {
-    // Pas de presse-papiers (contexte non sécurisé, permission refusée) : le texte
-    // est visible juste au-dessus, on le dit plutôt que de laisser un bouton mort.
-    emit('flash', 'Copie impossible — sélectionne le texte à la main', 'echec')
+    copiePrompt.value = true
+    setTimeout(() => { copiePrompt.value = false }, 2500)
   }
+  catch { emit('flash', 'Copie impossible — sélectionne le texte à la main', 'echec') }
 }
 
 const { chargerExemple } = useRestauration()
@@ -67,34 +131,132 @@ async function charger() {
 <template>
   <div class="stack">
     <div class="card dem-hero">
-      <h2 class="dem-t">Ton programme est vide</h2>
+      <h2 class="dem-t">{{ d.bloque.value ? 'Bienvenue' : 'Il reste deux ou trois choses' }}</h2>
       <p class="dem-p">
-        C'est voulu. Damn Claude ne livre ni séances, ni aliments, ni menus : tu ne
-        commences pas par effacer ceux de quelqu'un d'autre.
+        <template v-if="d.bloque.value">
+          Damn Claude ne livre aucune donnée : ni séances, ni aliments, ni menus. Tu ne
+          commences pas par effacer celles de quelqu'un d'autre.
+        </template>
+        <template v-else>
+          L'application marche déjà. Ces étapes ne sont pas obligatoires, elles rendent
+          simplement les chiffres plus justes.
+        </template>
       </p>
+      <div class="dem-bar" :aria-label="`${d.progression.value} sur 4`">
+        <span v-for="e in d.etapes.value" :key="e.id" :class="{ ok: e.reglee }"></span>
+      </div>
     </div>
 
-    <div class="card">
-      <div class="section-label mb-8">Fais-le remplir par Claude</div>
-      <p class="dem-p">
-        Connecte ton Claude dans <b>Profil → Connecteur Claude</b>, puis colle-lui ce
-        message. Il te posera les questions et déposera ses propositions ici — rien
-        ne s'écrit sans ta validation.
-      </p>
-      <pre class="dem-prompt">{{ PROMPT }}</pre>
-      <button class="btn dem-btn" @click="copier">{{ copie ? 'Copié ✓' : '⧉ Copier le message' }}</button>
-    </div>
+    <div class="card dem-steps">
+      <div v-for="(e, i) in d.etapes.value" :key="e.id" class="dem-step" :class="{ open: ouverte === e.id, done: e.reglee }">
+        <button class="dem-head" @click="basculer(e.id)">
+          <span class="dem-n" :class="{ ok: e.faite, skip: !e.faite && e.passee }">{{ e.faite ? '✓' : (e.passee ? '–' : i + 1) }}</span>
+          <span class="dem-txt">
+            <b>{{ e.titre }}</b>
+            <small>{{ e.sous }}</small>
+          </span>
+          <span class="dem-chev" aria-hidden="true">{{ ouverte === e.id ? '▴' : '▾' }}</span>
+        </button>
 
-    <div class="card">
-      <div class="section-label mb-8">Ou pars d'un exemple</div>
-      <p class="dem-p">
-        Quatre séances, cent cinquante-deux aliments, trente-quatre recettes et deux
-        semaines de menus. Tout arrive comme du contenu <b>personnel</b> : tu le
-        modifies, tu en retires ce que tu veux.
-      </p>
-      <button class="btn dem-btn" :disabled="enCours" @click="charger">
-        {{ enCours ? 'Chargement…' : '↓ Charger l\'exemple' }}
-      </button>
+        <div v-if="ouverte === e.id" class="dem-body">
+          <!-- 1. Toi -->
+          <template v-if="e.id === 'toi'">
+            <p class="dem-p">
+              Ces quatre valeurs décident du métabolisme de base, donc de toute la cible
+              calorique. Sans elles l'application affiche des tirets — c'est préférable à
+              un chiffre inventé.
+            </p>
+            <label class="field"><span>Prénom</span>
+              <input :value="profile.prenom ?? ''" type="text" maxlength="40" placeholder="Grégoire" autocomplete="given-name" @change="setPrenom(($event.target as HTMLInputElement).value)"></label>
+            <div class="field">
+              <span>Sexe</span>
+              <div class="segmente" role="group">
+                <button :class="{ sel: profile.sex === 'h' }" @click="setSex('h')">Homme</button>
+                <button :class="{ sel: profile.sex === 'f' }" @click="setSex('f')">Femme</button>
+              </div>
+            </div>
+            <label class="field"><span>Taille (cm)</span>
+              <input :value="profile.heightCm ?? ''" type="number" inputmode="numeric" placeholder="180" @change="setHeight(parseFloat(($event.target as HTMLInputElement).value) || null)"></label>
+            <label class="field"><span>Année de naissance</span>
+              <input :value="profile.birthYear ?? ''" type="number" inputmode="numeric" placeholder="1998" @change="setBirthYear(parseInt(($event.target as HTMLInputElement).value, 10) || null)"></label>
+            <template v-if="!aPoids">
+              <label class="field"><span>Poids du jour (kg)</span>
+                <input v-model="poids" type="number" inputmode="decimal" step="0.1" placeholder="78.4"></label>
+              <button class="btn-primary dem-btn" :disabled="!poids" @click="poserPoids">Enregistrer ce poids</button>
+            </template>
+            <p v-else class="dem-p">Poids enregistré ✓ — la suite se met à jour toute seule.</p>
+          </template>
+
+          <!-- 2. Claude -->
+          <template v-else-if="e.id === 'claude'">
+            <div v-if="sante && manquantes.length" class="vt-warn">
+              <b>Le serveur n'est pas prêt.</b> Variables absentes chez ton hébergeur :
+              <b>{{ manquantes.join(', ') }}</b>.
+            </div>
+            <div v-else-if="sante && sante.store !== 'ok'" class="vt-warn">
+              <b>Stockage injoignable</b> ({{ sante.driver }}) : {{ sante.store }}.
+            </div>
+
+            <template v-if="!v.state.value.registered">
+              <p class="dem-p">
+                Pose ton passkey : c'est lui qui ouvre le coffre que Claude lit. Le code de
+                démarrage est <b>fabriqué à chaque déploiement</b> et imprimé dans le journal
+                du build — Netlify → Deploys → le dernier. Il ne sert qu'une fois.
+              </p>
+              <label class="field"><span>Code de démarrage</span>
+                <input v-model="codeDemarrage" type="password" autocomplete="off" placeholder="16 caractères"></label>
+              <button class="btn-primary dem-btn" :disabled="v.busy.value || !codeDemarrage.trim()" @click="poserPasskey">
+                🔐 Poser mon passkey
+              </button>
+              <p class="dem-p">
+                Ton appareil va te demander ton visage, ton empreinte ou ton code de
+                déverrouillage. Le champ ci-dessus n'est pas ça — c'est le code du journal.
+              </p>
+            </template>
+            <template v-else>
+              <p class="dem-p">
+                Passkey posé ✓. Ajoute maintenant le connecteur dans Claude avec cette
+                adresse, puis l'identifiant et le secret MCP de tes variables d'hébergement.
+              </p>
+              <pre class="dem-prompt mono">{{ urlConnecteur }}</pre>
+              <button class="btn dem-btn" @click="copierUrl">{{ copie ? 'Copié ✓' : '⧉ Copier l’adresse' }}</button>
+              <p class="dem-p">
+                Pense au <b>passkey de secours</b> depuis ton ordinateur, dans Profil →
+                Connecteur : sans lui, perdre ce téléphone impose de redéployer pour rentrer.
+              </p>
+            </template>
+          </template>
+
+          <!-- 3. Balance et pas -->
+          <template v-else-if="e.id === 'capteurs'">
+            <p class="dem-p">
+              Une balance connectée remplit le poids et la composition toute seule. Sans
+              elle, tu saisis ton poids à la main — c'est un choix, pas un manque, et tous
+              les écrans fonctionnent pareil.
+            </p>
+            <SportSources />
+            <button class="btn dem-btn" @click="d.passer('capteurs')">Je pèse à la main, passer</button>
+          </template>
+
+          <!-- 4. Remplir -->
+          <template v-else>
+            <p class="dem-p">
+              Colle ce message à ton Claude : il te posera les questions et déposera ses
+              propositions ici. Rien ne s'écrit sans ta validation.
+            </p>
+            <pre class="dem-prompt">{{ PROMPT }}</pre>
+            <button class="btn dem-btn" @click="copierPrompt">{{ copiePrompt ? 'Copié ✓' : '⧉ Copier le message' }}</button>
+            <p class="dem-p mt-6">
+              Ou pars de l'exemple : quatre séances, cent cinquante-deux aliments,
+              trente-quatre recettes. Il arrive comme du contenu <b>personnel</b> — tu le
+              modifies, tu en retires ce que tu veux.
+            </p>
+            <button class="btn dem-btn" :disabled="enCours" @click="charger">
+              {{ enCours ? 'Chargement…' : '↓ Charger l’exemple' }}
+            </button>
+          </template>
+        </div>
+      </div>
     </div>
   </div>
 </template>

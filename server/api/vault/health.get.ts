@@ -1,4 +1,4 @@
-import { readMirror, readProposals } from '../../utils/vault'
+import { bootstrapArme, origineBootstrap, readMirror, readProposals } from '../../utils/vault'
 import { trace } from '../../utils/trace'
 
 /**
@@ -14,9 +14,17 @@ import { trace } from '../../utils/trace'
  */
 export default defineEventHandler(async () => {
   const raw = (k: string) => process.env[k] || ''
+  /**
+   * `NUXT_VAULT_BOOTSTRAP` n'est PLUS dans cette liste, et c'est une correction.
+   *
+   * Le code de démarrage est fabriqué au build et imprimé dans le journal de
+   * déploiement : il n'y a plus de variable à poser. La laisser ici faisait afficher
+   * « le serveur n'est pas prêt » avec un nom de variable en rouge, sur une
+   * installation parfaitement correcte — et envoyait créer une variable dont le seul
+   * effet est de revenir à un secret permanent.
+   */
   const env = {
     NUXT_VAULT_SECRET: raw('NUXT_VAULT_SECRET').trim().length >= 24,
-    NUXT_VAULT_BOOTSTRAP: !!raw('NUXT_VAULT_BOOTSTRAP').trim(),
     NUXT_MCP_CLIENT_ID: !!raw('NUXT_MCP_CLIENT_ID').trim(),
     NUXT_MCP_CLIENT_SECRET: !!raw('NUXT_MCP_CLIENT_SECRET').trim(),
   }
@@ -32,6 +40,10 @@ export default defineEventHandler(async () => {
    * pas un espace de 62^12 possibilites.
    */
   const bootstrap = {
+    /** « build » = à lire dans le journal du dernier déploiement ; « env » = posé à la main. */
+    origine: origineBootstrap(),
+    /** Encore utilisable ? Consommé, il faut redéployer — ou changer la variable. */
+    arme: await bootstrapArme(),
     longueur: raw('NUXT_VAULT_BOOTSTRAP').trim().length,
     espaces_parasites: raw('NUXT_VAULT_BOOTSTRAP') !== raw('NUXT_VAULT_BOOTSTRAP').trim(),
   }
