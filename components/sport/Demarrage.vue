@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import { useDemarrage } from '~/composables/useDemarrage'
 import type { EtapeId } from '~/composables/useDemarrage'
 import { useProfile } from '~/composables/useProfile'
@@ -27,26 +27,84 @@ const { profile, setPrenom, setHeight, setSex, setBirthYear } = useProfile()
 const { addBodyWeight } = useWorkout()
 const v = useVault()
 
-/** L'étape ouverte : la première non réglée, sauf si on en a choisi une autre. */
-const choisie = ref<EtapeId | null>(null)
-const ouverte = computed<EtapeId | null>(() => choisie.value ?? d.restantes.value[0]?.id ?? null)
-const basculer = (id: EtapeId) => { choisie.value = choisie.value === id ? null : id }
+/**
+ * L'étape ouverte : posée UNE FOIS, puis pilotée par l'utilisateur.
+ *
+ * Elle se calculait en continu — « la première non réglée ». Résultat : en tapant le
+ * dernier chiffre de son poids, l'étape se refermait sous les doigts et la suivante
+ * s'ouvrait à sa place. L'écran bougeait pendant la frappe, sans que rien ne l'ait
+ * demandé, et le bouton « Continuer » disparaissait avant d'avoir servi.
+ *
+ * Elle se pose donc dès que l'état est connu — l'hydratation du profil se fait dans
+ * la coque, donc pas forcément avant ce composant — et ne bouge plus ensuite que sur
+ * un geste : un en-tête, ou « Continuer ».
+ */
+const ouverte = ref<EtapeId | null>(null)
+let posee = false
+watch(() => d.restantes.value[0]?.id ?? null, (premiere) => {
+  if (posee || !premiere) return
+  ouverte.value = premiere
+  posee = true
+}, { immediate: true })
+/**
+ * On ne passe pas devant une étape bloquante inachevée.
+ *
+ * Revenir en arrière reste libre — corriger sa taille après coup est normal. C'est
+ * l'inverse qui ne l'est pas : ouvrir « Remplir » avec un profil vide donne un
+ * programme dont les calories seront fausses, et rien à l'écran ne relierait la
+ * cause à l'effet.
+ */
+function accessible(id: EtapeId): boolean {
+  const liste = d.etapes.value
+  const i = liste.findIndex(e => e.id === id)
+  return !liste.some((e, j) => j < i && e.bloquante && !e.faite)
+}
+function basculer(id: EtapeId) {
+  if (!accessible(id)) return
+  ouverte.value = ouverte.value === id ? null : id
+}
+/** Ouvre la suivante — le geste normal quand une étape vient d'être remplie. */
+function suivante(id: EtapeId) {
+  const liste = d.etapes.value
+  ouverte.value = liste[liste.findIndex(e => e.id === id) + 1]?.id ?? null
+}
 
 onMounted(() => { d.hydrate(); void chargerSante() })
 
 // ─── 1. Toi ──────────────────────────────────────────────────────────────────
-const poids = ref('')
-function poserPoids() {
-  // `String(...)` d'abord : Vue convertit tout seul un `v-model` posé sur un
-  // `<input type="number">`, si bien que `poids.value` est un NOMBRE dès qu'il est
-  // saisissable — et `.replace` sur un nombre casse la fonction entière.
-  const kg = parseFloat(String(poids.value).replace(',', '.'))
+/**
+ * Chaque champ s'enregistre en le QUITTANT, sans bouton.
+ *
+ * Le poids en avait un — « Enregistrer ce poids » — et les trois autres n'en avaient
+ * pas. Un formulaire où trois valeurs sur quatre se rangent toutes seules et la
+ * quatrième attend un bouton est un formulaire qu'on quitte en croyant l'avoir
+ * rempli. Ce bouton ne confirmait rien et ne validait rien : il rattrapait une
+ * incohérence qu'il valait mieux supprimer.
+ */
+const { currentWeight } = useWorkout()
+
+function poserPoids(v: string) {
+  if (!String(v).trim()) return
+  // `String(...)` d'abord : Vue convertit tout seul la valeur d'un `<input
+  // type="number">`, et `.replace` sur un nombre casse la fonction entière.
+  const kg = parseFloat(String(v).replace(',', '.'))
   if (!kg || kg < 25 || kg > 350) { emit('flash', 'Un poids entre 25 et 350 kg', 'echec'); return }
   addBodyWeight(kg)
-  poids.value = ''
-  emit('flash', 'Poids enregistré ✓')
 }
-const aPoids = computed(() => useWorkout().bodyWeight.value.length > 0)
+
+/**
+ * Ce qui manque, nommé.
+ *
+ * « Continuer » grisé sans un mot est une porte fermée sans écriteau : on remonte
+ * l'écran à la recherche du champ oublié. La liste coûte quatre comparaisons qu'on
+ * faisait déjà pour savoir si l'étape est finie.
+ */
+const manqueProfil = computed(() => [
+  profile.value.sex ? null : 'le sexe',
+  profile.value.heightCm ? null : 'la taille',
+  profile.value.birthYear ? null : 'l’année de naissance',
+  currentWeight.value ? null : 'le poids',
+].filter(Boolean) as string[])
 
 // ─── 2. Claude ───────────────────────────────────────────────────────────────
 /**
@@ -149,7 +207,7 @@ async function charger() {
 
     <div class="card dem-steps">
       <div v-for="(e, i) in d.etapes.value" :key="e.id" class="dem-step" :class="{ open: ouverte === e.id, done: e.reglee }">
-        <button class="dem-head" @click="basculer(e.id)">
+        <button class="dem-head" :disabled="!accessible(e.id)" @click="basculer(e.id)">
           <span class="dem-n" :class="{ ok: e.faite, skip: !e.faite && e.passee }">{{ e.faite ? '✓' : (e.passee ? '–' : i + 1) }}</span>
           <span class="dem-txt">
             <b>{{ e.titre }}</b>
@@ -179,12 +237,15 @@ async function charger() {
               <input :value="profile.heightCm ?? ''" type="number" inputmode="numeric" placeholder="180" @change="setHeight(parseFloat(($event.target as HTMLInputElement).value) || null)"></label>
             <label class="field"><span>Année de naissance</span>
               <input :value="profile.birthYear ?? ''" type="number" inputmode="numeric" placeholder="1998" @change="setBirthYear(parseInt(($event.target as HTMLInputElement).value, 10) || null)"></label>
-            <template v-if="!aPoids">
-              <label class="field"><span>Poids du jour (kg)</span>
-                <input v-model="poids" type="number" inputmode="decimal" step="0.1" placeholder="78.4"></label>
-              <button class="btn-primary dem-btn" :disabled="!poids" @click="poserPoids">Enregistrer ce poids</button>
-            </template>
-            <p v-else class="dem-p">Poids enregistré ✓ — la suite se met à jour toute seule.</p>
+            <label class="field"><span>Poids du jour (kg)</span>
+              <input :value="currentWeight ?? ''" type="number" inputmode="decimal" step="0.1" placeholder="78.4" @change="poserPoids(($event.target as HTMLInputElement).value)"></label>
+
+            <p v-if="manqueProfil.length" class="dem-p dem-manque">
+              Il manque encore <b>{{ manqueProfil.join(', ') }}</b>.
+            </p>
+            <button class="btn-primary dem-btn" :disabled="manqueProfil.length > 0" @click="suivante('toi')">
+              Continuer →
+            </button>
           </template>
 
           <!-- 2. Claude -->
