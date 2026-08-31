@@ -128,15 +128,40 @@ async function chargerSante() {
 const manquantes = computed(() => Object.entries(sante.value?.env ?? {}).filter(([, ok]) => !ok).map(([k]) => k))
 
 const codeDemarrage = ref('')
+/**
+ * Le résultat s'affiche DANS l'étape, pas seulement en haut de page.
+ *
+ * Le bandeau de message vit dans la coque, tout en haut. Quand on pose son passkey,
+ * on est en bas d'un formulaire déroulé : il apparaît hors de l'écran, disparaît au
+ * bout de six secondes, et le bouton reste là, identique. On ne sait ni si ça a
+ * marché, ni pourquoi non — ce qui est exactement ce qu'on vient de me décrire.
+ */
+const echecPasskey = ref('')
 async function poserPasskey() {
+  echecPasskey.value = ''
   if (await v.register(codeDemarrage.value.trim(), profile.value.prenom || '')) {
     codeDemarrage.value = ''
     emit('flash', 'Passkey posé ✓ — le code de démarrage est consommé')
     void chargerSante()
   }
-  else emit('flash', v.error.value ?? 'Enregistrement refusé', 'echec')
+  else {
+    echecPasskey.value = v.error.value ?? 'Enregistrement refusé, sans plus de détail.'
+    emit('flash', echecPasskey.value, 'echec')
+  }
 }
 
+/**
+ * En local, TOUT est différent, et rien ne le dit.
+ *
+ * Un passkey est lié au DOMAINE : celui posé sur le site en ligne ne vaut rien sur
+ * `localhost`, et le coffre local est un dossier vide. Il faut donc en poser un
+ * second, avec le code imprimé par `npm run dev` — pas celui de Netlify. Sans cette
+ * phrase, on essaie son passkey, le navigateur n'en propose aucun, et on conclut
+ * que l'application est cassée.
+ */
+const enLocal = computed(() => import.meta.client && /^(localhost|127\.|\[::1\])/.test(location.hostname))
+
+const hote = computed(() => (import.meta.client ? location.host : ''))
 const urlConnecteur = computed(() => (import.meta.client ? `${location.origin}/api/mcp` : '/api/mcp'))
 const copie = ref(false)
 async function copierUrl() {
@@ -262,22 +287,46 @@ async function charger() {
             <template v-if="!v.state.value.registered">
               <p class="dem-p">
                 Pose ton passkey : c'est lui qui ouvre le coffre que Claude lit. Le code de
-                démarrage est <b>fabriqué à chaque déploiement</b> et imprimé dans le journal
-                du build — Netlify → Deploys → le dernier. Il ne sert qu'une fois.
+                démarrage est <b>fabriqué à chaque démarrage</b> et ne sert qu'une fois.
+                <template v-if="enLocal">
+                  En local, il est imprimé dans le terminal où tourne
+                  <b>npm run dev</b> — pas celui de Netlify.
+                </template>
+                <template v-else>
+                  Il est imprimé dans le journal du build : Netlify → Deploys → le dernier.
+                </template>
               </p>
+              <div v-if="enLocal" class="vt-warn">
+                <b>Tu es en local.</b> Un passkey est lié au domaine : celui de ton site en
+                ligne ne fonctionne pas ici, et le coffre local est vide. Il faut en poser
+                un <b>second</b>, propre à <b>{{ hote }}</b>.
+              </div>
               <label class="field"><span>Code de démarrage</span>
                 <input v-model="codeDemarrage" type="password" autocomplete="off" placeholder="ex. 4f2a9c1e8b7d0356"></label>
-              <button class="btn-primary dem-btn" :disabled="v.busy.value || !codeDemarrage.trim()" @click="poserPasskey">
-                🔐 Poser mon passkey
-              </button>
+              <!-- Bouton mort si le serveur ne peut pas répondre : sans NUXT_VAULT_SECRET,
+                   la demande de défi rend un 500, et « 500 Server Error » n'apprend rien à
+                   celui qui vient de taper son code. Mieux vaut ne pas proposer le geste. -->
+              <button
+                class="btn-primary dem-btn"
+                :disabled="v.busy.value || !codeDemarrage.trim() || manquantes.length > 0"
+                @click="poserPasskey"
+              >🔐 Poser mon passkey</button>
+              <p v-if="manquantes.length" class="dem-p dem-manque">
+                Impossible tant que <b>{{ manquantes.join(', ') }}</b> {{ manquantes.length > 1 ? 'manquent' : 'manque' }} :
+                le serveur ne sait pas signer la demande.
+              </p>
+              <p v-if="echecPasskey" class="vt-warn">
+                <b>Ça n'a pas marché.</b> {{ echecPasskey }}
+              </p>
               <p class="dem-p">
                 Ton appareil va te demander ton visage, ton empreinte ou ton code de
                 déverrouillage. Le champ ci-dessus n'est pas ça — c'est le code du journal.
               </p>
             </template>
             <template v-else>
+              <div class="vt-ok"><b>Passkey posé ✓</b> — le code de démarrage est consommé.</div>
               <p class="dem-p">
-                Passkey posé ✓. Ajoute maintenant le connecteur dans Claude avec cette
+                Ajoute maintenant le connecteur dans Claude avec cette
                 adresse, puis l'identifiant et le secret MCP de tes variables d'hébergement.
               </p>
               <pre class="dem-prompt mono">{{ urlConnecteur }}</pre>

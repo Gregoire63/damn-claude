@@ -183,6 +183,8 @@
 /* Un échec sur fond vert se lit de loin comme une réussite. La couleur porte la
    moitié du message ; la donner fausse est pire que ne rien afficher. */
 .flash.echec { background: #f6ece1; border-color: #e6c3b0; color: #b5502f; }
+/* Le pendant vert de `.vt-warn` : une réussite doit se voir là où on l'a déclenchée. */
+.vt-ok { background: #e7f0e2; border: 1px solid #bcd8ae; color: #3f7a4f; border-radius: 10px; padding: 10px 12px; font-size: 13px; line-height: 1.45; margin-bottom: 10px; }
 .row-between { display: flex; justify-content: space-between; align-items: center; }
 .mt-2 { margin-top: 2px; } .mt-6 { margin-top: 8px; } .mb-8 { margin-bottom: 8px; }
 .flex-1 { flex: 1; } .center { text-align: center; } .hidden-input { display: none; }
@@ -1347,7 +1349,14 @@ input::-webkit-outer-spin-button, input::-webkit-inner-spin-button { -webkit-app
   font-family: var(--font-mono); font-size: 11.5px; line-height: 1.55;
   white-space: pre-wrap; word-break: break-word; color: var(--text-primary);
 }
-.dem-btn { width: 100%; }
+/* Un bouton pleine largeur suit un champ ou un texte : sans marge, il vient se
+   coller au bord de l'input et l'ensemble se lit comme un seul bloc. */
+.dem-btn { width: 100%; margin-top: 14px; }
+/* Le même problème partout ailleurs : un bouton d'action posé JUSTE APRÈS un champ.
+   Les rangées de boutons (`.nav-row`) ne sont pas touchées — elles ne contiennent
+   que des boutons, jamais un champ suivi d'un bouton. */
+.field + .btn, .field + .btn-primary,
+.note-input + .btn, .note-input + .btn-primary { margin-top: 14px; }
 
 /* ─── Appareils autorisés (passkeys) ──────────────────────────────────────── */
 .vt-keys { border-top: 1px dotted var(--bg-accent); padding-top: 10px; }
