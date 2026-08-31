@@ -196,8 +196,9 @@ async function charger() {
           commences pas par effacer celles de quelqu'un d'autre.
         </template>
         <template v-else>
-          L'application marche déjà. Ces étapes ne sont pas obligatoires, elles rendent
-          simplement les chiffres plus justes.
+          Encore {{ d.restantes.value.length }} étape<template v-if="d.restantes.value.length > 1">s</template>.
+          Chacune peut être passée — mais autant les regarder une fois, elles ne
+          reviendront pas te chercher.
         </template>
       </p>
       <div class="dem-bar" :aria-label="`${d.progression.value} sur 4`">
@@ -225,7 +226,7 @@ async function charger() {
               un chiffre inventé.
             </p>
             <label class="field"><span>Prénom</span>
-              <input :value="profile.prenom ?? ''" type="text" maxlength="40" placeholder="Grégoire" autocomplete="given-name" @change="setPrenom(($event.target as HTMLInputElement).value)"></label>
+              <input :value="profile.prenom ?? ''" type="text" maxlength="40" placeholder="ex. Grégoire" autocomplete="given-name" @change="setPrenom(($event.target as HTMLInputElement).value)"></label>
             <div class="field">
               <span>Sexe</span>
               <div class="segmente" role="group">
@@ -234,11 +235,11 @@ async function charger() {
               </div>
             </div>
             <label class="field"><span>Taille (cm)</span>
-              <input :value="profile.heightCm ?? ''" type="number" inputmode="numeric" placeholder="180" @change="setHeight(parseFloat(($event.target as HTMLInputElement).value) || null)"></label>
+              <input :value="profile.heightCm ?? ''" type="number" inputmode="numeric" placeholder="ex. 180" @change="setHeight(parseFloat(($event.target as HTMLInputElement).value) || null)"></label>
             <label class="field"><span>Année de naissance</span>
-              <input :value="profile.birthYear ?? ''" type="number" inputmode="numeric" placeholder="1998" @change="setBirthYear(parseInt(($event.target as HTMLInputElement).value, 10) || null)"></label>
+              <input :value="profile.birthYear ?? ''" type="number" inputmode="numeric" placeholder="ex. 1998" @change="setBirthYear(parseInt(($event.target as HTMLInputElement).value, 10) || null)"></label>
             <label class="field"><span>Poids du jour (kg)</span>
-              <input :value="currentWeight ?? ''" type="number" inputmode="decimal" step="0.1" placeholder="78.4" @change="poserPoids(($event.target as HTMLInputElement).value)"></label>
+              <input :value="currentWeight ?? ''" type="number" inputmode="decimal" step="0.1" placeholder="ex. 78,4" @change="poserPoids(($event.target as HTMLInputElement).value)"></label>
 
             <p v-if="manqueProfil.length" class="dem-p dem-manque">
               Il manque encore <b>{{ manqueProfil.join(', ') }}</b>.
@@ -265,7 +266,7 @@ async function charger() {
                 du build — Netlify → Deploys → le dernier. Il ne sert qu'une fois.
               </p>
               <label class="field"><span>Code de démarrage</span>
-                <input v-model="codeDemarrage" type="password" autocomplete="off" placeholder="16 caractères"></label>
+                <input v-model="codeDemarrage" type="password" autocomplete="off" placeholder="ex. 4f2a9c1e8b7d0356"></label>
               <button class="btn-primary dem-btn" :disabled="v.busy.value || !codeDemarrage.trim()" @click="poserPasskey">
                 🔐 Poser mon passkey
               </button>
@@ -286,6 +287,9 @@ async function charger() {
                 Connecteur : sans lui, perdre ce téléphone impose de redéployer pour rentrer.
               </p>
             </template>
+            <button class="btn dem-btn" @click="d.passer('claude'); suivante('claude')">
+              {{ v.state.value.registered ? 'Continuer →' : 'Plus tard, continuer' }}
+            </button>
           </template>
 
           <!-- 3. Balance et pas -->
@@ -296,7 +300,9 @@ async function charger() {
               les écrans fonctionnent pareil.
             </p>
             <SportSources />
-            <button class="btn dem-btn" @click="d.passer('capteurs')">Je pèse à la main, passer</button>
+            <button class="btn dem-btn" @click="d.passer('capteurs'); suivante('capteurs')">
+              Je pèse à la main, continuer →
+            </button>
           </template>
 
           <!-- 4. Remplir -->
@@ -314,6 +320,9 @@ async function charger() {
             </p>
             <button class="btn dem-btn" :disabled="enCours" @click="charger">
               {{ enCours ? 'Chargement…' : '↓ Charger l’exemple' }}
+            </button>
+            <button class="btn dem-btn" @click="d.passer('remplir')">
+              Je remplirai plus tard — entrer dans l’application
             </button>
           </template>
         </div>

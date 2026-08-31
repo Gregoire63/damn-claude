@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted } from 'vue'
+import { computed } from 'vue'
 import { sessionMuscles } from '~/lib/muscles'
 import { shiftIso } from '~/utils/sportStats'
 import { useProgram } from '~/composables/useProgram'
@@ -8,7 +8,6 @@ import { useWorkout } from '~/composables/useWorkout'
 import { useJour } from '~/composables/useJour'
 import { useSeance } from '~/composables/useSeance'
 import { useFlash } from '~/composables/useFlash'
-import { useDemarrage } from '~/composables/useDemarrage'
 
 // L'accueil : la semaine en cours, la séance du jour, et de quoi en démarrer une.
 // Tout ce qui se superpose — la feuille, la mini-barre, les confirmations — vit dans
@@ -19,8 +18,6 @@ const { sessionLog } = useWorkout()
 const { todayISO, todayDow, todayIndex } = useJour()
 const { activeSession, deloadAdvised, startSession, editSession } = useSeance()
 const { showFlash } = useFlash()
-const demarrage = useDemarrage()
-onMounted(demarrage.hydrate)
 
 /**
  * Le libellé court d'un jour de la bande hebdomadaire.
@@ -95,10 +92,7 @@ const todayRecord = computed(() => {
     l'écran d'accueil annoncerait « ton programme est vide » à quelqu'un qui a des
     séances, l'espace d'un battement.
   -->
-  <ClientOnly>
-    <SportDemarrage v-if="!demarrage.fini.value" @flash="showFlash" />
-  </ClientOnly>
-  <div v-if="!demarrage.bloque.value" class="stack">
+  <div class="stack">
     <!-- La séance du jour est passée EN SLOT du bandeau nutrition : les deux
          partagent la première ligne, et les compteurs s'étalent en dessous. -->
     <ClientOnly>

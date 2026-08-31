@@ -888,10 +888,19 @@ input::-webkit-outer-spin-button, input::-webkit-inner-spin-button { -webkit-app
 /* Profil — champs & selects « maison » (design épuré, cohérent) */
 .form-grid { display: flex; flex-direction: column; gap: 14px; }
 .field { display: flex; flex-direction: column; gap: 7px; }
-.field > span { font-family: var(--font-mono); font-size: 10px; text-transform: uppercase; letter-spacing: 0.1em; font-weight: 700; color: var(--accent-primary); }
+/* Le libellé était en 10 px, très espacé, dans la couleur d'accent : plus petit et
+   plus pâle que le texte de substitution juste en dessous. L'œil lisait donc le
+   PLACEHOLDER comme la valeur, et le libellé comme un ornement. */
+.field > span { font-family: var(--font-mono); font-size: 11px; text-transform: uppercase; letter-spacing: 0.07em; font-weight: 700; color: var(--text-secondary); }
 /* Champs texte/nombre du profil : même habillage que les selects */
 .field input { width: 100% !important; text-align: left; background: var(--bg-primary); border: 1.5px solid var(--bg-accent); color: var(--text-primary); border-radius: 12px; padding: 12px 14px; font-size: 15px; font-weight: 600; transition: border-color 0.18s, box-shadow 0.18s; }
 .field input:focus { outline: none; border-color: var(--accent-primary); box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent-primary) 16%, transparent); }
+/* Sans règle explicite, le texte de substitution héritait de la couleur ET de la
+   graisse 600 du champ : un formulaire vide avait l'air rempli, et on le quittait
+   sans rien saisir. `opacity: 1` parce que Firefox en applique une par défaut, qui
+   troublerait la couleur choisie. */
+.field input::placeholder,
+.note-input::placeholder { color: var(--text-muted); font-weight: 400; opacity: 1; }
 /* Selects : flèche personnalisée, coins arrondis, focus net (plus de style natif) */
 .field select, .select {
   width: 100%;

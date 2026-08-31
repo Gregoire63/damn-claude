@@ -17,6 +17,7 @@ import { useFitbit } from '~/composables/useFitbit'
 import { usePhotos } from '~/composables/usePhotos'
 import { useNutrition } from '~/composables/useNutrition'
 import { useVault } from '~/composables/useVault'
+import { useDemarrage } from '~/composables/useDemarrage'
 import { useSnapshot } from '~/composables/useSnapshot'
 import { useWorkout } from '~/composables/useWorkout'
 import { useBackGuard } from '~/composables/useBackGuard'
@@ -56,6 +57,8 @@ const router = useRouter()
 const TABS = ONGLETS
 const pageTitle = computed(() => titreDe(route.path))
 const { flash, flashTon, showFlash } = useFlash()
+// Le parcours d'installation : tant qu'il reste une étape, il occupe l'écran seul.
+const demarrage = useDemarrage()
 const { todayISO, hydrateJour } = useJour()
 const { sessionLog, seedDemo } = useWorkout()
 const { hydrate: hydrateProfile } = useProfile()
@@ -273,6 +276,7 @@ onMounted(() => {
   // ouverte, on repousse le miroir — au plus une fois toutes les cinq minutes.
   // C'est ce qui remplace l'export manuel qu'il fallait penser à faire.
   const { buildSnapshot } = useSnapshot()
+  demarrage.hydrate()
   vault.hydrate()
     .then(() => vault.push(buildSnapshot))
     .catch(() => { /* hors ligne : le coffre est un confort, pas une dépendance */ })
@@ -325,7 +329,7 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div class="sport-app has-bottomnav" :class="{ 'has-minibar': activeSession && !sheetOpen && !sheetClosing }">
+  <div class="sport-app" :class="{ 'has-bottomnav': demarrage.fini.value, 'has-minibar': demarrage.fini.value && activeSession && !sheetOpen && !sheetClosing }">
     <header class="sport-header" :class="{ 'titre-replie': titreReplie }">
       <div class="header-top">
         <button class="brand" @click="router.push('/')">
@@ -344,7 +348,7 @@ onUnmounted(() => {
         </span>
       </div>
       <!-- Desktop : navigation en haut -->
-      <nav class="topnav">
+      <nav v-if="demarrage.fini.value" class="topnav">
         <button v-for="t in TABS" :key="t.chemin" class="topnav-tab" :class="{ active: route.path === t.chemin }" @click="router.push(t.chemin)">
           <Glyphe :nom="t.glyphe" :taille="17" />
           <span class="tn-label">{{ t.label }}</span>
@@ -376,7 +380,21 @@ onUnmounted(() => {
       L'onglet courant. C'est la seule chose qui change d'une route à l'autre ; tout
       ce qui l'entoure — en-tête, feuille, mini-barre, barre d'onglets — traverse.
     -->
-    <slot />
+    <!--
+      Le parcours d'installation prend TOUT l'écran, et il barre la route.
+
+      Il vivait dans l'accueil, sous la barre d'onglets : on pouvait donc en sortir
+      d'un tap vers Nutrition ou Progrès, et y trouver des écrans qui n'ont rien à
+      montrer et des chiffres calculés sur un profil absent. Un blocage qu'on
+      contourne par le bas n'est pas un blocage, c'est une suggestion.
+
+      Il est donc posé ici, à la place de l'onglet, et la navigation se retire avec
+      lui — il n'y a rien à visiter tant qu'il n'y a rien dedans.
+    -->
+    <ClientOnly>
+      <SportDemarrage v-if="!demarrage.fini.value" @flash="showFlash" />
+    </ClientOnly>
+    <slot v-if="demarrage.fini.value" />
 
     <!-- ═══════════ SÉANCE (vraie feuille : monte, descend, glissable au doigt) ═══════════ -->
     <!-- Voile : l'onglet reste rendu derrière ; on le voit quand on descend la feuille -->
@@ -796,7 +814,7 @@ onUnmounted(() => {
     </div>
 
     <!-- Mobile : navigation en bas (barre d'onglets) -->
-    <nav class="bottomnav">
+    <nav v-if="demarrage.fini.value" class="bottomnav">
       <button v-for="t in TABS" :key="t.chemin" class="bn-tab" :class="{ active: route.path === t.chemin }" @click="router.push(t.chemin)">
         <Glyphe :nom="t.glyphe" :taille="25" />
         <span class="bn-label">{{ t.label }}</span>
