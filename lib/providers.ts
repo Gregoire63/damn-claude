@@ -35,6 +35,14 @@ export interface Provider {
   id: string
   /** Le nom que voit l'utilisateur — la marque, telle qu'elle est écrite dessus. */
   label: string
+  /**
+   * Le pictogramme de la liste.
+   *
+   * Un emoji, et pas un fichier : une liste de marques se parcourt à la forme avant
+   * de se lire, et charger quatre images pour quatre lignes qu'on regarde une fois à
+   * l'installation coûte plus que ça ne rapporte.
+   */
+  icone: string
   capabilities: Capability[]
   /**
    * `null` = rien à configurer, le fournisseur est toujours disponible.
@@ -57,6 +65,7 @@ export interface Provider {
 export const PROVIDERS: Provider[] = [
   {
     id: 'manual',
+    icone: '✍️',
     label: 'À la main',
     capabilities: ['poids', 'pas'],
     env: null,
@@ -64,6 +73,7 @@ export const PROVIDERS: Provider[] = [
   },
   {
     id: 'withings',
+    icone: '⚖️',
     label: 'Withings',
     capabilities: ['poids', 'pas', 'composition'],
     env: ['NUXT_WITHINGS_CLIENT_ID', 'NUXT_WITHINGS_CLIENT_SECRET'],
@@ -71,6 +81,7 @@ export const PROVIDERS: Provider[] = [
   },
   {
     id: 'fitbit',
+    icone: '⌚',
     label: 'Fitbit',
     capabilities: ['poids', 'pas'],
     env: ['NUXT_FITBIT_CLIENT_ID', 'NUXT_FITBIT_CLIENT_SECRET'],
@@ -78,6 +89,7 @@ export const PROVIDERS: Provider[] = [
   },
   {
     id: 'garmin',
+    icone: '🧭',
     label: 'Garmin',
     capabilities: ['poids', 'pas', 'composition'],
     env: ['NUXT_GARMIN_CLIENT_ID', 'NUXT_GARMIN_CLIENT_SECRET'],

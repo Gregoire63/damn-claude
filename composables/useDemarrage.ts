@@ -80,8 +80,8 @@ export function useDemarrage() {
     },
     {
       id: 'capteurs' as EtapeId,
-      titre: 'Balance et pas',
-      sous: 'Ou la saisie à la main, qui est un choix comme un autre',
+      titre: 'Connecteurs',
+      sous: 'Balance, montre — ou rien, la saisie à la main marche aussi',
       faite: false,
       bloquante: false,
     },

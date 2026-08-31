@@ -22,10 +22,10 @@ export default defineEventHandler(() => {
   }
   return {
     disponibles: availableProviders(poses).map(p => ({
-      id: p.id, label: p.label, capabilities: p.capabilities, note: p.note ?? '',
+      id: p.id, label: p.label, icone: p.icone, capabilities: p.capabilities, note: p.note ?? '',
     })),
     indisponibles: unavailableProviders(poses).map(d => ({
-      id: d.provider.id, label: d.provider.label, raison: d.raison,
+      id: d.provider.id, label: d.provider.label, icone: d.provider.icone, raison: d.raison,
     })),
   }
 })

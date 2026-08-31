@@ -6,6 +6,8 @@ import { useProfile } from '~/composables/useProfile'
 import { useRestauration, phraseBilan } from '~/composables/useRestauration'
 import { useVault } from '~/composables/useVault'
 import { useWorkout } from '~/composables/useWorkout'
+import { useWithings } from '~/composables/useWithings'
+import { useFitbit } from '~/composables/useFitbit'
 
 /**
  * Le premier écran : ce qu'il faut avoir posé pour que l'application dise vrai.
@@ -69,7 +71,7 @@ function suivante(id: EtapeId) {
   ouverte.value = liste[liste.findIndex(e => e.id === id) + 1]?.id ?? null
 }
 
-onMounted(() => { d.hydrate(); void chargerSante() })
+onMounted(() => { d.hydrate(); void chargerSante(); void chargerSources() })
 
 // ─── 1. Toi ──────────────────────────────────────────────────────────────────
 /**
@@ -172,6 +174,47 @@ async function copierUrl() {
   }
   catch { emit('flash', 'Copie impossible — sélectionne l’adresse à la main', 'echec') }
 }
+
+// ─── 3. Connecteurs ──────────────────────────────────────────────────────────
+/**
+ * Ce qu'on peut brancher, et rien d'autre.
+ *
+ * L'étape s'appelait « Balance et pas » et proposait de saisir son poids : il est
+ * déjà demandé à l'étape 1, et les pas ne décident presque rien. Elle répond
+ * maintenant à la seule question qui se pose ici — qu'est-ce que je peux brancher,
+ * et est-ce que c'est déjà branché.
+ *
+ * Les marques non configurées restent VISIBLES, en grisé, avec la raison. Ne rien
+ * montrer ferait croire que l'application ne les connaît pas, et on chercherait
+ * ailleurs une intégration qui n'attend qu'une variable d'environnement.
+ */
+interface Dispo { id: string, label: string, icone: string, capabilities: string[], note: string }
+interface Indispo { id: string, label: string, icone: string, raison: string }
+const dispo = ref<Dispo[]>([])
+const indispo = ref<Indispo[]>([])
+async function chargerSources() {
+  try {
+    const r = await $fetch<{ disponibles: Dispo[], indisponibles: Indispo[] }>('/api/sources')
+    dispo.value = r.disponibles
+    indispo.value = r.indisponibles
+  }
+  catch { dispo.value = []; indispo.value = [] }
+}
+
+const withings = useWithings()
+const fitbit = useFitbit()
+const branche = (id: string) =>
+  (id === 'withings' ? withings.connected.value : id === 'fitbit' ? fitbit.connected.value : false)
+/** « À la main » n'est pas un fournisseur qu'on branche : c'est le cas par défaut. */
+const aBrancher = (id: string) => id === 'withings' || id === 'fitbit'
+function connecter(id: string) {
+  if (id === 'withings') withings.connect()
+  else if (id === 'fitbit') fitbit.connect()
+}
+const CE_QUE_CA_DONNE: Record<string, string> = {
+  poids: 'poids', composition: 'masse grasse', pas: 'pas',
+}
+const apporte = (caps: string[]) => caps.map(c => CE_QUE_CA_DONNE[c] ?? c).join(' · ')
 
 // ─── 4. Remplir ──────────────────────────────────────────────────────────────
 const PROMPT = `Tu as accès à mon application de suivi sportif et nutritionnel par le connecteur « Damn Claude ». Elle est VIDE : aucune séance, aucun aliment, aucune recette, aucun menu.
@@ -341,16 +384,34 @@ async function charger() {
             </button>
           </template>
 
-          <!-- 3. Balance et pas -->
+          <!-- 3. Connecteurs -->
           <template v-else-if="e.id === 'capteurs'">
             <p class="dem-p">
-              Une balance connectée remplit le poids et la composition toute seule. Sans
-              elle, tu saisis ton poids à la main — c'est un choix, pas un manque, et tous
-              les écrans fonctionnent pareil.
+              Une balance connectée remplit le poids et la composition toute seule, tous les
+              matins, sans y penser. Rien n'est obligatoire : à la main, tout fonctionne
+              pareil.
             </p>
-            <SportSources />
+            <ul class="dem-conn">
+              <li v-for="c in dispo" :key="c.id" :class="{ on: branche(c.id) }">
+                <span class="dem-conn-i" aria-hidden="true">{{ c.icone }}</span>
+                <span class="dem-conn-t">
+                  <b>{{ c.label }}</b>
+                  <small>{{ apporte(c.capabilities) }}</small>
+                </span>
+                <span v-if="branche(c.id)" class="dem-conn-ok mono">connecté ✓</span>
+                <button v-else-if="aBrancher(c.id)" class="btn dem-conn-b" @click="connecter(c.id)">Connecter</button>
+                <span v-else class="dem-conn-ok mono">par défaut</span>
+              </li>
+              <li v-for="c in indispo" :key="c.id" class="off">
+                <span class="dem-conn-i" aria-hidden="true">{{ c.icone }}</span>
+                <span class="dem-conn-t">
+                  <b>{{ c.label }}</b>
+                  <small>{{ c.raison }}</small>
+                </span>
+              </li>
+            </ul>
             <button class="btn dem-btn" @click="d.passer('capteurs'); suivante('capteurs')">
-              Je pèse à la main, continuer →
+              Continuer →
             </button>
           </template>
 
