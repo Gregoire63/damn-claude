@@ -24,8 +24,13 @@ export default defineEventHandler(() => {
     disponibles: availableProviders(poses).map(p => ({
       id: p.id, label: p.label, icone: p.icone, capabilities: p.capabilities, note: p.note ?? '',
     })),
+    // Les indisponibles portent aussi ce qu'ils SAURAIENT fournir : la liste des
+    // réglages les affiche au même format que les autres, et « Garmin — poids ·
+    // masse grasse · pas, indisponible » dit en une ligne ce qu'on rate, là où le
+    // nom seul laissait croire à une marque exotique.
     indisponibles: unavailableProviders(poses).map(d => ({
-      id: d.provider.id, label: d.provider.label, icone: d.provider.icone, raison: d.raison,
+      id: d.provider.id, label: d.provider.label, icone: d.provider.icone,
+      capabilities: d.provider.capabilities, note: d.provider.note ?? '', raison: d.raison,
     })),
   }
 })

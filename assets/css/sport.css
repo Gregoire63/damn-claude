@@ -452,12 +452,28 @@ input::-webkit-outer-spin-button, input::-webkit-inner-spin-button { -webkit-app
 .src-row { display: flex; gap: 8px; align-items: center; }
 .src-row input { flex: 1; width: auto; text-align: left; padding-inline: 12px; }
 .src-cur { font-size: 11.5px; line-height: 1.45; }
-.src-provider { margin-top: 14px; padding-top: 12px; border-top: 1px dotted var(--bg-accent); display: flex; flex-direction: column; gap: 6px; }
-.src-provider p { margin: 0; }
-.src-more { margin-top: 12px; }
-.src-more summary { cursor: pointer; font-size: 12px; }
-.src-off { font-size: 12px; line-height: 1.5; padding: 6px 0; border-bottom: 1px dotted var(--bg-accent); }
-.src-off:last-child { border-bottom: none; }
+/* ─── La liste des connecteurs ────────────────────────────────────────────── */
+/* Une seule liste pour deux écrans : le parcours d'installation la montre à plat
+   (la marque, ce qu'elle apporte, un bouton), les réglages la déplient. Deux jeux
+   de styles auraient divergé au premier ajustement, et c'est la version la moins
+   regardée qui serait restée en arrière. */
+.conn { list-style: none; margin: 12px 0 0; padding: 0; }
+.conn > li { border-bottom: 1px dotted var(--bg-accent); }
+.conn > li:last-child { border-bottom: 0; }
+/* Une marque non configurée reste VISIBLE : la masquer ferait croire que
+   l'application ne la connaît pas, et on chercherait l'intégration ailleurs. */
+.conn > li.off { opacity: 0.5; }
+.conn-row { display: flex; align-items: center; gap: 11px; width: 100%; padding: 10px 0; background: none; border: 0; color: inherit; font: inherit; text-align: left; }
+button.conn-row { cursor: pointer; }
+.conn-i { flex: 0 0 26px; font-size: 20px; text-align: center; }
+.conn-t { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 1px; }
+.conn-t small { color: var(--text-muted); font-size: 11.5px; line-height: 1.35; }
+.conn-e { flex: 0 0 auto; font-size: 11px; color: var(--text-muted); }
+.conn > li.on .conn-e { color: #3f7a4f; }
+.conn-b { flex: 0 0 auto; padding: 7px 13px; font-size: 13px; }
+.conn-chev { flex: 0 0 auto; color: var(--text-muted); font-size: 12px; }
+.conn-det { display: flex; flex-direction: column; gap: 7px; padding: 2px 0 14px; }
+.conn-det p { margin: 0; }
 .pg-line { font-size: 12.5px; line-height: 1.4; padding: 5px 0; border-bottom: 1px dotted var(--bg-accent); gap: 10px; }
 .pg-line:last-of-type { border-bottom: none; }
 .vt-prog-n { font-size: 11.5px; line-height: 1.45; color: var(--text-muted); margin: 6px 0 0; }
@@ -902,6 +918,7 @@ input::-webkit-outer-spin-button, input::-webkit-inner-spin-button { -webkit-app
    sans rien saisir. `opacity: 1` parce que Firefox en applique une par défaut, qui
    troublerait la couleur choisie. */
 .field input::placeholder,
+.src-row input::placeholder,
 .note-input::placeholder { color: var(--text-muted); font-weight: 400; opacity: 1; }
 /* Selects : flèche personnalisée, coins arrondis, focus net (plus de style natif) */
 .field select, .select {
@@ -1350,8 +1367,9 @@ input::-webkit-outer-spin-button, input::-webkit-inner-spin-button { -webkit-app
   white-space: pre-wrap; word-break: break-word; color: var(--text-primary);
 }
 /* Un bouton pleine largeur suit un champ ou un texte : sans marge, il vient se
-   coller au bord de l'input et l'ensemble se lit comme un seul bloc. */
-.dem-btn { width: 100%; margin-top: 14px; }
+   coller au bord de l'input et l'ensemble se lit comme un seul bloc. Le parcours
+   d'installation n'en a pas l'exclusivité — les réglages s'en servent aussi. */
+.btn-bloc { width: 100%; margin-top: 14px; }
 /* Le même problème partout ailleurs : un bouton d'action posé JUSTE APRÈS un champ.
    Les rangées de boutons (`.nav-row`) ne sont pas touchées — elles ne contiennent
    que des boutons, jamais un champ suivi d'un bouton. */
@@ -1384,19 +1402,6 @@ input::-webkit-outer-spin-button, input::-webkit-inner-spin-button { -webkit-app
 .dem-body { padding: 0 14px 16px; }
 .dem-head:disabled { opacity: 0.45; cursor: default; }
 .dem-manque { color: var(--accent-strong); }
-/* ─── Liste des connecteurs, dans le parcours ─────────────────────────────── */
-.dem-conn { list-style: none; margin: 12px 0 0; padding: 0; }
-.dem-conn li { display: flex; align-items: center; gap: 11px; padding: 10px 0; border-bottom: 1px dotted var(--bg-accent); }
-.dem-conn li:last-child { border-bottom: 0; }
-/* Une marque non configurée reste VISIBLE : la masquer ferait croire que
-   l'application ne la connaît pas, et on chercherait l'intégration ailleurs. */
-.dem-conn li.off { opacity: 0.5; }
-.dem-conn-i { flex: 0 0 26px; font-size: 20px; text-align: center; }
-.dem-conn-t { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 1px; }
-.dem-conn-t small { color: var(--text-muted); font-size: 11.5px; line-height: 1.35; }
-.dem-conn-ok { flex: 0 0 auto; font-size: 11px; color: var(--text-muted); }
-.dem-conn li.on .dem-conn-ok { color: #3f7a4f; }
-.dem-conn-b { flex: 0 0 auto; padding: 7px 13px; font-size: 13px; }
 
 
 .dem-body .field { margin-top: 10px; }

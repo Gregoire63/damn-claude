@@ -49,6 +49,27 @@ export function useDemarrage() {
   }
 
   /**
+   * Rejouer le parcours.
+   *
+   * Il ne revient jamais de lui-même : une fois les quatre étapes réglées, l'écran
+   * disparaît, et c'est voulu — une liste de tâches finie qui se raccroche à l'accueil
+   * est une nuisance. Mais on a besoin de le revoir : pour brancher une balance
+   * achetée depuis, pour poser un passkey sur un second navigateur, ou simplement
+   * pour vérifier ce qu'on fait avaler à quelqu'un qui installe le dépôt.
+   *
+   * Seuls les « passées » sont effacés — c'est-à-dire les décisions de reporter. Rien
+   * de ce qui est réellement fait n'est défait : le profil, le passkey et le programme
+   * restent, et leurs étapes se rouvrent déjà cochées.
+   */
+  function rejouer() {
+    passees.value = []
+    if (import.meta.client) {
+      try { localStorage.removeItem(PASSEES_KEY) }
+      catch { /* stockage refusé : le parcours se rejoue quand même, sans mémoire */ }
+    }
+  }
+
+  /**
    * « Faite » se DÉDUIT de l'état réel, elle ne se coche pas.
    *
    * Une case cochée est une affirmation qui peut mentir : elle survit à un import
@@ -100,5 +121,5 @@ export function useDemarrage() {
   const bloque = computed(() => !profilComplet.value)
   const fini = computed(() => restantes.value.length === 0)
 
-  return { hydrate, etapes, restantes, progression, bloque, fini, passer, passees }
+  return { hydrate, etapes, restantes, progression, bloque, fini, passer, rejouer, passees }
 }
