@@ -6,8 +6,6 @@ import { useProfile } from '~/composables/useProfile'
 import { useRestauration, phraseBilan } from '~/composables/useRestauration'
 import { useVault } from '~/composables/useVault'
 import { useWorkout } from '~/composables/useWorkout'
-import { useWithings } from '~/composables/useWithings'
-import { useFitbit } from '~/composables/useFitbit'
 
 /**
  * Le premier écran : ce qu'il faut avoir posé pour que l'application dise vrai.
@@ -23,6 +21,8 @@ import { useFitbit } from '~/composables/useFitbit'
  * s'en passer et se servir de l'application, ce qui n'est pas vrai du profil.
  */
 const emit = defineEmits<{ flash: [msg: string, ton?: 'ok' | 'echec'] }>()
+/** Les messages des composants enfants passent par le même bandeau, ton compris. */
+function relayer(msg: string, ton?: 'ok' | 'echec') { emit('flash', msg, ton) }
 
 const d = useDemarrage()
 const { profile, setPrenom, setHeight, setSex, setBirthYear } = useProfile()
@@ -71,7 +71,7 @@ function suivante(id: EtapeId) {
   ouverte.value = liste[liste.findIndex(e => e.id === id) + 1]?.id ?? null
 }
 
-onMounted(() => { d.hydrate(); void chargerSante(); void chargerSources() })
+onMounted(() => { d.hydrate(); void chargerSante() })
 
 // ─── 1. Toi ──────────────────────────────────────────────────────────────────
 /**
@@ -176,45 +176,9 @@ async function copierUrl() {
 }
 
 // ─── 3. Connecteurs ──────────────────────────────────────────────────────────
-/**
- * Ce qu'on peut brancher, et rien d'autre.
- *
- * L'étape s'appelait « Balance et pas » et proposait de saisir son poids : il est
- * déjà demandé à l'étape 1, et les pas ne décident presque rien. Elle répond
- * maintenant à la seule question qui se pose ici — qu'est-ce que je peux brancher,
- * et est-ce que c'est déjà branché.
- *
- * Les marques non configurées restent VISIBLES, en grisé, avec la raison. Ne rien
- * montrer ferait croire que l'application ne les connaît pas, et on chercherait
- * ailleurs une intégration qui n'attend qu'une variable d'environnement.
- */
-interface Dispo { id: string, label: string, icone: string, capabilities: string[], note: string }
-interface Indispo { id: string, label: string, icone: string, raison: string }
-const dispo = ref<Dispo[]>([])
-const indispo = ref<Indispo[]>([])
-async function chargerSources() {
-  try {
-    const r = await $fetch<{ disponibles: Dispo[], indisponibles: Indispo[] }>('/api/sources')
-    dispo.value = r.disponibles
-    indispo.value = r.indisponibles
-  }
-  catch { dispo.value = []; indispo.value = [] }
-}
-
-const withings = useWithings()
-const fitbit = useFitbit()
-const branche = (id: string) =>
-  (id === 'withings' ? withings.connected.value : id === 'fitbit' ? fitbit.connected.value : false)
-/** « À la main » n'est pas un fournisseur qu'on branche : c'est le cas par défaut. */
-const aBrancher = (id: string) => id === 'withings' || id === 'fitbit'
-function connecter(id: string) {
-  if (id === 'withings') withings.connect()
-  else if (id === 'fitbit') fitbit.connect()
-}
-const CE_QUE_CA_DONNE: Record<string, string> = {
-  poids: 'poids', composition: 'masse grasse', pas: 'pas',
-}
-const apporte = (caps: string[]) => caps.map(c => CE_QUE_CA_DONNE[c] ?? c).join(' · ')
+// La liste est celle des réglages, en version compacte : voir SportSources. Deux
+// listes de marques auraient divergé au premier ajout, et c'est celle du parcours —
+// vue une fois, à l'installation — qui serait restée en arrière.
 
 // ─── 4. Remplir ──────────────────────────────────────────────────────────────
 const PROMPT = `Tu as accès à mon application de suivi sportif et nutritionnel par le connecteur « Damn Claude ». Elle est VIDE : aucune séance, aucun aliment, aucune recette, aucun menu.
@@ -312,7 +276,7 @@ async function charger() {
             <p v-if="manqueProfil.length" class="dem-p dem-manque">
               Il manque encore <b>{{ manqueProfil.join(', ') }}</b>.
             </p>
-            <button class="btn-primary dem-btn" :disabled="manqueProfil.length > 0" @click="suivante('toi')">
+            <button class="btn-primary btn-bloc" :disabled="manqueProfil.length > 0" @click="suivante('toi')">
               Continuer →
             </button>
           </template>
@@ -350,7 +314,7 @@ async function charger() {
                    la demande de défi rend un 500, et « 500 Server Error » n'apprend rien à
                    celui qui vient de taper son code. Mieux vaut ne pas proposer le geste. -->
               <button
-                class="btn-primary dem-btn"
+                class="btn-primary btn-bloc"
                 :disabled="v.busy.value || !codeDemarrage.trim() || manquantes.length > 0"
                 @click="poserPasskey"
               >🔐 Poser mon passkey</button>
@@ -373,13 +337,13 @@ async function charger() {
                 adresse, puis l'identifiant et le secret MCP de tes variables d'hébergement.
               </p>
               <pre class="dem-prompt mono">{{ urlConnecteur }}</pre>
-              <button class="btn dem-btn" @click="copierUrl">{{ copie ? 'Copié ✓' : '⧉ Copier l’adresse' }}</button>
+              <button class="btn btn-bloc" @click="copierUrl">{{ copie ? 'Copié ✓' : '⧉ Copier l’adresse' }}</button>
               <p class="dem-p">
                 Pense au <b>passkey de secours</b> depuis ton ordinateur, dans Profil →
                 Connecteur : sans lui, perdre ce téléphone impose de redéployer pour rentrer.
               </p>
             </template>
-            <button class="btn dem-btn" @click="d.passer('claude'); suivante('claude')">
+            <button class="btn btn-bloc" @click="d.passer('claude'); suivante('claude')">
               {{ v.state.value.registered ? 'Continuer →' : 'Plus tard, continuer' }}
             </button>
           </template>
@@ -391,26 +355,8 @@ async function charger() {
               matins, sans y penser. Rien n'est obligatoire : à la main, tout fonctionne
               pareil.
             </p>
-            <ul class="dem-conn">
-              <li v-for="c in dispo" :key="c.id" :class="{ on: branche(c.id) }">
-                <span class="dem-conn-i" aria-hidden="true">{{ c.icone }}</span>
-                <span class="dem-conn-t">
-                  <b>{{ c.label }}</b>
-                  <small>{{ apporte(c.capabilities) }}</small>
-                </span>
-                <span v-if="branche(c.id)" class="dem-conn-ok mono">connecté ✓</span>
-                <button v-else-if="aBrancher(c.id)" class="btn dem-conn-b" @click="connecter(c.id)">Connecter</button>
-                <span v-else class="dem-conn-ok mono">par défaut</span>
-              </li>
-              <li v-for="c in indispo" :key="c.id" class="off">
-                <span class="dem-conn-i" aria-hidden="true">{{ c.icone }}</span>
-                <span class="dem-conn-t">
-                  <b>{{ c.label }}</b>
-                  <small>{{ c.raison }}</small>
-                </span>
-              </li>
-            </ul>
-            <button class="btn dem-btn" @click="d.passer('capteurs'); suivante('capteurs')">
+            <SportSources compact @flash="relayer" />
+            <button class="btn btn-bloc" @click="d.passer('capteurs'); suivante('capteurs')">
               Continuer →
             </button>
           </template>
@@ -422,16 +368,16 @@ async function charger() {
               propositions ici. Rien ne s'écrit sans ta validation.
             </p>
             <pre class="dem-prompt">{{ PROMPT }}</pre>
-            <button class="btn dem-btn" @click="copierPrompt">{{ copiePrompt ? 'Copié ✓' : '⧉ Copier le message' }}</button>
+            <button class="btn btn-bloc" @click="copierPrompt">{{ copiePrompt ? 'Copié ✓' : '⧉ Copier le message' }}</button>
             <p class="dem-p mt-6">
               Ou pars de l'exemple : quatre séances, cent cinquante-deux aliments,
               trente-quatre recettes. Il arrive comme du contenu <b>personnel</b> — tu le
               modifies, tu en retires ce que tu veux.
             </p>
-            <button class="btn dem-btn" :disabled="enCours" @click="charger">
+            <button class="btn btn-bloc" :disabled="enCours" @click="charger">
               {{ enCours ? 'Chargement…' : '↓ Charger l’exemple' }}
             </button>
-            <button class="btn dem-btn" @click="d.passer('remplir')">
+            <button class="btn btn-bloc" @click="d.passer('remplir')">
               Je remplirai plus tard — entrer dans l’application
             </button>
           </template>

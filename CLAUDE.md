@@ -123,6 +123,21 @@ CALQUE au-dessus de l'onglet courant. Son état vit dans `useSeance()`, hors de 
 composant, dans un `effectScope` détaché — sinon le chrono et la sauvegarde
 automatique mourraient avec l'écran qui les a créés.
 
+**Le parcours d'installation barre l'application, et une seule étape barre le
+parcours.** `useDemarrage()` porte quatre étapes ; « faite » se DÉDUIT de l'état réel
+(profil rempli, passkey posé, programme non vide) et ne se coche jamais — une case
+cochée survit à un import qui a tout remplacé. Seules les décisions de reporter sont
+écrites (`gr-demarrage-v1`). Le profil est la seule étape bloquante : sans taille,
+sexe et année de naissance il n'y a pas de métabolisme de base, donc pas de cible
+calorique. `rejouer()` efface ces reports et rouvre le parcours — Profil →
+Installation ; rien de fait n'est défait.
+
+**Une seule liste de connecteurs, affichée deux fois.** `components/sport/Sources.vue`
+sert le parcours (`compact`) et les réglages (dépliable), à partir de `/api/sources`,
+qui ne renvoie que des NOMS de variables d'environnement — jamais une valeur. Une
+marque non configurée reste visible, en grisé, avec la raison. Ajouter une marque =
+une fiche dans `lib/providers.ts` et une conversion ; aucun écran à toucher.
+
 ## Le modèle de données
 
 Trois couches, et elles partent toutes du livré :

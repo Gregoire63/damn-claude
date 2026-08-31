@@ -10,6 +10,7 @@ import { DAY_NAMES } from '~/lib/nutritionStats'
 import { useEnergy } from '~/composables/useEnergy'
 import { useProgram } from '~/composables/useProgram'
 import { phraseBilan, useRestauration } from '~/composables/useRestauration'
+import { useDemarrage } from '~/composables/useDemarrage'
 import { fmtRest } from '~/lib/rest'
 
 // Vue « Profil » extraite de /sport (chargée à la demande). État partagé via composables.
@@ -192,6 +193,27 @@ async function onImport(ev: Event) {
   // Sans ça, réimporter LE MÊME fichier ne déclenche pas « change » et ne fait rien.
   input.value = ''
 }
+/**
+ * Revoir l'installation.
+ *
+ * Le parcours ne revient pas tout seul, et c'est très bien : une liste de tâches finie
+ * qui reste accrochée à l'accueil se lit comme un reproche. Mais il n'existait AUCUN
+ * chemin de retour — une balance achetée après coup, un passkey à poser sur un second
+ * navigateur, ou simplement l'envie de revoir ce qu'on fait lire à quelqu'un qui
+ * installe le dépôt, et il fallait vider le stockage du site à la main.
+ *
+ * Rien n'est effacé : seules les décisions de reporter le sont. Ce qui est fait reste
+ * fait, et ses étapes se rouvrent déjà cochées.
+ */
+const demarrage = useDemarrage()
+function revoirInstallation() {
+  demarrage.rejouer()
+  emit('flash', 'Installation rouverte — l’application revient à la fin du parcours')
+}
+
+/** Un message d'enfant garde son ton : « Poids invalide » n'est pas un succès. */
+function relayer(msg: string, ton?: 'ok' | 'echec') { emit('flash', msg, ton) }
+
 function onHeight(ev: Event) { setHeight(parseFloat((ev.target as HTMLInputElement).value) || null) }
 function onYear(ev: Event) { setBirthYear(parseInt((ev.target as HTMLInputElement).value, 10) || null) }
 </script>
@@ -297,7 +319,7 @@ function onYear(ev: Event) { setBirthYear(parseInt((ev.target as HTMLInputElemen
         <!-- D'où viennent le poids et les pas. La saisie à la main y est en premier :
          c'est le seul mode qui marche sans aucun objet connecté, et il était enterré
          au fond de la carte Withings, là où personne ne le trouvait. -->
-    <SportSources :today-iso="props.todayIso" :withings-error="props.withingsError" @flash="emit('flash', $event)" />
+    <SportSources :today-iso="props.todayIso" :withings-error="props.withingsError" @flash="relayer" />
 
     <!-- Le coffre : miroir des données et boîte de réception des propositions -->
     <SportVault :snapshot="buildSnapshot" @flash="emit('flash', $event)" />
@@ -343,6 +365,17 @@ function onYear(ev: Event) { setBirthYear(parseInt((ev.target as HTMLInputElemen
         <button class="btn restore-btn" @click="onRestore">↩ Restaurer cet instantané</button>
       </div>
       <div class="muted mt-6">Le planning de la semaine est fixe (Lundi Pecs/Ép · Mardi Dos/Bic · Jeudi Jambes · Vendredi Pecs/Bras). Tu peux démarrer n'importe quelle séance n'importe quand — ça ne change pas le planning. « Réinit. » le remet par défaut.</div>
+    </div>
+
+    <!-- Le parcours d'installation, à la demande. En bas : on y revient une fois
+         tous les six mois, et jamais dans l'urgence. -->
+    <div class="card">
+      <div class="section-label mb-8">Installation</div>
+      <div class="muted">
+        Profil, connexion à Claude, connecteurs, contenu : le parcours du premier
+        lancement. Le rouvrir ne défait rien — ce qui est déjà réglé reste coché.
+      </div>
+      <button class="btn btn-bloc" @click="revoirInstallation">↺ Revoir l'installation</button>
     </div>
   </div>
 </template>
