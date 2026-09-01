@@ -3,30 +3,24 @@
 import type { BodyEntry } from './mesures'
 
 // ─────────────────────────────────────────────────────────────────────────────
-// D'où viennent le poids et les pas.
+// Les marques qui peuvent alimenter le poids et les pas.
 // ─────────────────────────────────────────────────────────────────────────────
 //
-// L'application ne connaissait qu'une balance, la mienne. Ça n'a jamais été un choix :
-// c'est simplement la seule que j'avais sous la main quand j'ai écrit le code. Le
-// résultat, c'est qu'héberger ce dépôt sans balance Withings donnait une application
-// dont deux écrans sur cinq restaient vides — sans jamais dire pourquoi.
+// Ce fichier est une liste de fiches déclaratives, et RIEN d'autre : pas d'appel
+// réseau, pas de jeton, pas de DOM. Ajouter une marque, c'est ajouter une fiche ici et
+// un adaptateur dans server/connecteurs/ — ni écran, ni stockage, ni calcul à toucher.
 //
-// Ce fichier est la liste de ce qui peut alimenter ces deux chiffres, et RIEN d'autre :
-// pas d'appel réseau, pas de jeton, pas de DOM. Un fournisseur y est une fiche
-// déclarative. Ajouter une marque, c'est ajouter une fiche et une fonction de
-// conversion — pas toucher à l'écran, au stockage, ni au calcul des calories.
+// La saisie à la main N'EST PAS une fiche. Elle l'a été, au motif qu'une personne sans
+// objet connecté est un utilisateur normal ; mais une ligne « À la main — par défaut »
+// dans une liste de marques à brancher n'apprend rien et ne se branche pas. La saisie
+// vit là où l'on regarde ses mesures — Rapport → Corps —, avec la date et la masse
+// grasse, et cette liste ne répond plus qu'à une question : qu'est-ce que je peux
+// brancher ?
 //
-// Deux décisions valent d'être dites, parce qu'elles se paient plus tard sinon.
-//
-// La première : « manuel » EST un fournisseur, au même rang que les autres. La
-// tentation était d'en faire un cas particulier — « si aucune balance, alors afficher
-// un champ ». C'est ce qui l'avait relégué au fond de l'écran Withings, où personne
-// ne le trouvait. Une personne sans objet connecté est un utilisateur normal, pas une
-// exception à traiter en dernier.
-//
-// La seconde : un fournisseur dont les identifiants ne sont pas configurés ne
-// s'affiche PAS. Proposer un bouton « Connecter Fitbit » qui mène à une erreur 503
-// est pire que de ne rien proposer : on croit à une panne, on réessaie, on cherche.
+// Une décision vaut d'être dite, parce qu'elle se paie plus tard sinon : un
+// fournisseur dont les identifiants ne sont pas configurés ne propose PAS de bouton.
+// « Connecter Fitbit » qui mène à une erreur 501 est pire que rien — on croit à une
+// panne, on réessaie, on cherche.
 
 /** Ce qu'un fournisseur sait fournir. Le tri de l'écran s'en sert. */
 export type Capability = 'poids' | 'pas' | 'composition'
@@ -44,17 +38,18 @@ export interface Provider {
    */
   icone: string
   capabilities: Capability[]
-  /**
-   * `false` = rien à configurer, le fournisseur marche partout (la saisie à la main).
-   * `true` = la marque veut une application déclarée chez elle, donc un identifiant
-   * et un secret — posés soit dans l'application, soit chez l'hébergeur.
-   *
-   * On ne liste plus les NOMS des variables ici : ils se déduisent de l'identifiant
-   * (`NUXT_WITHINGS_CLIENT_ID`, voir server/utils/connecteurs.ts). Les écrire à la
-   * main dans chaque fiche, c'était une occasion de faute de frappe par marque, et
-   * une raison de plus de toucher ce fichier en ajoutant un connecteur.
-   */
-  identifiants: boolean
+    /**
+     * `true` = la marque veut une application déclarée chez elle, donc un identifiant et
+     * un secret — posés soit dans l'application, soit chez l'hébergeur. C'est le cas de
+     * toutes celles connues aujourd'hui ; le champ existe pour une source qui n'en
+     * demanderait pas (un import de fichier, un service ouvert).
+     *
+     * On ne liste pas les NOMS des variables ici : ils se déduisent de l'identifiant
+     * (`NUXT_WITHINGS_CLIENT_ID`, voir server/utils/connecteurs.ts). Les écrire à la
+     * main dans chaque fiche, c'était une occasion de faute de frappe par marque, et une
+     * raison de plus de toucher ce fichier en ajoutant un connecteur.
+     */
+    identifiants: boolean
   /**
    * Où déclarer cette application. Affiché tel quel dans l'écran de configuration :
    * chercher soi-même « portail développeur <marque> » est la première marche, et la
@@ -75,16 +70,8 @@ export interface Provider {
  * recherche. Elle est faite, elle est datée, elle est écrite.
  */
 export const PROVIDERS: Provider[] = [
-  {
-    id: 'manual',
-    icone: '✍️',
-    label: 'À la main',
-    capabilities: ['poids', 'pas'],
-    identifiants: false,
-    note: 'Saisie du poids et des pas à la main. Aucun objet connecté nécessaire.',
-  },
-  {
-    id: 'withings',
+    {
+      id: 'withings',
     icone: '⚖️',
     label: 'Withings',
     capabilities: ['poids', 'pas', 'composition'],

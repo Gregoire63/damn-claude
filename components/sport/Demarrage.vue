@@ -342,7 +342,7 @@ async function charger() {
           <template v-else-if="e.id === 'capteurs'">
             <p class="dem-p">
               Une balance ou une montre connectée remplit le poids et les pas
-              automatiquement. La saisie manuelle reste disponible.
+                            automatiquement.
             </p>
             <SportSources compact @flash="relayer" />
             <button class="btn btn-bloc" @click="d.passer('capteurs'); suivante('capteurs')">

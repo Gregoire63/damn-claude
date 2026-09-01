@@ -20,25 +20,25 @@ import {
 const TOUT = ['withings', 'fitbit']
 
 describe('ce que l’instance propose', () => {
-  it('la saisie manuelle est toujours là, sans rien à configurer', () => {
-    // C'est le seul fournisseur qui marche partout, et donc le seul qui garantisse
-    // qu'une instance fraîchement déployée soit utilisable.
-    const sansRien = availableProviders([])
-    expect(sansRien.map(p => p.id)).toEqual(['manual'])
-    expect(providerById('manual')!.identifiants).toBe(false)
-  })
+  it('ne propose RIEN sur une instance fraîchement déployée', () => {
+      // Et c'est correct : sans identifiants, aucune marque n'est branchable. L'écran le
+      // dit et rappelle que le poids se note à la main dans Rapport — la saisie manuelle
+      // n'est pas une fiche de cette liste, qui ne répond qu'à « que puis-je brancher ».
+      expect(availableProviders([])).toEqual([])
+      expect(providerById('manual'), 'la saisie à la main n’est pas un fournisseur').toBeNull()
+    })
 
   it('une marque non configurée ne produit aucun bouton', () => {
-    // Le serveur ne met une marque dans la liste que s'il a l'identifiant ET le
-    // secret (voir server/utils/connecteurs.ts) : le cas « à moitié configuré » — une
-    // variable oubliée, un formulaire à demi rempli — n'arrive donc jamais jusqu'ici.
-    expect(availableProviders([]).map(p => p.id)).toEqual(['manual'])
-    expect(availableProviders(['withings']).map(p => p.id)).toEqual(['manual', 'withings'])
-  })
+      // Le serveur ne met une marque dans la liste que s'il a l'identifiant ET le secret
+      // (voir server/utils/connecteurs.ts) : le cas « à moitié configuré » — une variable
+      // oubliée, un formulaire à demi rempli — n'arrive donc jamais jusqu'ici.
+      expect(availableProviders([]).map(p => p.id)).toEqual([])
+      expect(availableProviders(['withings']).map(p => p.id)).toEqual(['withings'])
+    })
 
-  it('tout configuré donne manuel, Withings et Fitbit — jamais Garmin', () => {
-    expect(availableProviders(TOUT).map(p => p.id)).toEqual(['manual', 'withings', 'fitbit'])
-  })
+  it('tout configuré donne Withings et Fitbit — jamais Garmin', () => {
+      expect(availableProviders(TOUT).map(p => p.id)).toEqual(['withings', 'fitbit'])
+    })
 
   /**
    * Garmin est dans la liste alors qu'il ne marche pas. Sans la fiche, la question

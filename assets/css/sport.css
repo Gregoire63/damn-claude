@@ -443,15 +443,6 @@ input::-webkit-outer-spin-button, input::-webkit-inner-spin-button { -webkit-app
 .ex-opt { opacity: 0.72; }
 .ex-opt:hover, .ex-opt:focus-within { opacity: 1; }
 .ex-opt-tag { margin-left: 7px; font-size: 9.5px; text-transform: uppercase; letter-spacing: 0.07em; color: var(--text-muted); border: 1px solid var(--bg-accent); border-radius: 6px; padding: 1px 5px; vertical-align: middle; white-space: nowrap; }
-/* ─── Sources de poids et de pas ──────────────────────────────────────────── */
-/* La saisie à la main d'abord, la marque ensuite : c'est l'ordre d'importance réel,
-   et l'inverse de ce que faisait l'écran avant. */
-.src-manual { display: flex; flex-direction: column; gap: 12px; }
-.src-field { display: flex; flex-direction: column; gap: 5px; }
-.src-lab { font-size: 11px; text-transform: uppercase; letter-spacing: 0.07em; color: var(--text-muted); }
-.src-row { display: flex; gap: 8px; align-items: center; }
-.src-row input { flex: 1; width: auto; text-align: left; padding-inline: 12px; }
-.src-cur { font-size: 11.5px; line-height: 1.45; }
 /* ─── La liste des connecteurs ────────────────────────────────────────────── */
 /* Une seule liste pour deux écrans : le parcours d'installation la montre à plat
    (la marque, ce qu'elle apporte, un bouton), les réglages la déplient. Deux jeux
@@ -931,7 +922,6 @@ button.conn-row { cursor: pointer; }
    sans rien saisir. `opacity: 1` parce que Firefox en applique une par défaut, qui
    troublerait la couleur choisie. */
 .field input::placeholder,
-.src-row input::placeholder,
 .note-input::placeholder { color: var(--text-muted); font-weight: 400; opacity: 1; }
 /* Selects : flèche personnalisée, coins arrondis, focus net (plus de style natif) */
 .field select, .select {

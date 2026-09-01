@@ -17,7 +17,6 @@ import Sources from '../../components/sport/Sources.vue'
 
 const SOURCES = {
   disponibles: [
-    { id: 'manual', label: 'À la main', icone: '✍️', capabilities: ['poids', 'pas'], note: '', console: '' },
     { id: 'withings', label: 'Withings', icone: '⚖️', capabilities: ['poids'], note: 'Balances.', console: 'https://developer.withings.com/' },
   ],
   indisponibles: [
@@ -44,10 +43,10 @@ describe('la liste compacte, dans le parcours d’installation', () => {
     await attendre(); await attendre()
 
     const lignes = w.findAll('.conn > li')
-    expect(lignes).toHaveLength(4)
+        expect(lignes).toHaveLength(3)
     for (const li of lignes) {
       const texte = li.text()
-      const geste = li.find('button').exists() || /par défaut|connecté/.test(texte)
+      const geste = li.find('button').exists() || /connecté/.test(texte)
       expect(geste, `aucun geste possible sur « ${texte.slice(0, 40)} »`).toBe(true)
     }
     w.unmount()
