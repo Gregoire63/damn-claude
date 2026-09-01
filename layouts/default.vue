@@ -21,6 +21,7 @@ import { useDemarrage } from '~/composables/useDemarrage'
 import { useSnapshot } from '~/composables/useSnapshot'
 import { useWorkout } from '~/composables/useWorkout'
 import { useBackGuard } from '~/composables/useBackGuard'
+import { decalageGlissement, poserSens, useGlissement } from '~/composables/useGlissement'
 import Popup from '~/components/Popup.vue'
 import '~/assets/css/sport.css'
 import '~/assets/css/nutrition.css'
@@ -54,11 +55,14 @@ useHead({
 
 const route = useRoute()
 const router = useRouter()
+
 const TABS = ONGLETS
 const pageTitle = computed(() => titreDe(route.path))
 const { flash, flashTon, showFlash } = useFlash()
 // Le parcours d'installation : tant qu'il reste une étape, il occupe l'écran seul.
 const demarrage = useDemarrage()
+
+
 const { todayISO, hydrateJour } = useJour()
 const { sessionLog, seedDemo } = useWorkout()
 const { hydrate: hydrateProfile } = useProfile()
@@ -80,6 +84,38 @@ const {
   overloadHint, isDumbbell, seanceWeight, lestOf, setLest, totalOf, derniere,
   ratioFor, restLeft, restFmt, addRest, stopRest,
 } = s
+
+/**
+ * Le glissement latéral change d'onglet.
+ *
+ * Neutralisé dans trois cas, et chacun a coûté un essai :
+ *
+ *   · pendant le parcours d'installation — il n'y a rien à côté, et un geste qui ne
+ *     fait rien se lit comme une panne ;
+ *   · quand la feuille de séance est ouverte — elle se glisse VERTICALEMENT et vit
+ *     dans la même coque ; changer d'onglet dessous reviendrait à échanger le décor
+ *     pendant qu'on joue la scène ;
+ *   · quand un aperçu de séance est posé par-dessus, pour la même raison.
+ *
+ * Les fenêtres et les feuilles du bas, elles, passent par `useOverlay` et sont
+ * couvertes par le composable lui-même.
+ *
+ * `router.push` et non `replace` : le retour du téléphone doit défaire un changement
+ * d'onglet comme il défait un tap.
+ */
+const glisse = useGlissement(
+  chemin => router.push(chemin),
+  () => demarrage.fini.value && !sheetVisible.value && !previewSession.value,
+)
+
+/**
+ * Le sens de l'animation, même quand la navigation ne vient pas d'un geste.
+ *
+ * Sans ça, toucher « Profil » depuis « Accueil » rejouait le sens du dernier
+ * glissement : l'écran partait à droite pour arriver de gauche, et on voyait que
+ * quelque chose clochait sans pouvoir dire quoi.
+ */
+router.beforeEach((to, from) => { poserSens(from.path, to.path) })
 
 
 /**
@@ -298,7 +334,23 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div class="sport-app" :class="{ 'has-bottomnav': demarrage.fini.value, 'has-minibar': demarrage.fini.value && activeSession && !sheetOpen && !sheetClosing }">
+    <!--
+      Le geste est écouté sur la COQUE, pas sur l'écran de l'onglet.
+  
+      Sur l'onglet, il cessait de répondre juste après un changement : le temps de la
+      transition, l'écran sortant est parti et l'entrant n'est pas là — le doigt tombait
+      alors dans le vide, en dehors de l'élément qui écoute. Même effet sur un écran
+      court, dont la moitié basse n'appartient à personne. La coque, elle, fait toujours
+      la hauteur de la fenêtre.
+    -->
+    <div
+      class="sport-app"
+      :class="{ 'has-bottomnav': demarrage.fini.value, 'has-minibar': demarrage.fini.value && activeSession && !sheetOpen && !sheetClosing }"
+      @touchstart.passive="glisse.debut"
+      @touchmove.passive="glisse.bouge"
+      @touchend.passive="glisse.fin"
+      @touchcancel.passive="glisse.fin"
+    >
     <header class="sport-header" :class="{ 'titre-replie': titreReplie }">
       <div class="header-top">
         <button class="brand" @click="router.push('/')">
@@ -363,7 +415,22 @@ onUnmounted(() => {
     <ClientOnly>
       <SportDemarrage v-if="!demarrage.fini.value" @flash="showFlash" />
     </ClientOnly>
-    <slot v-if="demarrage.fini.value" />
+        <!--
+          L'écran d'un onglet, et le geste qui en change.
+    
+          Le `transform` n'est posé QUE pendant le glissement, jamais au repos : un
+          élément transformé devient le bloc conteneur de ses descendants `position:
+          fixed` et déplace le calcul des `sticky`. Au repos, `:style` rend `undefined`
+          et l'attribut disparaît — l'en-tête collant et les barres internes retrouvent
+          la fenêtre pour référence.
+        -->
+            <div
+              v-if="demarrage.fini.value"
+              class="onglet-glisse"
+              :style="decalageGlissement ? { transform: `translate3d(${decalageGlissement}px,0,0)` } : undefined"
+            >
+              <slot />
+            </div>
 
     <!-- ═══════════ SÉANCE (vraie feuille : monte, descend, glissable au doigt) ═══════════ -->
     <!-- Voile : l'onglet reste rendu derrière ; on le voit quand on descend la feuille -->

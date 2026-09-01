@@ -1,4 +1,4 @@
-import { onMounted, onUnmounted } from 'vue'
+import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { pushBack } from './useBackStack'
 import { useScrollLock } from './useScrollLock'
 
@@ -34,6 +34,16 @@ import { useScrollLock } from './useScrollLock'
 const stack: symbol[] = []
 
 /**
+ * Y a-t-il un calque ouvert ?
+ *
+ * Exporté pour les gestes de la coque : un glissement latéral change d'onglet, ce qui
+ * n'a aucun sens pendant qu'une feuille est ouverte — on changerait l'écran SOUS elle.
+ * Un compteur réactif plutôt que `stack.length` : un tableau nu ne réveille pas Vue.
+ */
+const ouverts = ref(0)
+export const calqueOuvert = computed(() => ouverts.value > 0)
+
+/**
  * Arme un calque : verrou de défilement, place dans la pile, sortie au clavier.
  *
  * @param close Ce que « fermer » veut dire pour ce calque-là. Appelé uniquement si
@@ -54,8 +64,9 @@ export function useOverlay(close: () => void) {
   let releaseBack: (() => void) | null = null
 
   onMounted(() => {
-    lock()
-    stack.push(id)
+        lock()
+        stack.push(id)
+        ouverts.value = stack.length
     // Le retour du téléphone ferme ce calque au lieu de quitter l'application.
     // Inscrit ici, donc VRAI POUR TOUS : chaque feuille et chaque fenêtre passe par
     // `useOverlay`, il n'y a pas de calque à qui on aurait pu oublier de le donner.
@@ -71,8 +82,9 @@ export function useOverlay(close: () => void) {
     releaseBack = null
     // `lastIndexOf` et non `indexOf` : deux calques peuvent naître dans le même tick,
     // et c'est la place la plus récente qui est la nôtre.
-    const i = stack.lastIndexOf(id)
-    if (i >= 0) stack.splice(i, 1)
+        const i = stack.lastIndexOf(id)
+        if (i >= 0) stack.splice(i, 1)
+        ouverts.value = stack.length
     window.removeEventListener('keydown', onKey)
   })
 }

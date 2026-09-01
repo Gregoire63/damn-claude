@@ -1,4 +1,7 @@
 <script setup lang="ts">
+import { computed } from 'vue'
+import { sensNavigation } from '~/composables/useGlissement'
+
 // Trois niveaux, et chacun a une raison d'être.
 //
 //   app.vue        les jetons de design et la racine — ne change jamais
@@ -12,12 +15,25 @@
 //
 // <NuxtLayout> n'est pas décoratif : sans lui, <NuxtPage> se monte seul et la coque
 // n'existe pas — plus d'en-tête, plus de barre d'onglets, plus de feuille.
+//
+// La transition part du côté d'où l'on vient : vers la droite dans la barre, l'écran
+// entre par la droite. C'est ce qui fait qu'un changement d'onglet se lit comme un
+// déplacement et non comme un remplacement — et c'est aussi ce que le glissement au
+// doigt promet pendant qu'on le fait.
+//
+// `out-in` : l'écran sortant part AVANT que l'entrant arrive. Les deux à la fois
+// demanderaient de les positionner en absolu le temps de l'animation, ce qui casse la
+// hauteur de la page et fait sauter le défilement d'un onglet long.
+const transition = computed(() => ({
+  name: `page-${sensNavigation.value}`,
+  mode: 'out-in' as const,
+}))
 </script>
 
 <template>
-  <NuxtLayout>
-    <NuxtPage />
-  </NuxtLayout>
+    <NuxtLayout>
+      <NuxtPage :transition="transition" />
+    </NuxtLayout>
 </template>
 
 <style>

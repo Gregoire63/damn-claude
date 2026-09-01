@@ -118,12 +118,18 @@ const { soundEnabled, soundVolume, soundType, testSound, SOUND_OPTIONS, vibratio
  * Il n'en reste qu'une phrase, affichée UNIQUEMENT quand le navigateur refuse ou n'a
  * pas encore accordé la permission. Quand tout va bien, il n'y a rien à dire.
  */
-const AVERTISSEMENT_NOTIF: Record<string, string> = {
-  denied: 'Notifications bloquées par le navigateur : rien n’arrivera au poignet.',
-  default: 'Touche « Tester » une fois pour autoriser les notifications.',
-  unsupported: 'Ce navigateur ne sait pas envoyer de notification.',
-}
-const avertissementNotif = computed(() => AVERTISSEMENT_NOTIF[watchStatus.value] ?? '')
+/**
+ * On ne dit RIEN tant que rien n'est cassé.
+ *
+ * Il y avait « Touche Tester une fois pour autoriser les notifications » : une phrase
+ * qui demandait d'appuyer sur le bouton juste au-dessus, alors qu'appuyer dessus est
+ * précisément ce qui déclenche la demande. Elle n'apprenait rien et occupait une ligne
+ * sur un écran qu'on parcourt.
+ *
+ * Reste le seul cas où la personne ne peut PAS s'en sortir toute seule : le navigateur
+ * a refusé, et aucun bouton de cette application ne le fera revenir dessus.
+ */
+const notifsBloquees = computed(() => watchStatus.value === 'denied')
 const volPct = computed({
   get: () => Math.round(soundVolume.value * 100),
   set: (v: number) => { soundVolume.value = Math.min(1, Math.max(0, (Number(v) || 0) / 100)) },
@@ -319,7 +325,9 @@ function onYear(ev: Event) { setBirthYear(parseInt((ev.target as HTMLInputElemen
                   <!-- Rien sur la notification quand elle fonctionne : elle part avec le son et la
                        vibration, et le bouton « Tester » les envoie tous les trois. On ne parle que
                        du cas où le navigateur l'empêche. -->
-                  <div v-if="avertissementNotif" class="muted mt-6 export-warn">{{ avertissementNotif }}</div>
+                        <div v-if="notifsBloquees" class="muted mt-6 export-warn">
+                          Notifications bloquées par le navigateur : rien n'arrivera au poignet.
+                        </div>
                 </div>
 
     <!-- Appareils : la balance se branche ici, avec la montre. C'est un réglage

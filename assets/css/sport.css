@@ -839,7 +839,44 @@ button.conn-row { cursor: pointer; }
 }
 
 /* Progrès — sous-navigation entre corps, séances et exercices */
-.rp-nav { position: sticky; top: 0; z-index: 5; background: var(--bg-primary); padding: 4px 0; }
+/* ─── Le changement d'onglet ──────────────────────────────────────────────── */
+/*
+ * Un déplacement, pas un remplacement : l'écran sortant s'en va du côté vers lequel
+ * on navigue, l'entrant arrive du côté opposé.
+ *
+ * Court, et asymétrique : 130 ms pour partir, 190 ms pour arriver. Une sortie lente
+ * fait attendre devant un écran qu'on a déjà quitté ; une arrivée trop rapide donne
+ * l'impression d'un saut. Les distances sont petites (24 px) parce qu'un écran qui
+ * traverse toute la largeur se lit comme un carrousel — or l'onglet d'à côté n'a pas
+ * été rendu, il n'y a rien à faire glisser réellement.
+ *
+ * `prefers-reduced-motion` supprime le déplacement et garde le fondu : l'information
+ * « l'écran a changé » reste, le mouvement qui donne le vertige part.
+ */
+.page-gauche-enter-active, .page-droite-enter-active { transition: opacity 0.19s var(--ease-out), transform 0.19s var(--ease-out); }
+.page-gauche-leave-active, .page-droite-leave-active { transition: opacity 0.13s ease-in, transform 0.13s ease-in; }
+.page-gauche-enter-from { opacity: 0; transform: translate3d(24px, 0, 0); }
+.page-gauche-leave-to { opacity: 0; transform: translate3d(-16px, 0, 0); }
+.page-droite-enter-from { opacity: 0; transform: translate3d(-24px, 0, 0); }
+.page-droite-leave-to { opacity: 0; transform: translate3d(16px, 0, 0); }
+
+/* Le retour tactile pendant le geste : l'écran suit le doigt, amorti. Il n'a PAS de
+   transition quand le doigt le déplace — sinon le mouvement traîne d'un cran derrière
+   — mais il en retrouve une pour revenir en place quand on relâche sans aller au bout. */
+.onglet-glisse { transition: transform 0.24s var(--ease-out); }
+
+@media (prefers-reduced-motion: reduce) {
+  .page-gauche-enter-from, .page-gauche-leave-to,
+  .page-droite-enter-from, .page-droite-leave-to { transform: none; }
+  .onglet-glisse { transition: none; }
+}
+
+/* ─── La navigation À L'INTÉRIEUR d'un onglet ─────────────────────────────── */
+/* Trois écrans en avaient trois versions : des boutons pleins dans Progression, une
+   rangée de boutons dans Plats, des pastilles dans « Séries par muscle ». Le même
+   geste doit avoir la même forme partout, sinon chaque écran se réapprend.
+   Elle colle en haut : on change de vue en gardant sa place dans la liste. */
+.onglets-int { position: sticky; top: 0; z-index: 5; background: var(--bg-page); padding: 4px 0; }
 
 /* Rapport *//* Rapport *//* Rapport */
 .stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
@@ -863,9 +900,7 @@ button.conn-row { cursor: pointer; }
 .mv-count.ok { color: #3f7a4f; }
 .mv-count.high { color: #a97b1e; font-weight: 700; }
 /* Bascule Semaine / Depuis le début */
-.mv-toggle { display: flex; gap: 4px; }
-.mv-tab { background: var(--bg-secondary); border: 1px solid var(--bg-accent); color: var(--text-muted); border-radius: 8px; padding: 5px 10px; font-family: var(--font-body); font-size: 12px; cursor: pointer; }
-.mv-tab.active { background: var(--accent-primary); border-color: transparent; color: #fff; font-weight: 600; }
+
 .rec-list { display: flex; flex-direction: column; }
 .rec-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid var(--bg-secondary); font-size: 14px; }
 .rec-row:last-child { border-bottom: none; }
@@ -1021,6 +1056,8 @@ button.conn-row { cursor: pointer; }
   background: var(--bg-primary); color: var(--text-primary); font-weight: 600;
   box-shadow: 0 1px 3px rgba(42, 40, 38, 0.13), 0 0 0 0.5px rgba(42, 40, 38, 0.05);
 }
+/* Posé dans l'en-tête d'une carte, à côté d'un titre : même dessin, moins de place. */
+.segmente-mini > button { padding: 5px 9px; font-size: 12px; }
 .profil-summary { display: flex; flex-wrap: wrap; gap: 8px 16px; margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--bg-secondary); }
 .ps-item { font-size: 13px; color: var(--text-secondary); }
 .ps-item b { color: var(--text-primary); }
