@@ -199,7 +199,7 @@ export function phraseBilan(b: BilanRestauration): string {
     b.journal ? `${b.journal} séance${b.journal > 1 ? 's' : ''} au journal` : null,
     b.pesees ? `${b.pesees} pesée${b.pesees > 1 ? 's' : ''}` : null,
   ].filter(Boolean)
-  if (!bouts.length) return 'Importé — mais la sauvegarde ne contenait rien de reconnaissable.'
-  const rebase = b.rebase ? ' Programme et catalogue d\'origine rétablis depuis l\'exemple.' : ''
-  return `Importé ✓ — ${bouts.join(', ')}.${rebase}`
+  if (!bouts.length) return 'Import terminé : aucune donnée exploitable dans le fichier.'
+  const rebase = b.rebase ? ' Programme et catalogue rétablis depuis l\'exemple.' : ''
+    return `Import réussi ✓ — ${bouts.join(', ')}.${rebase}`
 }

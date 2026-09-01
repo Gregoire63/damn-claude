@@ -312,7 +312,7 @@ onUnmounted(() => {
           marque sur un écran étroit.
         -->
         <span class="header-txt">
-          <span class="brand-eyebrow">Damn Claude · Recomp</span>
+          <span class="brand-eyebrow">Damn Claude</span>
           <span class="header-titre">{{ pageTitle }}</span>
         </span>
       </div>
@@ -423,14 +423,14 @@ onUnmounted(() => {
           <div v-if="openEx === e.id" class="ex-body">
             <LazySportExerciseMove :ex-id="e.id"><LazySportMuscleMap :muscles="e.muscles" /></LazySportExerciseMove>
             <div v-if="e.bodyweight" class="hint-pill bw">
-              🧍 Tape seulement le <strong>lest</strong> — vide si tu es à vide.
-              <template v-if="seanceWeight">Ton poids du jour ({{ seanceWeight }} kg) est ajouté tout seul&nbsp;;</template>
+              🧍 Saisis uniquement le <strong>lest</strong> ; laisse vide sans lest.
+              <template v-if="seanceWeight">Ton poids du jour ({{ seanceWeight }} kg) est ajouté automatiquement&nbsp;;</template>
               <template v-else>Aucune pesée pour ce jour : le total sera ce que tu tapes&nbsp;;</template>
-              c'est le total qui est enregistré, il s'affiche sous le champ.
+              le total enregistré s'affiche sous le champ.
             </div>
             <div v-if="overloadHint(e)" class="hint-pill" :class="overloadHint(e)!.cls">{{ overloadHint(e)!.text }}</div>
             <div v-if="previousNote(e.id)" class="hint-pill note">💬 La dernière fois : {{ previousNote(e.id) }}</div>
-            <div v-if="isDumbbell(e)" class="hint-pill db">🏋️ Note le poids <strong>total des 2 haltères</strong> (ex. 2 × 20 kg → 40 kg), pas un seul.</div>
+            <div v-if="isDumbbell(e)" class="hint-pill db">🏋️ Saisis le poids <strong>total des deux haltères</strong> (2 × 20 kg → 40 kg).</div>
             <!-- Les deux gestes « ça ne s'est pas passé comme prévu », côte à côte
                  et sans texte. Ils occupaient dix lignes d'explication chacun, à deux
                  endroits opposés de la carte, pour deux boutons qu'on touche une fois
@@ -452,7 +452,7 @@ onUnmounted(() => {
               </button>
               <button
                 class="ex-act" :class="{ sel: draftSwap[e.id] }"
-                :aria-label="`J'ai repris le mouvement en main sur ${e.name}`"
+                :aria-label="`Reprise en main sur ${e.name}`"
                 :aria-pressed="!!draftSwap[e.id]"
                 @click="swapAsk = e.id"
               >
@@ -629,7 +629,7 @@ onUnmounted(() => {
                 <button class="add-set" @click="addSprintRow('echauffement')">+ Échauffement</button>
                 <button class="add-set" @click="addSprintRow('sprint')">+ Sprint</button>
               </div>
-              <div class="muted sprint-hint">Ex : Échauff. 1 × 3 min @ 8 km/h, puis Sprint 3 × 20 s @ 16 km/h. Enregistré avec la séance.</div>
+              <div class="muted sprint-hint">Exemple : échauffement 1 × 3 min à 8 km/h, puis 3 × 20 s à 16 km/h. Enregistré avec la séance.</div>
             </div>
           </div>
         </div>
@@ -643,10 +643,10 @@ onUnmounted(() => {
         <div class="card note-card">
           <div class="section-label mb-8">Note de séance <span class="muted">· facultatif</span></div>
           <textarea v-model="sessionNote" class="note-input" rows="2" placeholder="Douleur épaule, mal dormi, banc occupé…"></textarea>
-          <div class="muted mt-6">C'est ce qui expliquera une séance en dessous quand tu la reliras dans un mois.</div>
+          <div class="muted mt-6">Utile pour expliquer une séance en dessous de tes standards.</div>
         </div>
         <button class="btn-primary finish" :disabled="!finishReady" @click="finishSession">{{ editingRecord ? 'Enregistrer les modifications' : 'Terminer et enregistrer la séance' }}</button>
-        <div v-if="!finishReady && activeSession" class="finish-hint muted">Termine au moins 80 % des exercices pour enregistrer — {{ finishedCount }}/{{ requiredEx.length }} faits.</div>
+        <div v-if="!finishReady && activeSession" class="finish-hint muted">80 % des exercices sont nécessaires pour enregistrer — {{ finishedCount }}/{{ requiredEx.length }} faits.</div>
           </div>
         </div>
       </div>
@@ -661,7 +661,7 @@ onUnmounted(() => {
           </div>
           <button class="sheet-close" aria-label="Fermer" @click="previewSession = null">×</button>
         </div>
-        <div class="preview-note">🔒 Une séance est déjà en cours. Termine-la ou abandonne-la pour démarrer celle-ci.</div>
+        <div class="preview-note">🔒 Une séance est déjà en cours. Termine-la ou abandonne-la d'abord.</div>
         <div class="preview-list">
           <div v-for="(e, idx) in previewSession.exercises" :key="e.id" class="preview-ex" :class="{ 'ex-opt': e.optionnel }">
             <div class="preview-ex-head">
@@ -677,7 +677,7 @@ onUnmounted(() => {
             <div class="preview-ex-head"><span class="preview-ex-name">⚡ {{ previewSession.sprint.title }}</span></div>
           </div>
         </div>
-        <button class="btn-primary preview-resume" @click="previewSession = null; expandSession()">↩ Reprendre ma séance en cours</button>
+        <button class="btn-primary preview-resume" @click="previewSession = null; expandSession()">↩ Reprendre la séance en cours</button>
       </div>
     </div>
 
@@ -710,15 +710,14 @@ onUnmounted(() => {
               records et progression reprennent leur fil.
             </template>
             <template v-else>
-              À cocher quand tu as <b>volontairement baissé la charge</b> pour mieux exécuter
-              — après une pause, une douleur, ou pour corriger une technique.
+              À cocher après une <b>baisse volontaire de charge</b> : reprise, douleur ou
+                            correction technique.
               <br><br>
               Sur <b>{{ swapEx.name }}</b>, records et progression <b>repartent de cette séance</b> :
-              la charge du jour n’est pas comparable aux précédentes, et la courbe ne
-              lira pas cette baisse comme une régression.
+                            la baisse ne sera pas lue comme une régression.
               <br><br>
-              Si c’est simplement la machine qui était prise, utilise plutôt 🔁 — ta
-              progression reste alors continue, convertie par le coefficient.
+              Si la machine était simplement occupée, utilise 🔁 : la progression reste
+                              continue, convertie par le coefficient.
             </template>
           </div>
           <div class="confirm-actions">
@@ -757,8 +756,7 @@ onUnmounted(() => {
         placeholder="Machine occupée, épaule qui tire, prise changée…"
       ></textarea>
       <p class="muted">
-        C'est ce que tu reliras <b>la prochaine fois</b>, en haut de cet exercice, au
-        moment de recharger la barre — pas trois semaines plus tard en bas d'une séance.
+        Cette note s'affichera <b>à la prochaine séance</b>, en haut de cet exercice.
       </p>
       <div class="nav-row">
         <button v-if="draftNote[notingEx.id]?.trim()" class="btn flex-1" @click="clearNote(notingEx.id)">Effacer</button>

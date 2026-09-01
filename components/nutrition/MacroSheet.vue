@@ -43,16 +43,12 @@ const TONE_LABEL = { ok: 'dans la cible', low: 'il en manque', high: 'au-dessus'
         </div>
 
         <p class="nu-note">
-          Protéines et lipides sont des <b>planchers</b>, calculés sur ton poids : l'un
-          protège le muscle, l'autre l'équilibre hormonal, et aucun des deux ne se
-          négocie quand les calories baissent. Les glucides prennent ce qui reste —
-          c'est la variable d'ajustement, et c'est pour ça que le plan ne retire jamais
-          que des féculents.
+          Protéines et lipides sont des <b>planchers</b> calculés sur ton poids : ils ne
+                    baissent pas quand les calories baissent. Les glucides absorbent l'ajustement.
         </p>
         <p class="muted ms-caveat">
-          Les tables de composition se trompent couramment de 10 % : un écart de quelques
-          grammes n'est pas un signal. Seuls les écarts francs, répétés plusieurs jours,
-          valent qu'on change quelque chose.
+          Les tables de composition ont une marge d'environ 10 % : seuls des écarts nets,
+                  répétés plusieurs jours, méritent un ajustement.
         </p>
     </template>
   </Sheet>

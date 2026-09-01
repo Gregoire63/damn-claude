@@ -16,10 +16,10 @@ import { readCredentials, removeCredential } from '../../utils/vault'
 export default defineEventHandler(async (event) => {
   requireSession(event)
   const { id } = await readBody<{ id?: string }>(event) ?? {}
-  if (!id) throw createError({ statusCode: 400, statusMessage: 'Quel passkey ?' })
+  if (!id) throw createError({ statusCode: 400, statusMessage: 'Clé d\'accès non précisée' })
 
   if (!(await removeCredential(String(id)))) {
-    throw createError({ statusCode: 409, statusMessage: 'Impossible : c\'est le dernier passkey, ou il n\'existe pas' })
+    throw createError({ statusCode: 409, statusMessage: 'Impossible : dernière clé d\'accès, ou clé inexistante' })
   }
   return { ok: true, passkeys: (await readCredentials()).length }
 })

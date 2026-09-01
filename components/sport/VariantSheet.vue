@@ -104,7 +104,7 @@ function ratioLabel(r: Row): string {
        la feuille qui défile. Voir components/Popup.vue. -->
   <Popup
     popup-class="variant-popup"
-    title="Je ne peux pas le faire ici"
+    title="Remplacer cet exercice"
     :subtitle="`${ex.name} · ${rows.length} façons de travailler les mêmes muscles`"
     @close="emit('close')"
   >
@@ -146,22 +146,20 @@ function ratioLabel(r: Row): string {
       </div>
 
       <p class="muted vr-foot">
-        📷 Le dessin donne la silhouette du matériel. Touche-le pour <b>photographier la
-        machine de ta salle</b> : la photo remplace le dessin partout, et c'est celle-là
-        qui te la fera reconnaître dans l'allée. Elle reste sur ton téléphone.
+        📷 Le dessin donne la silhouette du matériel. Touche-le pour le remplacer par une
+                <b>photo de la machine de ta salle</b>. La photo reste sur cet appareil.
       </p>
 
       <!-- Dire ce que le choix fait, et ce qu'il ne fait pas. -->
       <p class="muted vr-foot">
-        La charge affichée est celle à mettre <b>sur cette machine-là</b>. Ta courbe et
-        ton prochain palier restent calculés en équivalent «&nbsp;{{ ex.name }}&nbsp;»,
-        donc ils ne se coupent pas. Les <b>records</b>, eux, restent par machine : un
-        record est un poids qu'on a vraiment soulevé, jamais une conversion.
+        La charge affichée est celle <b>de cette machine</b>. Courbe et paliers restent
+                calculés en équivalent «&nbsp;{{ ex.name }}&nbsp;» pour rester continus ; les
+                <b>records</b> sont conservés par machine.
       </p>
       <p class="muted vr-foot">
-        Les coefficients marqués <b>estimé</b> sont des ordres de grandeur. Dès que tu
-        auras fait les deux mouvements dans les mêmes semaines, ils seront remplacés par
-        <b>ton</b> rapport réel, calculé sur tes 1RM estimés.
+        Les coefficients marqués <b>estimé</b> sont des ordres de grandeur. Ils seront
+                remplacés par ton rapport réel dès que les deux mouvements auront été faits dans
+                les mêmes semaines.
       </p>
     </template>
   </Popup>

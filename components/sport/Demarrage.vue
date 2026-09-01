@@ -90,7 +90,7 @@ function poserPoids(v: string) {
   // `String(...)` d'abord : Vue convertit tout seul la valeur d'un `<input
   // type="number">`, et `.replace` sur un nombre casse la fonction entière.
   const kg = parseFloat(String(v).replace(',', '.'))
-  if (!kg || kg < 25 || kg > 350) { emit('flash', 'Un poids entre 25 et 350 kg', 'echec'); return }
+  if (!kg || kg < 25 || kg > 350) { emit('flash', 'Poids invalide : entre 25 et 350 kg', 'echec'); return }
   addBodyWeight(kg)
 }
 
@@ -143,11 +143,11 @@ async function poserPasskey() {
   echecPasskey.value = ''
   if (await v.register(codeDemarrage.value.trim(), profile.value.prenom || '')) {
     codeDemarrage.value = ''
-    emit('flash', 'Passkey posé ✓ — le code de démarrage est consommé')
+    emit('flash', 'Clé d’accès créée ✓')
     void chargerSante()
   }
   else {
-    echecPasskey.value = v.error.value ?? 'Enregistrement refusé, sans plus de détail.'
+    echecPasskey.value = v.error.value ?? 'Enregistrement refusé.'
     emit('flash', echecPasskey.value, 'echec')
   }
 }
@@ -172,7 +172,7 @@ async function copierUrl() {
     copie.value = true
     setTimeout(() => { copie.value = false }, 2500)
   }
-  catch { emit('flash', 'Copie impossible — sélectionne l’adresse à la main', 'echec') }
+  catch { emit('flash', 'Copie impossible. Sélectionne l’adresse manuellement.', 'echec') }
 }
 
 // ─── 3. Connecteurs ──────────────────────────────────────────────────────────
@@ -204,7 +204,7 @@ async function copierPrompt() {
     copiePrompt.value = true
     setTimeout(() => { copiePrompt.value = false }, 2500)
   }
-  catch { emit('flash', 'Copie impossible — sélectionne le texte à la main', 'echec') }
+  catch { emit('flash', 'Copie impossible. Sélectionne le texte manuellement.', 'echec') }
 }
 
 const { chargerExemple } = useRestauration()
@@ -221,16 +221,14 @@ async function charger() {
 <template>
   <div class="stack">
     <div class="card dem-hero">
-      <h2 class="dem-t">{{ d.bloque.value ? 'Bienvenue' : 'Il reste deux ou trois choses' }}</h2>
+      <h2 class="dem-t">{{ d.bloque.value ? 'Configuration' : 'Presque prêt' }}</h2>
       <p class="dem-p">
         <template v-if="d.bloque.value">
-          Damn Claude ne livre aucune donnée : ni séances, ni aliments, ni menus. Tu ne
-          commences pas par effacer celles de quelqu'un d'autre.
+          Quelques réglages avant de commencer. Seul le profil est obligatoire.
         </template>
         <template v-else>
-          Encore {{ d.restantes.value.length }} étape<template v-if="d.restantes.value.length > 1">s</template>.
-          Chacune peut être passée — mais autant les regarder une fois, elles ne
-          reviendront pas te chercher.
+          Encore {{ d.restantes.value.length }} étape<template v-if="d.restantes.value.length > 1">s</template>,
+          toutes facultatives.
         </template>
       </p>
       <div class="dem-bar" :aria-label="`${d.progression.value} sur 4`">
@@ -253,12 +251,10 @@ async function charger() {
           <!-- 1. Toi -->
           <template v-if="e.id === 'toi'">
             <p class="dem-p">
-              Ces quatre valeurs décident du métabolisme de base, donc de toute la cible
-              calorique. Sans elles l'application affiche des tirets — c'est préférable à
-              un chiffre inventé.
+              Ces valeurs servent à calculer ta dépense énergétique et tes objectifs.
             </p>
             <label class="field"><span>Prénom</span>
-              <input :value="profile.prenom ?? ''" type="text" maxlength="40" placeholder="ex. Grégoire" autocomplete="given-name" @change="setPrenom(($event.target as HTMLInputElement).value)"></label>
+              <input :value="profile.prenom ?? ''" type="text" maxlength="40" placeholder="Prénom" autocomplete="given-name" @change="setPrenom(($event.target as HTMLInputElement).value)"></label>
             <div class="field">
               <span>Sexe</span>
               <div class="segmente" role="group">
@@ -274,7 +270,7 @@ async function charger() {
               <input :value="currentWeight ?? ''" type="number" inputmode="decimal" step="0.1" placeholder="ex. 78,4" @change="poserPoids(($event.target as HTMLInputElement).value)"></label>
 
             <p v-if="manqueProfil.length" class="dem-p dem-manque">
-              Il manque encore <b>{{ manqueProfil.join(', ') }}</b>.
+              Il manque <b>{{ manqueProfil.join(', ') }}</b>.
             </p>
             <button class="btn-primary btn-bloc" :disabled="manqueProfil.length > 0" @click="suivante('toi')">
               Continuer →
@@ -284,7 +280,7 @@ async function charger() {
           <!-- 2. Claude -->
           <template v-else-if="e.id === 'claude'">
             <div v-if="sante && manquantes.length" class="vt-warn">
-              <b>Le serveur n'est pas prêt.</b> Variables absentes chez ton hébergeur :
+              <b>Serveur incomplet.</b> Variables manquantes chez l'hébergeur :
               <b>{{ manquantes.join(', ') }}</b>.
             </div>
             <div v-else-if="sante && sante.store !== 'ok'" class="vt-warn">
@@ -293,23 +289,17 @@ async function charger() {
 
             <template v-if="!v.state.value.registered">
               <p class="dem-p">
-                Pose ton passkey : c'est lui qui ouvre le coffre que Claude lit. Le code de
-                démarrage est <b>fabriqué à chaque démarrage</b> et ne sert qu'une fois.
-                <template v-if="enLocal">
-                  En local, il est imprimé dans le terminal où tourne
-                  <b>npm run dev</b> — pas celui de Netlify.
-                </template>
-                <template v-else>
-                  Il est imprimé dans le journal du build : Netlify → Deploys → le dernier.
-                </template>
+                Ta clé d'accès protège les données que Claude peut lire. Pour la créer, saisis
+                le code de démarrage à usage unique
+                <template v-if="enLocal">affiché dans le terminal du serveur de développement.</template>
+                <template v-else>affiché dans le journal du dernier déploiement.</template>
               </p>
               <div v-if="enLocal" class="vt-warn">
-                <b>Tu es en local.</b> Un passkey est lié au domaine : celui de ton site en
-                ligne ne fonctionne pas ici, et le coffre local est vide. Il faut en poser
-                un <b>second</b>, propre à <b>{{ hote }}</b>.
+                Une clé d'accès est liée à un domaine : celle du site en ligne ne fonctionne
+                pas sur <b>{{ hote }}</b>. Il en faut une seconde, propre à cette adresse.
               </div>
               <label class="field"><span>Code de démarrage</span>
-                <input v-model="codeDemarrage" type="password" autocomplete="off" placeholder="ex. 4f2a9c1e8b7d0356"></label>
+                <input v-model="codeDemarrage" type="password" autocomplete="off" placeholder="16 caractères"></label>
               <!-- Bouton mort si le serveur ne peut pas répondre : sans NUXT_VAULT_SECRET,
                    la demande de défi rend un 500, et « 500 Server Error » n'apprend rien à
                    celui qui vient de taper son code. Mieux vaut ne pas proposer le geste. -->
@@ -317,43 +307,42 @@ async function charger() {
                 class="btn-primary btn-bloc"
                 :disabled="v.busy.value || !codeDemarrage.trim() || manquantes.length > 0"
                 @click="poserPasskey"
-              >🔐 Poser mon passkey</button>
+              >🔐 Créer une clé d'accès</button>
               <p v-if="manquantes.length" class="dem-p dem-manque">
-                Impossible tant que <b>{{ manquantes.join(', ') }}</b> {{ manquantes.length > 1 ? 'manquent' : 'manque' }} :
-                le serveur ne sait pas signer la demande.
+                Indisponible tant que <b>{{ manquantes.join(', ') }}</b>
+                {{ manquantes.length > 1 ? 'manquent' : 'manque' }}.
               </p>
               <p v-if="echecPasskey" class="vt-warn">
-                <b>Ça n'a pas marché.</b> {{ echecPasskey }}
+                <b>Échec.</b> {{ echecPasskey }}
               </p>
               <p class="dem-p">
-                Ton appareil va te demander ton visage, ton empreinte ou ton code de
-                déverrouillage. Le champ ci-dessus n'est pas ça — c'est le code du journal.
+                Ton appareil demandera ensuite ton empreinte, ton visage ou ton code de
+                déverrouillage.
               </p>
             </template>
             <template v-else>
-              <div class="vt-ok"><b>Passkey posé ✓</b> — le code de démarrage est consommé.</div>
+              <div class="vt-ok"><b>Clé d'accès créée ✓</b></div>
               <p class="dem-p">
-                Ajoute maintenant le connecteur dans Claude avec cette
-                adresse, puis l'identifiant et le secret MCP de tes variables d'hébergement.
+                Ajoute le connecteur dans Claude avec cette adresse, puis l'identifiant et le
+                secret MCP.
               </p>
               <pre class="dem-prompt mono">{{ urlConnecteur }}</pre>
               <button class="btn btn-bloc" @click="copierUrl">{{ copie ? 'Copié ✓' : '⧉ Copier l’adresse' }}</button>
               <p class="dem-p">
-                Pense au <b>passkey de secours</b> depuis ton ordinateur, dans Profil →
-                Connecteur : sans lui, perdre ce téléphone impose de redéployer pour rentrer.
+                Ajoute une <b>seconde clé d'accès</b> depuis un autre appareil, dans Profil →
+                Connecteur Claude. Sans elle, perdre celui-ci fait perdre l'accès.
               </p>
             </template>
             <button class="btn btn-bloc" @click="d.passer('claude'); suivante('claude')">
-              {{ v.state.value.registered ? 'Continuer →' : 'Plus tard, continuer' }}
+              {{ v.state.value.registered ? 'Continuer →' : 'Passer cette étape' }}
             </button>
           </template>
 
           <!-- 3. Connecteurs -->
           <template v-else-if="e.id === 'capteurs'">
             <p class="dem-p">
-              Une balance connectée remplit le poids et la composition toute seule, tous les
-              matins, sans y penser. Rien n'est obligatoire : à la main, tout fonctionne
-              pareil.
+              Une balance ou une montre connectée remplit le poids et les pas
+              automatiquement. La saisie manuelle reste disponible.
             </p>
             <SportSources compact @flash="relayer" />
             <button class="btn btn-bloc" @click="d.passer('capteurs'); suivante('capteurs')">
@@ -364,21 +353,20 @@ async function charger() {
           <!-- 4. Remplir -->
           <template v-else>
             <p class="dem-p">
-              Colle ce message à ton Claude : il te posera les questions et déposera ses
-              propositions ici. Rien ne s'écrit sans ta validation.
+              Colle ce message dans Claude. Il te posera les questions et déposera ses
+              propositions ici, à valider une par une.
             </p>
             <pre class="dem-prompt">{{ PROMPT }}</pre>
             <button class="btn btn-bloc" @click="copierPrompt">{{ copiePrompt ? 'Copié ✓' : '⧉ Copier le message' }}</button>
             <p class="dem-p mt-6">
-              Ou pars de l'exemple : quatre séances, cent cinquante-deux aliments,
-              trente-quatre recettes. Il arrive comme du contenu <b>personnel</b> — tu le
-              modifies, tu en retires ce que tu veux.
+              Ou charge l'exemple : 4 séances, 152 aliments et 34 recettes, modifiables et
+              supprimables.
             </p>
             <button class="btn btn-bloc" :disabled="enCours" @click="charger">
               {{ enCours ? 'Chargement…' : '↓ Charger l’exemple' }}
             </button>
             <button class="btn btn-bloc" @click="d.passer('remplir')">
-              Je remplirai plus tard — entrer dans l’application
+              Passer cette étape
             </button>
           </template>
         </div>

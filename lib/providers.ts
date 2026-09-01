@@ -81,7 +81,7 @@ export const PROVIDERS: Provider[] = [
     label: 'À la main',
     capabilities: ['poids', 'pas'],
     identifiants: false,
-    note: 'Aucun objet connecté. Tu saisis ton poids au réveil et tes pas si tu les connais — c\'est ce que faisaient les carnets, et ça suffit à tout calculer.',
+    note: 'Saisie du poids et des pas à la main. Aucun objet connecté nécessaire.',
   },
   {
     id: 'withings',
@@ -90,7 +90,7 @@ export const PROVIDERS: Provider[] = [
     capabilities: ['poids', 'pas', 'composition'],
     identifiants: true,
     console: 'https://developer.withings.com/dashboard/',
-    note: 'Balances Body / Body+ / Body Scan et montres ScanWatch. Donne aussi la masse grasse, maigre, hydrique et osseuse.',
+    note: 'Balances Body, Body+, Body Scan et montres ScanWatch. Poids, masse grasse, masse maigre, hydratation et masse osseuse.',
   },
   {
     id: 'fitbit',
@@ -99,7 +99,7 @@ export const PROVIDERS: Provider[] = [
     capabilities: ['poids', 'pas'],
     identifiants: true,
     console: 'https://dev.fitbit.com/apps/new',
-    note: 'Montres Fitbit et balance Aria. L\'inscription développeur passe désormais par un compte Google.',
+    note: 'Montres et bracelets Fitbit, balance Aria. Poids et pas.',
   },
   {
     id: 'oura',
@@ -112,7 +112,7 @@ export const PROVIDERS: Provider[] = [
     capabilities: ['pas'],
     identifiants: true,
     console: 'https://cloud.ouraring.com/oauth/applications',
-    note: 'Bague Oura. Compte les pas et l\'activité ; ne mesure aucun poids — la valeur du profil Oura est saisie à la main, sans date, et n\'a rien à faire dans une courbe.',
+    note: 'Bague Oura. Pas et activité quotidienne. Ne mesure pas le poids.',
   },
   {
     id: 'garmin',
@@ -124,7 +124,7 @@ export const PROVIDERS: Provider[] = [
     // Vérifié en août 2026 : le formulaire de demande d'accès a été retiré et le
     // programme est en pause sans date de réouverture annoncée. Ce n'est pas une
     // limite de ce code — personne ne peut obtenir d'identifiants aujourd'hui.
-    bloque: 'Le programme développeur Garmin est en pause depuis 2026 : le formulaire de demande a été retiré et aucune date de réouverture n\'est annoncée. Impossible d\'obtenir des identifiants, quel que soit le code écrit ici.',
+    bloque: 'Le programme développeur Garmin est suspendu depuis 2026 : aucun identifiant ne peut être obtenu pour le moment.',
   },
 ]
 
@@ -153,7 +153,7 @@ export function unavailableProviders(configures: string[]): { provider: Provider
     .filter(p => p.bloque || (p.identifiants && !set.has(p.id)))
     .map(p => ({
       provider: p,
-      raison: p.bloque ?? 'Pas encore configuré : il faut déclarer une application chez la marque, puis coller son identifiant et son secret ici.',
+      raison: p.bloque ?? 'Non configuré. Déclare une application chez la marque, puis reporte son identifiant et son secret.',
     }))
 }
 

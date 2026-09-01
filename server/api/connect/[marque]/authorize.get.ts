@@ -21,7 +21,7 @@ export default defineEventHandler(async (event) => {
   const base = origin || getRequestURL(event).origin
 
   if (!nonce || nonce.length < 16) {
-    throw createError({ statusCode: 400, statusMessage: 'Nonce manquant : relance la connexion depuis l\'application.' })
+    throw createError({ statusCode: 400, statusMessage: 'Requête incomplète. Relance la connexion depuis l\'application.' })
   }
   const state = signToken({ sub: a.id, scope: 'oauth', nonce }, 600, Date.now())
   return sendRedirect(event, a.autoriser({ clientId, redirectUri: urlRetour(base, a.id), state }))

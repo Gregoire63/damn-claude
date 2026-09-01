@@ -1777,8 +1777,8 @@ export function weekBalance(days: DayBalance[]): WeekBalance {
     capped,
     giveUp: false,
     advice: surplus > 0
-      ? `${surplus} kcal au-dessus sur la semaine. Étalé sur les ${daysLeft} jours restants, ça fait ${Math.abs(perDay)} kcal de moins par jour — un féculent un peu plus petit, rien de plus.${capped ? ' Le report est plafonné : le reste est absorbé, pas rattrapé.' : ''}`
-      : `${Math.abs(surplus)} kcal en dessous sur la semaine. Tu peux ajouter ${perDay} kcal par jour sur les ${daysLeft} jours restants — descendre trop bas finit toujours par se payer sur les séances.`,
+      ? `${surplus} kcal au-dessus sur la semaine, soit ${Math.abs(perDay)} kcal de moins par jour sur les ${daysLeft} jours restants.${capped ? ' Report plafonné : le reste n\'est pas rattrapé.' : ''}`
+            : `${Math.abs(surplus)} kcal en dessous sur la semaine, soit ${perDay} kcal de plus par jour sur les ${daysLeft} jours restants.`,
   }
 }
 

@@ -27,7 +27,7 @@ export async function identifiantsOuRefus(a: Adaptateur): Promise<Identifiants> 
     const label = providerById(a.id)?.label ?? a.id
     throw createError({
       statusCode: 501,
-      statusMessage: `${label} n'est pas configuré sur cette instance : renseigne l'identifiant et le secret dans Profil → Connecteurs, ou pose les variables d'environnement.`,
+      statusMessage: `${label} n'est pas configuré. Renseigne son identifiant et son secret dans Profil → Connecteurs.`,
     })
   }
   return ids

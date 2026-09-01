@@ -169,7 +169,7 @@ onMounted(() => {
       </div>
     </div>
 
-    <p class="muted cal-hint">Seul le réel est affiché : séances enregistrées, télétravail confirmé. Les jours grisés changent de mois.</p>
+    <p class="muted cal-hint">Seules les données réelles sont affichées : séances enregistrées et télétravail confirmé.</p>
 
     <transition name="sheet">
       <SportDaySheet

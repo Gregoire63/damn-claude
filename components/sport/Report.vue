@@ -150,7 +150,7 @@ const hasData = computed(() => totalSessions.value > 0 || latestWeight.value !==
 
 <template>
   <div class="stack">
-    <div v-if="!hasData" class="card empty">Ta progression se construit au fil des séances.<br>Renseigne ta taille dans <b>Profil</b>, pèse-toi, et enregistre une séance.</div>
+    <div v-if="!hasData" class="card empty">Aucune donnée pour le moment.<br>Renseigne ton profil, pèse-toi et enregistre une séance.</div>
     <template v-else>
       <nav class="nav-row rp-nav">
         <button
@@ -171,9 +171,8 @@ const hasData = computed(() => totalSessions.value > 0 || latestWeight.value !==
           <div class="stat"><div class="stat-v mono">{{ maintenance ?? '—' }}<span v-if="maintenance" class="stat-u">kcal</span></div><div class="stat-l">Maintien estimé</div></div>
         </div>
         <div class="muted mt-6">
-          Le maintien affiché ici est une moyenne large (Mifflin-St Jeor × 1,55). La cible
-          du jour, elle, est recalculée dans le Journal à partir des pas réellement marchés
-          et de la séance réellement enregistrée : c'est elle qui fait foi.
+          Estimation large (Mifflin-St Jeor × 1,55). La cible du jour, recalculée dans le
+                    Journal à partir des pas et de la séance du jour, est plus précise.
         </div>
       </div>
       <div v-if="part === 'seances'" class="card">
@@ -333,7 +332,7 @@ const hasData = computed(() => totalSessions.value > 0 || latestWeight.value !==
       <div class="card" :class="{ 'backup-warn': exportStale }">
         <div class="section-label mb-8">Sauvegarde</div>
         <div v-if="exportAge === null" class="muted">
-          ⚠️ <b>Jamais sauvegardé.</b> Tout est stocké dans ce navigateur : vider les données du site effacerait tout ton historique. Fais un export depuis <b>Profil → Données</b>.
+          ⚠️ <b>Aucune sauvegarde.</b> Les données sont stockées dans ce navigateur. Exporte-les depuis <b>Profil → Données</b>.
         </div>
         <div v-else class="muted">
           <template v-if="exportStale">⚠️ Dernière sauvegarde il y a <b>{{ exportAge }} jours</b> ({{ lastExportAt }}) — pense à refaire un export depuis <b>Profil → Données</b>.</template>

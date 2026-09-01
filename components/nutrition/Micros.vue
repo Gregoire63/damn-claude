@@ -26,9 +26,8 @@ const width = (pct: number) => Math.min(100, pct / 2)
     <div class="card">
       <div class="section-label">Couverture de ta semaine</div>
       <p class="mt-6 muted">
-        Moyenne par jour sur les sept jours de la semaine que tu as choisie — les jours
-        d'absence ne comptent pas. Vitamine C des légumes minorée de 35 % pour la cuisson.
-        Comparé aux références ANSES pour un homme adulte.
+        Moyenne quotidienne sur la semaine choisie, hors jours d'absence. Vitamine C des
+              légumes minorée de 35 % pour la cuisson. Références ANSES, adulte.
       </p>
     </div>
 
@@ -40,8 +39,7 @@ const width = (pct: number) => Math.min(100, pct / 2)
         <template v-for="(g, i) in gaps" :key="g.key">
           <strong>{{ g.label }}</strong> à {{ g.pct }} %<span v-if="i < gaps.length - 1">, </span>
         </template>.
-        Tout le reste est au-dessus de la référence — l'assiette fait déjà le travail,
-        ce n'est pas la peine d'empiler des compléments « par sécurité ».
+        Tout le reste est au-dessus de la référence : aucune complémentation nécessaire.
       </p>
     </div>
 
@@ -76,16 +74,13 @@ const width = (pct: number) => Math.min(100, pct / 2)
     <div class="card nu-warn">
       <div class="section-label">À garder en tête</div>
       <p class="nu-note">
-        Ces chiffres sont calculés sur des tables de composition, pas sur ton sang. Ils
-        disent que le plan <em>apporte</em> de quoi couvrir tes besoins — pas que tu
-        <em>absorbes</em> tout, ni où tu en es aujourd'hui. Si tu veux savoir, une prise de
-        sang avec vitamine D, ferritine et NFS répond en une fois, et coûte moins cher
-        qu'un an de compléments pris à l'aveugle.
+        Ces chiffres viennent de tables de composition : ils indiquent ce que les repas
+                <em>apportent</em>, pas ce qui est réellement <em>absorbé</em> ni ton statut
+                actuel. Seule une analyse sanguine permet de le savoir.
       </p>
       <p class="nu-note">
-        Sel : ce plan est cuisiné maison, donc naturellement pauvre en sodium. Avec 3 L d'eau
-        par jour et de la transpiration en salle, sale tes plats normalement — l'excès de
-        restriction n'a pas d'intérêt ici.
+        Sel : des repas cuisinés maison sont naturellement pauvres en sodium. Sale
+                normalement, surtout en cas de forte transpiration.
       </p>
     </div>
   </div>

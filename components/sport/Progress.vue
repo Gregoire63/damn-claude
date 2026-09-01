@@ -50,7 +50,7 @@ const progExStats = computed(() => (progressSessionObj.value?.exercises ?? []).m
 
 <template>
   <div class="stack">
-    <div class="section-label">Touche une séance pour voir la progression de tous ses exercices</div>
+    <div class="section-label">Sélectionne une séance pour afficher la progression de ses exercices</div>
     <div class="prog-grid">
       <button
         v-for="s in prog" :key="s.id"
@@ -82,16 +82,16 @@ const progExStats = computed(() => (progressSessionObj.value?.exercises ?? []).m
             </div>
           </div>
           <p v-if="stats?.converted" class="muted prog-conv">
-            🔁 Courbe en équivalent «&nbsp;{{ e.name }}&nbsp;» : les séances faites sur une
-            autre machine y sont converties, pour qu'un changement de matériel ne se lise
-            pas comme un gain.
+            🔁 Courbe en équivalent «&nbsp;{{ e.name }}&nbsp;» : les séances faites sur une autre
+                  machine y sont converties, pour qu'un changement de matériel n'apparaisse pas comme
+                  une progression.
             <template v-if="stats.lastReal"> Dernière séance&nbsp;: {{ stats.lastReal }} kg réels.</template>
           </p>
           <LazySportSvgChart v-if="stats" :data="stats.data" y-key="charge" :color="progressSessionObj.color" :height="150" />
-          <div v-else class="muted prog-empty">Pas encore de données — enregistre une séance avec cet exercice.</div>
+          <div v-else class="muted prog-empty">Aucune donnée : enregistre une séance avec cet exercice.</div>
         </div>
       </div>
     </template>
-    <div v-else class="card empty">Choisis une séance ci-dessus pour afficher toutes ses courbes d'un coup.</div>
+    <div v-else class="card empty">Sélectionne une séance ci-dessus pour afficher toutes ses courbes.</div>
   </div>
 </template>

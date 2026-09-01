@@ -132,9 +132,9 @@ export default defineEventHandler(async (event) => {
  * une seule variable, `NUXT_OWNER_NAME`, et un texte qui reste juste quand elle est
  * absente.
  */
-const instructions = async () => `Suivi d'entraînement et de nutrition de ${await ownerName()} (recomposition : perdre du gras, garder le muscle).
-Les données sont un MIROIR poussé par son téléphone ; elles peuvent avoir quelques heures de retard, l'outil « etat » donne la date.
-Tu ne peux rien modifier directement : « proposer_modification » dépose une proposition qu'il valide dans l'application.
+const instructions = async () => `Suivi d'entraînement et de nutrition de ${await ownerName()}.
+Les données sont une COPIE envoyée par son appareil : elles peuvent avoir quelques heures de retard, l'outil « etat » en donne la date.
+Aucune modification directe n'est possible : « proposer_modification » dépose une proposition à valider dans l'application.
 Réponds en français, en t'appuyant sur ses chiffres réels plutôt que sur des généralités.`
 
 const TOOLS = [

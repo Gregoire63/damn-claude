@@ -21,7 +21,7 @@ export default defineEventHandler(async (event) => {
   const a = marqueDe(event)
   const body = await readBody<{ acces?: string, rafraichissement?: string, depuis?: number }>(event)
   if (!body?.acces && !body?.rafraichissement) {
-    throw createError({ statusCode: 400, statusMessage: 'Aucun jeton fourni : reconnecte le compte.' })
+    throw createError({ statusCode: 400, statusMessage: 'Aucun jeton fourni. Reconnecte le compte.' })
   }
   const ids = await identifiantsOuRefus(a)
 
@@ -66,7 +66,7 @@ export default defineEventHandler(async (event) => {
   }
   catch (e) {
     if (e instanceof ErreurConnecteur && e.auth) {
-      return vide({ reconnecter: true, erreur: 'L\'autorisation a été révoquée. Reconnecte le compte, une fois : les mesures déjà récupérées ne bougent pas.' })
+      return vide({ reconnecter: true, erreur: 'Autorisation révoquée. Reconnecte le compte ; les mesures déjà récupérées sont conservées.' })
     }
     // Toute autre panne : on rend quand même les jetons s'il y en a de neufs.
     if (neufs) return vide({ erreur: (e as Error).message.slice(0, 160) })
