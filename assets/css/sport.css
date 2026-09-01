@@ -179,7 +179,30 @@
 .section-label { display: flex; align-items: center; gap: 7px; font-family: var(--font-mono); font-size: 12px; text-transform: uppercase; letter-spacing: 0.12em; color: var(--accent-primary); }
 .section-label .glyphe { margin-top: -1px; }
 .week-hint { text-transform: none; letter-spacing: 0; }
-.flash { margin: 12px 16px 0; background: #e7f0e2; border: 1px solid #bcd8ae; color: #3f7a4f; border-radius: 12px; padding: 11px 14px; font-size: 14px; font-weight: 500; line-height: 1.4; }
+/*
+ * Le message de confirmation est un TOAST, pas un bandeau dans le flux.
+ *
+ * Il vivait en haut de la coque, à sa place dans le document. Or on déclenche ce
+ * qu'il confirme depuis le BAS d'un écran long — importer une sauvegarde, poser une
+ * clé d'accès, réinitialiser un planning sont tous en fin de réglages. Le message
+ * s'affichait alors six cents pixels au-dessus du pouce, six secondes, puis
+ * disparaissait : on venait d'importer trois cents séances et rien ne semblait
+ * s'être passé.
+ *
+ * Fixe en bas, donc, là où le geste vient d'avoir lieu. Au-dessus de la barre
+ * d'onglets, et la pastille de mise à jour lui laisse la place quand les deux
+ * s'affichent (voir `.has-flash` plus bas).
+ */
+.flash {
+  position: fixed; z-index: 32;
+  left: 12px; right: 12px; margin: 0 auto; max-width: 460px;
+  bottom: calc(76px + env(safe-area-inset-bottom, 0px));
+  background: #e7f0e2; border: 1px solid #bcd8ae; color: #3f7a4f;
+  border-radius: 12px; padding: 11px 14px; font-size: 14px; font-weight: 500; line-height: 1.4;
+  box-shadow: 0 10px 30px rgba(42, 40, 38, 0.18);
+}
+.flash-enter-active, .flash-leave-active { transition: opacity 0.18s var(--ease-out), transform 0.18s var(--ease-out); }
+.flash-enter-from, .flash-leave-to { opacity: 0; transform: translateY(10px); }
 /* Un échec sur fond vert se lit de loin comme une réussite. La couleur porte la
    moitié du message ; la donner fausse est pire que ne rien afficher. */
 .flash.echec { background: #f6ece1; border-color: #e6c3b0; color: #b5502f; }
@@ -1105,7 +1128,9 @@ button.conn-row { cursor: pointer; }
   &.has-bottomnav { padding-bottom: 40px; }
   &.has-minibar { padding-bottom: 96px; }
   .mini-session { bottom: 16px; max-width: 760px; margin: 0 auto; }
+  .flash { bottom: 16px; }
   .maj-pop { bottom: 16px; }
+  &.has-flash .maj-pop { bottom: 88px; }
   &.has-minibar .maj-pop { bottom: 88px; }
   .bottomnav { display: none; }
   .topnav { display: flex; gap: 6px; max-width: 620px; }
@@ -1251,6 +1276,8 @@ button.conn-row { cursor: pointer; }
 .mini-abandon { flex: 0 0 auto; width: 44px; background: rgba(0, 0, 0, 0.12); border: none; color: var(--bg-primary); font-size: 15px; cursor: pointer; }
 .mini-abandon:hover { background: rgba(0, 0, 0, 0.22); }
 &.has-minibar { padding-bottom: calc(140px + env(safe-area-inset-bottom, 0px)); }
+/* Un toast occupe le bas : la pastille passe au-dessus plutôt que dessous. */
+&.has-flash .maj-pop { bottom: calc(140px + env(safe-area-inset-bottom, 0px)); }
 /* La mini-feuille occupe déjà le dessus de la barre d'onglets : la pastille monte. */
 &.has-minibar .maj-pop { bottom: calc(140px + env(safe-area-inset-bottom, 0px)); }
 

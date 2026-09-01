@@ -112,6 +112,16 @@ body {
      le bas en haut d'une liste doit rebondir, pas recharger la page et perdre la
      saisie en cours. */
   overscroll-behavior-y: none;
+  /*
+   * Coupe le ZOOM AU DOUBLE-TAP, que le `viewport` ne couvre pas.
+   *
+   * Un double-tap rapide sur un bouton — deux séries validées coup sur coup, un
+   * poids qu'on incrémente — était lu comme « agrandis ». L'écran restait à 1,3×,
+   * la barre du haut sortait du cadre, et rien ne disait comment revenir.
+   * `manipulation` garde le défilement et le pincement du navigateur là où le
+   * système les autorise, et retire seulement ce double-tap.
+   */
+  touch-action: manipulation;
   color: var(--text-primary);
   /* `clip` ici aussi : <body> en `overflow-x: hidden` devient un conteneur de
      défilement, et l'en-tête collant se cale dessus au lieu de la fenêtre. */

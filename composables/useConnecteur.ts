@@ -1,3 +1,4 @@
+import { avecRelances } from '~/lib/relance'
 import { computed, ref } from 'vue'
 import type { Ref } from 'vue'
 import { useMesures } from './useMesures'
@@ -386,6 +387,26 @@ export function useConnecteurs() {
     return repris
   }
 
+  /**
+   * La reprise, avec des relances — parce qu'un retour rapide n'est pas un échec.
+   *
+   * L'autorisation se termine dans l'autre navigateur : il range les jetons côté
+   * serveur, et l'application vient ensuite les réclamer avec son nonce. Entre les
+   * deux il y a un aller-retour réseau, et on revient à l'application avant qu'il
+   * soit fini — c'est même le cas NORMAL, puisque revenir est le premier réflexe une
+   * fois « Autoriser » tapé.
+   *
+   * `reprendre()` rendait alors faux et gardait le nonce « pour la prochaine
+   * ouverture ». Sauf qu'il n'y en a pas : l'application est déjà au premier plan, et
+   * plus rien ne se déclenche. Il fallait la recharger à la main pour voir sa balance
+   * apparaître — c'est-à-dire deviner qu'il faut le faire.
+   *
+   * La boucle elle-même est dans `lib/relance.ts`, où elle se vérifie sans
+   * navigateur ni minuteur.
+   */
+  const reprendreAvecRelances = (attentes: number[] = [0, 1500, 4000]) =>
+    avecRelances(attentes, reprendreTout)
+
   async function synchroniserTout(todayIso: string, opts: { complet?: boolean } = {}): Promise<boolean> {
     let une = false
     for (const c of branchees.value) {
@@ -402,6 +423,6 @@ export function useConnecteurs() {
 
   return {
     marques, rafraichir, branchees, occupe, erreur, aReconnecter, derniere,
-    reprendreTout, synchroniserTout, autoSyncTout, marquesLocales,
+    reprendreTout, reprendreAvecRelances, synchroniserTout, autoSyncTout, marquesLocales,
   }
 }

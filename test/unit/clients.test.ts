@@ -96,3 +96,28 @@ describe('le client des variables d\'environnement continue de passer', () => {
     expect(clientInscrit('peu-importe')).toBe(true)
   })
 })
+
+describe('ce qu\'on accorde à l\'inscription', () => {
+  /*
+   * LE cas qui bloquait : Claude demande authorization_code ET refresh_token, comme
+   * la plupart des clients. La première version refusait l'inscription entière —
+   * 400 avant même le premier écran d'autorisation — pour une préférence que le
+   * client n'exigeait pas.
+   */
+  it('accorde authorization_code même quand refresh_token est demandé', async () => {
+    const { grantsAccordes } = await utils()
+    expect(grantsAccordes(['authorization_code', 'refresh_token'])).toEqual(['authorization_code'])
+  })
+
+  it('accorde authorization_code quand rien n\'est demandé', async () => {
+    const { grantsAccordes } = await utils()
+    expect(grantsAccordes([])).toEqual(['authorization_code'])
+  })
+
+  /* On ne fait pas semblant : un client qui ne veut QUE ce qu'on ne sait pas faire
+     doit l'apprendre à l'inscription, pas au milieu d'une redirection. */
+  it('n\'accorde rien quand rien de demandé n\'est réalisable', async () => {
+    const { grantsAccordes } = await utils()
+    expect(grantsAccordes(['implicit', 'password'])).toEqual([])
+  })
+})

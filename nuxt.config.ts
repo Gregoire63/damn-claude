@@ -166,7 +166,23 @@ export default defineNuxtConfig({
     head: {
       title: 'Damn Claude',
       charset: 'utf-8',
-      viewport: 'width=device-width, initial-scale=1, viewport-fit=cover',
+      /*
+       * `maximum-scale=1, user-scalable=no` : l'interface ne se pince pas.
+       *
+       * Ce n'est pas un caprice de mise en page. Une application posée sur l'écran
+       * d'accueil se manipule au pouce, et la moitié des gestes d'ici sont des
+       * glissements — la barre d'onglets, la feuille de séance qu'on tire, le
+       * changement d'écran. Un pincement mal interprété laisse l'écran à 1,3× sans
+       * qu'on sache le défaire : la barre du haut sort du cadre, le bouton de la
+       * feuille aussi, et l'application a l'air cassée.
+       *
+       * Safari sur iOS ignore délibérément `user-scalable=no` dans un onglet, pour
+       * ne jamais empêcher quelqu'un d'agrandir un texte trop petit — c'est un bon
+       * choix de leur part, et on ne le contourne pas. La règle vaut donc pleinement
+       * en application installée et sur Android. `touch-action: manipulation` dans la
+       * feuille de style s'occupe du double-tap, qui est l'autre moitié du problème.
+       */
+      viewport: 'width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover',
       meta: [
         { name: 'description', content: 'Suivi d\'entraînement et de nutrition : séances, charges, progression, poids de corps.' },
         { name: 'format-detection', content: 'telephone=no' },
