@@ -113,6 +113,19 @@ test/nuxt/               câblage localStorage et composants, happy-dom
 `composables/` dans l'espace de noms global. Une fonction nommée `clamp` ou `slugify`
 n'a rien à y faire — collision silencieuse au premier renommage.
 
+**Le glissement latéral change d'onglet.** `composables/useGlissement.ts` : le geste
+est écouté sur la COQUE (un écran court ou une transition en cours laisserait le doigt
+dans le vide), il ne s'arme que s'il commence horizontal, il cède à un défilement
+latéral tant que celui-ci a encore de la marge dans ce sens, et il se tait quand un
+calque est ouvert — `calqueOuvert` pour les feuilles et fenêtres, `sheetVisible` pour
+la séance, qui n'y passe pas. Le sens de l'animation est posé aussi pour les
+navigations qui ne viennent pas d'un geste, sinon l'écran part du mauvais côté.
+
+**Une seule navigation interne.** `.onglets-int > .segmente` : le même contrôle
+segmenté dans Progression, dans Plats et partout où l'on bascule entre des vues d'un
+même écran. Trois dessins différents cohabitaient ; le même geste doit avoir la même
+forme, sinon chaque écran se réapprend.
+
 **Un onglet, une URL, un fichier.** `/`, `/journal`, `/nutrition`, `/progres`,
 `/profil`. L'onglet courant se lit dans l'URL, il n'est stocké nulle part. Un chemin
 absent de `lib/onglets.ts` garde le rendu serveur, `validate` le refuse, et le

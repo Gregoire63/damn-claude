@@ -174,11 +174,13 @@ const kindLabel = (k: RecipeKind) => KINDS.find(x => x.id === k)?.label ?? k
 
 <template>
   <div class="stack">
-    <div class="nav-row">
-      <button class="btn" :class="{ sel: tab === 'plats' }" @click="tab = 'plats'">Plats</button>
-      <button class="btn" :class="{ sel: tab === 'aliments' }" @click="tab = 'aliments'">Aliments</button>
-      <button class="btn" :class="{ sel: tab === 'micros' }" @click="tab = 'micros'">Micros</button>
-    </div>
+        <nav class="onglets-int">
+          <div class="segmente" role="tablist">
+            <button role="tab" :aria-selected="tab === 'plats'" :class="{ sel: tab === 'plats' }" @click="tab = 'plats'">Plats</button>
+            <button role="tab" :aria-selected="tab === 'aliments'" :class="{ sel: tab === 'aliments' }" @click="tab = 'aliments'">Aliments</button>
+            <button role="tab" :aria-selected="tab === 'micros'" :class="{ sel: tab === 'micros' }" @click="tab = 'micros'">Micros</button>
+          </div>
+        </nav>
 
     <NutritionMicros v-if="tab === 'micros'" />
 

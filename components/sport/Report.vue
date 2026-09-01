@@ -152,13 +152,16 @@ const hasData = computed(() => totalSessions.value > 0 || latestWeight.value !==
   <div class="stack">
     <div v-if="!hasData" class="card empty">Aucune donnée pour le moment.<br>Renseigne ton profil, pèse-toi et enregistre une séance.</div>
     <template v-else>
-      <nav class="nav-row rp-nav">
-        <button
-          v-for="pt in PARTS" :key="pt.id"
-          class="btn flex-1" :class="{ sel: part === pt.id }"
-          @click="part = pt.id"
-        >{{ pt.label }}</button>
-      </nav>
+            <nav class="onglets-int">
+              <div class="segmente" role="tablist">
+                <button
+                  v-for="pt in PARTS" :key="pt.id"
+                  role="tab" :aria-selected="part === pt.id"
+                  :class="{ sel: part === pt.id }"
+                  @click="part = pt.id"
+                >{{ pt.label }}</button>
+              </div>
+            </nav>
       <!-- Suivi du corps : pesées, composition, pas. Le poids se saisit ICI et
            nulle part ailleurs — il servait aux séances comme à la nutrition, il
            avait fini par exister en trois exemplaires. -->
@@ -188,9 +191,9 @@ const hasData = computed(() => totalSessions.value > 0 || latestWeight.value !==
       <div v-if="part === 'seances' && muscleVolume.length" class="card">
         <div class="row-between mb-8">
           <div class="section-label">Séries par muscle</div>
-          <div class="mv-toggle">
-            <button class="mv-tab" :class="{ active: muscleRange === 'week' }" @click="muscleRange = 'week'">Cette semaine</button>
-            <button class="mv-tab" :class="{ active: muscleRange === 'all' }" @click="muscleRange = 'all'">Depuis le début</button>
+                    <div class="segmente segmente-mini" role="tablist">
+                      <button role="tab" :aria-selected="muscleRange === 'week'" :class="{ sel: muscleRange === 'week' }" @click="muscleRange = 'week'">Cette semaine</button>
+                      <button role="tab" :aria-selected="muscleRange === 'all'" :class="{ sel: muscleRange === 'all' }" @click="muscleRange = 'all'">Depuis le début</button>
           </div>
         </div>
         <div class="mv-list">
