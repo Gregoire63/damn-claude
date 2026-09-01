@@ -29,6 +29,29 @@ import { CHEMINS } from './lib/onglets'
  */
 const codeDeDemarrage = randomBytes(8).toString('hex')
 
+/**
+ * La VERSION de ce build, et ce qu'elle répare.
+ *
+ * Un service worker met l'application en cache pour qu'elle s'ouvre hors ligne. Le
+ * revers est connu : tant que RIEN dans son URL ne change, le navigateur considère
+ * qu'il n'y a pas de nouveau service worker à installer, donc rien à purger. Le
+ * fichier était figé sur `sport-v2` depuis trois déploiements : un appareil qui avait
+ * déjà visité le site gardait ses caches d'alors, et « rafraîchir » n'y changeait
+ * rien — c'est le propre d'un cache qui ne sait pas qu'il est périmé.
+ *
+ * La version part donc du COMMIT quand l'hébergeur le donne (Netlify pose
+ * `COMMIT_REF`), et d'un horodatage sinon. Elle voyage dans l'URL d'enregistrement —
+ * `/sw.js?v=…` —, ce qui fait de chaque déploiement un service worker différent aux
+ * yeux du navigateur : il l'installe, et son `activate` jette tous les caches qui ne
+ * portent pas cette version.
+ *
+ * Elle est AFFICHÉE dans les réglages. « Suis-je à jour ? » est la première question
+ * qu'on se pose devant une application qui n'a pas changé, et jusqu'ici rien dans
+ * l'écran ne permettait d'y répondre.
+ */
+const version = (process.env.COMMIT_REF || '').slice(0, 7)
+  || new Date().toISOString().slice(0, 16).replace(/[-:T]/g, '')
+
 /*
  * Le journal DIT ce qu'il fait, y compris quand il ne fait rien.
  *
@@ -62,6 +85,15 @@ else {
     'À saisir une fois, pour poser le premier passkey.',
   ])
 }
+
+cadre([
+  'Version de ce build :',
+  '',
+  `    ${version}`,
+  '',
+  'Affichée dans les réglages, et portée par l\'URL du service',
+  'worker : chaque déploiement purge les caches du précédent.',
+])
 
 // https://nuxt.com/docs/api/configuration/nuxt-config
 export default defineNuxtConfig({
@@ -122,6 +154,11 @@ export default defineNuxtConfig({
     public: {
       // Données de démonstration : jamais en production sauf demande explicite.
       seedTestData: false,
+      // La version de ce build. Lue par `useMaj()` pour l'URL du service worker et
+      // par les réglages pour l'afficher. Publique par nature : elle est déjà dans
+      // l'URL du service worker, et c'est ce qu'on demande à quelqu'un qui signale
+      // un problème.
+      version,
     },
   },
 

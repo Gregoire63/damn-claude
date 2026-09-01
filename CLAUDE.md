@@ -121,6 +121,15 @@ calque est ouvert — `calqueOuvert` pour les feuilles et fenêtres, `sheetVisib
 la séance, qui n'y passe pas. Le sens de l'animation est posé aussi pour les
 navigations qui ne viennent pas d'un geste, sinon l'écran part du mauvais côté.
 
+**La version du build purge les caches.** L'application enregistre
+`/sw.js?v=<version>` : pour le navigateur, une URL de script différente est un autre
+service worker, donc il l'installe et son `activate` jette tout `sport-*` d'une autre
+version. La version vient de `COMMIT_REF` (Netlify la pose) ou d'un horodatage, elle
+est dans `runtimeConfig.public.version` et s'affiche en bas des réglages. Rien à
+incrémenter à la main — c'est justement ce qui avait figé trois déploiements sur
+`sport-v2`. Une application installée n'a ni barre d'adresse ni tiré-pour-rafraîchir :
+sans ça, il n'existe AUCUN geste pour aller chercher une nouvelle version.
+
 **Une page, un seul nœud à la racine, et c'est un élément HTML.** `<NuxtPage>`
 enveloppe chaque page dans une `<Transition>` ; une transition anime UN nœud du DOM.
 Une page dont la racine est `<Suspense>` ou `<ClientOnly>` — ou qui porte un

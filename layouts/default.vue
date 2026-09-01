@@ -59,6 +59,7 @@ const router = useRouter()
 const TABS = ONGLETS
 const pageTitle = computed(() => titreDe(route.path))
 const { flash, flashTon, showFlash } = useFlash()
+const maj = useMaj()
 // Le parcours d'installation : tant qu'il reste une étape, il occupe l'écran seul.
 const demarrage = useDemarrage()
 
@@ -234,25 +235,8 @@ function surveillerRetourAutorisation() {
 
 
 onMounted(() => {
-  // Service worker : PRODUCTION UNIQUEMENT.
-  // Il met /_nuxt/* en cache d'abord, en partant du principe que ces fichiers ont un
-  // nom haché donc immuable. C'est vrai après un build ; c'est faux en `nuxt dev`, où
-  // Vite sert les sources sous leur vrai chemin. Un fichier renommé, déplacé ou
-  // supprimé continuait alors d'être servi depuis le cache — indéfiniment, même après
-  // un Ctrl+Shift+R, qui ne contourne pas le service worker pour les sous-requêtes.
-  // En dev on le désinscrit donc, et on purge son cache, sinon un SW installé une fois
-  // continue de saboter tous les rechargements suivants.
-  if ('serviceWorker' in navigator) {
-    if (import.meta.dev) {
-      navigator.serviceWorker.getRegistrations()
-        .then(rs => Promise.all(rs.map(r => r.unregister())))
-        .then(() => (typeof caches !== 'undefined' ? caches.keys() : Promise.resolve([])))
-        .then(keys => Promise.all(keys.filter(k => k.startsWith('sport-')).map(k => caches.delete(k))))
-        .catch(() => { /* rien à désinscrire */ })
-    } else {
-      navigator.serviceWorker.register('/sw.js', { scope: '/' }).catch(() => {})
-    }
-  }
+  // Service worker, mises à jour et purge des caches : tout est dans `useMaj()`.
+  maj.installer(import.meta.dev)
   surveillerRetourAutorisation()
   hydrateProfile()
   // L'onglet D'ABORD, la séance ensuite : `restoreDraft` rouvre la feuille par-dessus,
@@ -388,6 +372,17 @@ onUnmounted(() => {
     </transition>
 
     <div v-if="flash" class="flash" :class="flashTon">{{ flash }}</div>
+
+    <!--
+      Nouvelle version installée. On ne recharge pas d'autorité : une séance peut être
+      ouverte, et personne n'échange une série contre une mise à jour. Le bandeau reste
+      jusqu'au rechargement — ce n'est pas une notification qu'on peut manquer, c'est
+      un état.
+    -->
+    <div v-if="maj.majDisponible.value" class="maj-bar" role="status">
+      <span>Nouvelle version prête.</span>
+      <button class="maj-go" @click="maj.recharger()">Recharger</button>
+    </div>
 
     <!--
       Le grand titre vit HORS de la barre collante, et c'est tout le mécanisme : il
