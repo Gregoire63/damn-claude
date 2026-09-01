@@ -183,6 +183,12 @@
 /* Un échec sur fond vert se lit de loin comme une réussite. La couleur porte la
    moitié du message ; la donner fausse est pire que ne rien afficher. */
 .flash.echec { background: #f6ece1; border-color: #e6c3b0; color: #b5502f; }
+/* Nouvelle version installée. Même gabarit que `.flash`, mais il ne s'efface pas
+   tout seul : ce n'est pas un événement qui passe, c'est un état qui dure jusqu'au
+   rechargement. */
+.maj-bar { margin: 12px 16px 0; display: flex; align-items: center; justify-content: space-between; gap: 12px; background: var(--bg-primary); border: 1px solid var(--accent-secondary); color: var(--text-primary); border-radius: 12px; padding: 10px 10px 10px 14px; font-size: 14px; font-weight: 500; }
+.maj-go { background: var(--accent-primary); color: #fff; border: none; border-radius: 9px; padding: 8px 14px; font-family: inherit; font-size: 13px; font-weight: 600; cursor: pointer; }
+
 /* Le pendant vert de `.vt-warn` : une réussite doit se voir là où on l'a déclenchée. */
 .vt-ok { background: #e7f0e2; border: 1px solid #bcd8ae; color: #3f7a4f; border-radius: 10px; padding: 10px 12px; font-size: 13px; line-height: 1.45; margin-bottom: 10px; }
 .row-between { display: flex; justify-content: space-between; align-items: center; }

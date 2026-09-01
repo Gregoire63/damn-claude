@@ -229,6 +229,8 @@ function relayer(msg: string, ton?: 'ok' | 'echec') { emit('flash', msg, ton) }
 
 function onHeight(ev: Event) { setHeight(parseFloat((ev.target as HTMLInputElement).value) || null) }
 function onYear(ev: Event) { setBirthYear(parseInt((ev.target as HTMLInputElement).value, 10) || null) }
+// La version affichée en bas des réglages — voir composables/useMaj.ts.
+const { version } = useMaj()
 </script>
 
 <template>
@@ -377,6 +379,20 @@ function onYear(ev: Event) { setBirthYear(parseInt((ev.target as HTMLInputElemen
                 Les rouvrir ne défait rien.
       </div>
       <button class="btn btn-bloc" @click="revoirInstallation">↺ Revoir la configuration</button>
+
+      <!--
+        La version, et pourquoi elle mérite une ligne à l'écran.
+
+        « Est-ce que j'ai la dernière version ? » n'avait aucune réponse dans
+        l'application : sur un téléphone, une application installée n'a ni barre
+        d'adresse ni bouton « recharger », et rien ne distingue un écran d'hier d'un
+        écran d'aujourd'hui. C'est aussi la première chose à demander à quelqu'un qui
+        signale un problème.
+
+        Le numéro est celui du commit déployé quand l'hébergeur le donne : il se
+        retrouve tel quel dans l'historique du dépôt.
+      -->
+      <div class="muted mt-6">Version installée : <b class="mono">{{ version() }}</b></div>
     </div>
   </div>
 </template>

@@ -2,18 +2,29 @@
 // Servi depuis la racine du domaine, il a donc le scope racine par défaut :
 // aucun en-tête `Service-Worker-Allowed` n'est nécessaire.
 /*
- * La VERSION du cache est le seul bouton qui purge un téléphone à distance.
+ * La VERSION du cache vient de l'URL de ce fichier, pas d'un nombre écrit à la main.
  *
- * `activate` supprime tout cache `sport-*` qui n'est pas le courant : changer ce
- * numéro jette d'un coup les coquilles HTML et les assets d'avant. À faire chaque
- * fois qu'un changement doit atteindre un appareil qui a déjà visité le site et
- * que le réseau seul ne suffirait pas à corriger — le manifeste et les icônes sont
- * servis CACHE D'ABORD, donc figés jusqu'ici pour toujours.
+ * C'était `sport-v2`, à changer soi-même « chaque fois qu'un changement doit atteindre
+ * un appareil qui a déjà visité le site ». Personne ne s'en souvient. Le numéro est
+ * resté figé trois déploiements durant, et les appareils qui avaient déjà ouvert
+ * l'application gardaient les caches d'alors : rafraîchir ne servait à rien, parce
+ * qu'un cache périmé ne sait pas qu'il l'est.
  *
- * v2 : le manifeste avait été mis en cache alors que Netlify le servait en
- * `application/octet-stream`, c'est-à-dire ignoré par le navigateur.
+ * L'application enregistre donc `/sw.js?v=<version du build>`. Pour le navigateur,
+ * une URL de script différente est un AUTRE service worker : il l'installe, et
+ * l'`activate` ci-dessous jette tout `sport-*` qui ne porte pas cette version. Un
+ * déploiement purge le précédent, sans que personne ait à y penser.
+ *
+ * Le repli `sans-version` couvre l'ouverture directe de /sw.js et les enregistrements
+ * d'avant ce changement : ils continuent de fonctionner, avec un cache à eux qui sera
+ * jeté à la première activation d'une vraie version.
+ *
+ * Le manifeste, lui, reste RÉSEAU D'ABORD (voir plus bas) : c'est une correction
+ * indépendante, et elle doit tenir même si l'on ouvre /sw.js sans version.
  */
-const CACHE = 'sport-v2'
+const VERSION = new URL(self.location.href).searchParams.get('v') || 'sans-version'
+const CACHE = `sport-${VERSION}`
+
 const SHELL = '/'
 const NAV_TIMEOUT_MS = 3000
 
@@ -73,7 +84,20 @@ self.addEventListener('activate', (e) => {
   e.waitUntil(
     caches.keys().then((keys) =>
       Promise.all(keys.filter((k) => k.startsWith('sport-') && k !== CACHE).map((k) => caches.delete(k)))
-    ).then(() => self.clients.claim())
+    )
+      .then(() => self.clients.claim())
+      /*
+       * Prévenir les pages OUVERTES qu'elles tournent sur la version d'avant.
+       *
+       * `claim()` ne recharge rien : l'onglet garde le JavaScript qu'il a déjà, et
+       * ses morceaux à charger plus tard viennent d'être supprimés du cache. On ne
+       * recharge pas d'autorité — une séance peut être en cours, et perdre une série
+       * pour une mise à jour serait un mauvais échange. On le DIT, et la personne
+       * recharge quand ça l'arrange.
+       */
+      .then(() => self.clients.matchAll({ type: 'window', includeUncontrolled: true }))
+      .then((list) => { for (const c of list) c.postMessage({ type: 'maj', version: VERSION }) })
+      .catch(() => { /* rien d'ouvert */ })
   )
 })
 
