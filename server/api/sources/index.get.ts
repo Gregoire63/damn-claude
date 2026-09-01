@@ -21,19 +21,24 @@ export default defineEventHandler(async () => {
   }
   return {
     disponibles: availableProviders(configures).map(p => ({
-      id: p.id, label: p.label, icone: p.icone, capabilities: p.capabilities, note: p.note ?? '',
-    })),
+          id: p.id, label: p.label, icone: p.icone, capabilities: p.capabilities,
+          note: p.note ?? '', console: p.console ?? '',
+        })),
     // Les indisponibles portent aussi ce qu'ils SAURAIENT fournir : la liste des
     // réglages les affiche au même format que les autres, et « Garmin — poids ·
     // masse grasse · pas, indisponible » dit en une ligne ce qu'on rate, là où le
     // nom seul laissait croire à une marque exotique.
     indisponibles: unavailableProviders(configures).map(d => ({
-      id: d.provider.id,
-      label: d.provider.label,
-      icone: d.provider.icone,
-      capabilities: d.provider.capabilities,
-      note: d.provider.note ?? '',
-      raison: d.raison,
+          id: d.provider.id,
+          label: d.provider.label,
+          icone: d.provider.icone,
+          capabilities: d.provider.capabilities,
+          note: d.provider.note ?? '',
+          // L'adresse de la console développeur de la marque : publique, et nécessaire AVANT
+          // toute authentification — c'est la première marche de la configuration, et la
+          // faire dépendre d'une session laissait une phrase qui s'arrêtait au milieu.
+          console: d.provider.console ?? '',
+          raison: d.raison,
       /** Vrai quand un formulaire peut y remédier ; faux quand c'est la marque qui bloque. */
       configurable: !d.provider.bloque,
     })),

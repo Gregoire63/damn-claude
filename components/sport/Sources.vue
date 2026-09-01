@@ -4,7 +4,7 @@ import { useConnecteur, useConnecteurs } from '~/composables/useConnecteur'
 import { useMesures } from '~/composables/useMesures'
 import { useNutrition } from '~/composables/useNutrition'
 import { useWorkout } from '~/composables/useWorkout'
-import { useVault } from '~/composables/useVault'
+
 
 /**
  * Les connecteurs : ce que cette instance sait brancher, ce qui est branché, et
@@ -34,8 +34,9 @@ interface Fiche {
   label: string
   icone: string
   capabilities: string[]
-  note: string
-  raison?: string
+    note: string
+    console?: string
+    raison?: string
   /** Vrai quand un formulaire peut y remédier ; faux quand c'est la marque qui bloque. */
   configurable?: boolean
 }
@@ -47,7 +48,7 @@ const { setSteps, dayFor } = useNutrition()
 const { bodyWeightAt } = useWorkout()
 const { addManual } = useMesures()
 const conn = useConnecteurs()
-const vault = useVault()
+
 
 async function chargerSources() {
   try {
@@ -82,12 +83,10 @@ const resume = computed(() => {
 const ouvert = ref<string | null>(null)
 function basculer(c: Fiche) {
   ouvert.value = ouvert.value === c.id ? null : c.id
-  // À chaque ouverture, pas seulement pour une marque à configurer : une marque DÉJÀ
-  // configurée doit pouvoir dire d'où viennent ses identifiants et se laisser retirer.
-  // Sans ça, poser des identifiants puis recharger la page faisait disparaître le
-  // bouton « Retirer » — et il ne restait plus aucun chemin pour les changer.
-  if (ouvert.value && c.id !== 'manual') void chargerConfig()
 }
+
+/** Les messages d'un enfant gardent leur ton en remontant. */
+function relais(msg: string, ton?: 'ok' | 'echec') { emit('flash', msg, ton) }
 
 async function connecter(id: string) {
   useConnecteur(id).connecter()
@@ -105,92 +104,15 @@ async function synchroniser(c: Fiche) {
 
 // ─── Configuration d'une marque ──────────────────────────────────────────────
 /**
- * Brancher une marque sans passer par l'hébergeur.
+ * Le formulaire vit dans SportConnecteurConfig : il s'affiche déplié dans les réglages
+ * et en fenêtre depuis le parcours, et deux copies auraient divergé.
  *
- * C'est la marche qui rendait ce dépôt inutilisable par quelqu'un d'autre : il fallait
- * poser deux variables d'environnement et REDÉPLOYER pour voir apparaître un bouton.
- * Le formulaire ne remplace pas TOUT — l'URL de retour doit toujours être déclarée
- * chez la marque, aucune API ne permet de le faire à sa place — mais il affiche
- * l'adresse exacte à recopier, ce qui est déjà la moitié des échecs évités.
- *
- * Le secret part vers le serveur et n'en revient jamais. Le champ affiche ce qui est
- * posé, pas sa valeur : un secret qu'on peut relire finit dans un journal, une capture
- * d'écran ou un cache de navigateur.
+ * `aConfigurer` est la fenêtre du parcours. Elle existe parce que la liste compacte
+ * était MUETTE : quatre marques grisées, « à configurer », et aucun geste possible —
+ * on quittait l'étape en pensant que l'application était incomplète, alors qu'il
+ * manquait deux champs à remplir.
  */
-interface EtatConfig {
-  id: string
-  origine: 'env' | 'coffre' | null
-  clientId: string
-  at: string
-  lisible: boolean
-  console: string
-  env: { id: string, secret: string }
-}
-const config = ref<Record<string, EtatConfig>>({})
-const configErr = ref('')
-const saisie = ref<Record<string, { clientId: string, secret: string }>>({})
-const enregistre = ref('')
-
-async function chargerConfig() {
-  configErr.value = ''
-  try {
-    const r = await $fetch<{ marques: EtatConfig[] }>('/api/connect/config')
-    config.value = Object.fromEntries(r.marques.map(m => [m.id, m]))
-  }
-  catch (e) {
-    // 401 : il faut un passkey. Ce n'est pas une panne, c'est la réponse — et le dire
-    // évite de chercher une erreur de configuration là où il manque une connexion.
-    configErr.value = (e as { status?: number }).status === 401
-      ? 'Déverrouille l’application pour configurer les connecteurs.'
-      : 'Configuration illisible pour l’instant.'
-  }
-}
-
-const champs = (id: string) => (saisie.value[id] ??= { clientId: '', secret: '' })
-const urlRetour = (id: string) =>
-  (import.meta.client ? `${location.origin}/api/connect/${id}/callback` : `/api/connect/${id}/callback`)
-
-const copie = ref('')
-async function copier(texte: string, marqueur: string) {
-  try {
-    await navigator.clipboard.writeText(texte)
-    copie.value = marqueur
-    setTimeout(() => { copie.value = '' }, 2500)
-  }
-  catch { emit('flash', 'Copie impossible. Sélectionne l’adresse manuellement.', 'echec') }
-}
-
-async function poser(c: Fiche) {
-  const v = champs(c.id)
-  if (!v.clientId.trim() || !v.secret.trim()) {
-    emit('flash', 'Identifiant et secret sont requis', 'echec')
-    return
-  }
-  enregistre.value = c.id
-  try {
-    await $fetch('/api/connect/config', {
-      method: 'POST',
-      body: { marque: c.id, clientId: v.clientId.trim(), clientSecret: v.secret.trim() },
-    })
-    saisie.value[c.id] = { clientId: '', secret: '' }
-    emit('flash', `${c.label} configuré ✓`)
-    await Promise.all([chargerSources(), chargerConfig()])
-    ouvert.value = c.id
-  }
-  catch (e) {
-    emit('flash', (e as { data?: { statusMessage?: string } }).data?.statusMessage ?? 'Enregistrement refusé', 'echec')
-  }
-  finally { enregistre.value = '' }
-}
-
-async function retirer(c: Fiche) {
-  try {
-    await $fetch(`/api/connect/config?marque=${encodeURIComponent(c.id)}`, { method: 'DELETE' })
-    emit('flash', `Identifiants de ${c.label} retirés`)
-    await Promise.all([chargerSources(), chargerConfig()])
-  }
-  catch { emit('flash', 'Suppression impossible', 'echec') }
-}
+const aConfigurer = ref<Fiche | null>(null)
 
 // ─── Saisie à la main ────────────────────────────────────────────────────────
 // Deux champs, et ce qui est DÉJÀ noté aujourd'hui affiché en dessous : on corrige
@@ -260,10 +182,12 @@ function enregistrerPas() {
           <span v-if="branche(c.id)" class="conn-e mono">connecté ✓</span>
                     <button v-else-if="aBrancher(c)" class="btn conn-b" @click="connecter(c.id)">Connecter</button>
                     <span v-else-if="!c.raison" class="conn-e mono">par défaut</span>
-                    <!-- Le détail de ce qu'il reste à faire vit dans les réglages, où il y a la
-                         place et le formulaire. Ici, il se répétait sur chaque marque et noyait
-                         la seule information utile : qu'est-ce qui est déjà branché. -->
-                    <span v-else class="conn-e mono">{{ c.configurable ? 'à configurer' : 'indisponible' }}</span>
+                    <!-- Une marque non configurée doit rester CLIQUABLE, même ici. Sans ça,
+                         l'étape n'offrait aucun geste : quatre lignes grisées, et rien à faire.
+                         Le détail vit dans une fenêtre, où il y a la place. -->
+                    <button v-else class="btn conn-b" @click="aConfigurer = c">
+                      {{ c.configurable ? 'Configurer' : 'Pourquoi ?' }}
+                    </button>
         </div>
 
         <div v-if="!props.compact && ouvert === c.id" class="conn-det">
@@ -297,44 +221,10 @@ function enregistrerPas() {
             </div>
           </template>
 
-          <!-- 2. Une marque que la marque elle-même bloque : la raison, et rien qui
-               ressemble à un bouton. -->
-          <template v-else-if="c.raison && !c.configurable">
-            <p class="muted">{{ c.raison }}</p>
-          </template>
-
-          <!-- 3. Une marque configurable : le formulaire. -->
+          <!-- 2 et 3. Ce qui touche aux identifiants — la raison d'un blocage, ou le
+               formulaire — est le même bloc que dans la fenêtre du parcours. -->
           <template v-else-if="c.raison">
-            <p class="muted">{{ c.note }}</p>
-            <p v-if="configErr" class="muted export-warn">⚠️ {{ configErr }}</p>
-            <template v-else>
-              <ol class="conn-pas">
-                <li>
-                  Crée une application chez la marque
-                                    <a v-if="config[c.id]?.console" :href="config[c.id].console" target="_blank" rel="noopener">— sa console</a>.
-                </li>
-                <li>
-                  Déclare cette URL de retour, à l'identique :
-                  <code class="conn-url mono">{{ urlRetour(c.id) }}</code>
-                  <button class="btn conn-mini" @click="copier(urlRetour(c.id), c.id)">
-                    {{ copie === c.id ? 'Copié ✓' : '⧉ Copier' }}
-                  </button>
-                </li>
-                <li>Reporte ici l'identifiant et le secret obtenus.</li>
-              </ol>
-              <label class="field"><span>Identifiant (client ID)</span>
-                <input v-model="champs(c.id).clientId" type="text" autocomplete="off" spellcheck="false" placeholder="Identifiant"></label>
-              <label class="field"><span>Secret (client secret)</span>
-                <input v-model="champs(c.id).secret" type="password" autocomplete="off" placeholder="Secret"></label>
-              <button class="btn-primary btn-bloc" :disabled="enregistre === c.id" @click="poser(c)">
-                {{ enregistre === c.id ? 'Enregistrement…' : '🔐 Enregistrer' }}
-              </button>
-              <p class="muted">
-                Le secret est chiffré et n'est jamais renvoyé au navigateur. Il peut aussi être
-                                posé chez l'hébergeur — <b>{{ config[c.id]?.env.id }}</b> et
-                                <b>{{ config[c.id]?.env.secret }}</b> —, qui restent prioritaires.
-              </p>
-            </template>
+            <SportConnecteurConfig :marque="c" @flash="relais" @change="chargerSources()" />
           </template>
 
           <!-- 4. Une marque disponible : l'état, les gestes, et de quoi la débrancher. -->
@@ -362,24 +252,32 @@ function enregistrerPas() {
             <p v-if="branche(c.id)" class="muted">
               La déconnexion ne supprime aucune mesure déjà récupérée.
             </p>
-            <!-- Les identifiants posés depuis l'application se retirent depuis
-                 l'application. Ceux de l'hébergeur, non : ils ne sont pas ici. -->
-            <p v-if="config[c.id]?.origine === 'coffre'" class="muted">
-              Identifiants enregistrés le {{ (config[c.id].at || '').slice(0, 10) }}
-              <button class="btn conn-mini" @click="retirer(c)">Retirer</button>
-            </p>
-            <p v-else-if="config[c.id]?.origine === 'env'" class="muted">
-              Configuré par l'hébergeur (<b>{{ config[c.id].env.id }}</b>).
-            </p>
-            <p v-else-if="configErr && vault.state.value.registered" class="muted">{{ configErr }}</p>
+            <!-- D'où viennent ses identifiants, et comment les retirer. -->
+                        <SportConnecteurConfig :marque="c" @flash="relais" @change="chargerSources()" />
           </template>
         </div>
       </li>
     </ul>
 
     <p v-if="!chargement && !dispos.length" class="muted mt-6">
-      Serveur injoignable : la liste des connecteurs n'a pas pu être chargée. La saisie
-            manuelle reste disponible dans <b>Rapport</b>.
-    </p>
-  </div>
-</template>
+          Serveur injoignable : la liste des connecteurs n'a pas pu être chargée. La saisie
+          manuelle reste disponible dans <b>Rapport</b>.
+        </p>
+    
+        <!-- La fenêtre du parcours : la liste compacte n'a pas la place du formulaire,
+             mais elle ne doit pas pour autant être un cul-de-sac. -->
+        <Popup
+          v-if="aConfigurer"
+          :title="`${aConfigurer.icone} ${aConfigurer.label}`"
+          :subtitle="apporte(aConfigurer.capabilities)"
+          popup-class="conn-popup"
+          @close="aConfigurer = null"
+        >
+          <SportConnecteurConfig
+            :marque="aConfigurer"
+            @flash="relais"
+            @change="chargerSources(); aConfigurer = null"
+          />
+        </Popup>
+      </div>
+    </template>

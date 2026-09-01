@@ -474,6 +474,19 @@ button.conn-row { cursor: pointer; }
 .conn-chev { flex: 0 0 auto; color: var(--text-muted); font-size: 12px; }
 .conn-det { display: flex; flex-direction: column; gap: 7px; padding: 2px 0 14px; }
 .conn-det p { margin: 0; }
+/* ─── Le bloc « identifiants d'une marque » ───────────────────────────────── */
+/* Déplié dans les réglages, en fenêtre depuis le parcours : mêmes styles des deux
+   côtés, puisque c'est le même composant. */
+.cc { display: flex; flex-direction: column; gap: 9px; }
+.cc p { margin: 0; }
+.conn-pas { margin: 0; padding-left: 18px; font-size: 12.5px; line-height: 1.55; color: var(--text-secondary); }
+.conn-pas li + li { margin-top: 7px; }
+/* L'URL de retour se recopie AU CARACTÈRE PRÈS : elle est donc sur sa propre ligne,
+   en chasse fixe, et ne se coupe qu'entre deux caractères — jamais avec un trait
+   d'union inventé par le navigateur, qu'on recopierait avec. */
+.conn-url { display: block; margin: 5px 0; padding: 7px 9px; background: var(--bg-primary); border: 1px solid var(--bg-accent); border-radius: 8px; font-size: 11.5px; line-height: 1.4; color: var(--text-primary); word-break: break-all; }
+.conn-mini { padding: 5px 10px; font-size: 12px; }
+.conn-popup .field { margin-top: 4px; }
 .pg-line { font-size: 12.5px; line-height: 1.4; padding: 5px 0; border-bottom: 1px dotted var(--bg-accent); gap: 10px; }
 .pg-line:last-of-type { border-bottom: none; }
 .vt-prog-n { font-size: 11.5px; line-height: 1.45; color: var(--text-muted); margin: 6px 0 0; }
