@@ -1,4 +1,4 @@
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
 
 // ─────────────────────────────────────────────────────────────────────────────
 // La mise à jour de l'application installée.
@@ -22,6 +22,38 @@ import { ref } from 'vue'
 
 /** Vrai quand une nouvelle version est installée et n'attend qu'un rechargement. */
 export const majDisponible = ref(false)
+
+/**
+ * Fermée à la main — pour cette fois seulement.
+ *
+ * L'état n'est PAS rangé : ni `localStorage`, ni cookie. Fermer la pastille doit
+ * dégager l'écran tout de suite, pas décider pour les fois suivantes. Une mise à
+ * jour qu'on a écartée d'un geste en passant serait autrement écartée pour de bon,
+ * et l'application resterait sur une version périmée sans plus jamais le dire.
+ *
+ * Elle revient donc quand l'application revient au premier plan — la fermer, quitter,
+ * revenir, et elle est là. C'est la seule promesse qu'on peut tenir sur un téléphone,
+ * où « rouvrir l'application » ne recharge pas forcément la page.
+ */
+export const majMasquee = ref(false)
+
+/** Ce que la coque affiche vraiment. */
+export const majVisible = computed(() => majDisponible.value && !majMasquee.value)
+
+/** La dernière inscription obtenue, pour pouvoir redemander une vérification. */
+let inscription: ServiceWorkerRegistration | null = null
+
+/**
+ * Le retour de l'application au premier plan.
+ *
+ * Deux choses, et séparées de l'écouteur pour être vérifiables sans navigateur :
+ * on redemande au navigateur s'il y a du neuf (une application jamais fermée ne
+ * vérifie jamais d'elle-même), et la pastille fermée réapparaît.
+ */
+export function auRetourEnAvantPlan() {
+  majMasquee.value = false
+  inscription?.update().catch(() => {})
+}
 
 /** La version qui tourne dans cet onglet. Affichée dans les réglages. */
 export function versionCourante(): string {
@@ -56,25 +88,24 @@ export function useMaj() {
 
     const version = versionCourante()
     navigator.serviceWorker.register(urlDuServiceWorker(version), { scope: '/' })
-      .then((reg) => {
-        // Le navigateur ne vérifie de lui-même qu'au chargement d'une page. Une
-        // application restée ouverte trois jours sur un téléphone n'a donc jamais
-        // rien vérifié. On le demande à chaque retour à l'écran ; c'est gratuit
-        // quand il n'y a rien de neuf (une requête conditionnelle sur un fichier
-        // de trois kilos).
-        document.addEventListener('visibilitychange', () => {
-          if (document.visibilityState === 'visible') reg.update().catch(() => {})
-        })
-      })
+      .then((reg) => { inscription = reg })
       .catch(() => { /* pas de service worker : l'application marche sans */ })
+
+    // Le navigateur ne vérifie de lui-même qu'au chargement d'une page. Une
+    // application restée ouverte trois jours sur un téléphone n'a donc jamais rien
+    // vérifié. On le demande à chaque retour à l'écran ; c'est gratuit quand il n'y
+    // a rien de neuf (une requête conditionnelle sur un fichier de trois kilos).
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'visible') auRetourEnAvantPlan()
+    })
 
     // Le service worker dit lui-même qu'il a pris la main (voir son `activate`).
     navigator.serviceWorker.addEventListener('message', (e: MessageEvent) => {
-      if (e.data?.type === 'maj' && e.data.version !== versionCourante()) majDisponible.value = true
+      if (e.data?.type === 'maj' && e.data.version !== versionCourante()) { majDisponible.value = true; majMasquee.value = false }
     })
     // Ceinture et bretelles : `controllerchange` part aussi quand le message se
     // perd — un onglet en arrière-plan peut manquer le `postMessage`.
-    navigator.serviceWorker.addEventListener('controllerchange', () => { majDisponible.value = true })
+    navigator.serviceWorker.addEventListener('controllerchange', () => { majDisponible.value = true; majMasquee.value = false })
   }
 
   /** Recharge pour appliquer la version installée. */
@@ -83,5 +114,10 @@ export function useMaj() {
     location.reload()
   }
 
-  return { majDisponible, installer, recharger, version: versionCourante }
+  /** Fermer la pastille. Elle revient au prochain retour à l'écran. */
+  function masquer() {
+    majMasquee.value = true
+  }
+
+  return { majDisponible, majVisible, installer, recharger, masquer, version: versionCourante }
 }
