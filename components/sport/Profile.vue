@@ -313,9 +313,8 @@ function onYear(ev: Event) { setBirthYear(parseInt((ev.target as HTMLInputElemen
     <!-- Appareils : la balance se branche ici, avec la montre. C'est un réglage
          d'appareil, pas une donnée de suivi — le Rapport affiche les mesures et
          renvoie vers cet écran quand rien n'est connecté. -->
-        <!-- D'où viennent le poids et les pas. La saisie à la main y est en premier :
-         c'est le seul mode qui marche sans aucun objet connecté, et il était enterré
-         au fond de la carte Withings, là où personne ne le trouvait. -->
+        <!-- Ce que cette instance sait brancher, et ce qui l'est. La saisie du poids, elle,
+                 vit dans Rapport → Corps, avec la courbe qu'elle alimente. -->
     <SportSources :today-iso="props.todayIso" @flash="relayer" />
 
     <!-- Le coffre : miroir des données et boîte de réception des propositions -->

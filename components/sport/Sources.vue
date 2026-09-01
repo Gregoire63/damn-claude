@@ -1,9 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
 import { useConnecteur, useConnecteurs } from '~/composables/useConnecteur'
-import { useMesures } from '~/composables/useMesures'
-import { useNutrition } from '~/composables/useNutrition'
-import { useWorkout } from '~/composables/useWorkout'
 
 
 /**
@@ -34,37 +31,41 @@ interface Fiche {
   label: string
   icone: string
   capabilities: string[]
-    note: string
-    console?: string
-    raison?: string
+  note: string
+  console?: string
+  raison?: string
   /** Vrai quand un formulaire peut y remédier ; faux quand c'est la marque qui bloque. */
   configurable?: boolean
 }
 const dispos = ref<Fiche[]>([])
 const indispos = ref<Fiche[]>([])
 const chargement = ref(true)
-
-const { setSteps, dayFor } = useNutrition()
-const { bodyWeightAt } = useWorkout()
-const { addManual } = useMesures()
+/**
+ * Le serveur a-t-il répondu ?
+ *
+ * Une liste vide ne veut pas dire la même chose des deux côtés : sans marque
+ * configurée, tout est simplement dans « indisponibles » et l'écran est correct. Ce
+ * n'est qu'en cas d'échec de l'appel qu'il faut le dire — confondre les deux affichait
+ * « serveur injoignable » à une instance qui allait très bien.
+ */
+const injoignable = ref(false)
 const conn = useConnecteurs()
-
 
 async function chargerSources() {
   try {
     const r = await $fetch<{ disponibles: Fiche[], indisponibles: Fiche[] }>('/api/sources')
     dispos.value = r.disponibles
     indispos.value = r.indisponibles
+    injoignable.value = false
   }
-  catch { /* instance sans serveur joignable : la saisie à la main reste possible */ }
+  catch { injoignable.value = true }
   finally { chargement.value = false }
 }
 onMounted(chargerSources)
 
-/** Branché ou non. « À la main » n'est pas un fournisseur qu'on branche : c'est le cas
- *  par défaut, et le seul qui marche sans rien configurer. */
-const aBrancher = (c: Fiche) => c.id !== 'manual' && !c.raison
-const branche = (id: string) => (id === 'manual' ? false : useConnecteur(id).connecte.value)
+/** Branchable : la marque est configurée sur cette instance, et rien ne la bloque. */
+const aBrancher = (c: Fiche) => !c.raison
+const branche = (id: string) => useConnecteur(id).connecte.value
 
 const CE_QUE_CA_DONNE: Record<string, string> = {
   poids: 'poids', composition: 'masse grasse', pas: 'pas',
@@ -72,7 +73,7 @@ const CE_QUE_CA_DONNE: Record<string, string> = {
 const apporte = (caps: string[]) => (caps ?? []).map(c => CE_QUE_CA_DONNE[c] ?? c).join(' · ')
 const resume = computed(() => {
   const on = dispos.value.filter(d => branche(d.id)).map(d => d.label)
-  return on.length ? on.join(' · ') : 'À la main'
+  return on.length ? on.join(' · ') : 'aucun branché'
 })
 
 /**
@@ -113,42 +114,6 @@ async function synchroniser(c: Fiche) {
  * manquait deux champs à remplir.
  */
 const aConfigurer = ref<Fiche | null>(null)
-
-// ─── Saisie à la main ────────────────────────────────────────────────────────
-// Deux champs, et ce qui est DÉJÀ noté aujourd'hui affiché en dessous : on corrige
-// plus souvent qu'on ne crée.
-const poids = ref('')
-const pas = ref('')
-const poidsDuJour = computed(() => (props.todayIso ? bodyWeightAt(props.todayIso) : null))
-const pasDuJour = computed(() => (props.todayIso ? dayFor(props.todayIso).steps : null))
-
-function enregistrerPoids() {
-  // `v-model` sur un <input type="number"> rend un NOMBRE, pas une chaîne : appeler
-  // `.replace` dessus jetait une TypeError et le bouton ne faisait rien, sans le dire.
-  const kg = Number(String(poids.value).replace(',', '.'))
-  if (!Number.isFinite(kg) || kg < 20 || kg > 400) {
-    emit('flash', 'Poids invalide : entre 20 et 400 kg', 'echec')
-    return
-  }
-  if (!props.todayIso) return
-  addManual(Math.round(kg * 100) / 100, props.todayIso)
-  poids.value = ''
-  emit('flash', 'Pesée enregistrée ✓')
-}
-
-function enregistrerPas() {
-  if (!props.todayIso) return
-  const brut = String(pas.value).trim()
-  if (brut === '') { setSteps(props.todayIso, null); emit('flash', 'Pas remis à l\'estimation'); return }
-  const n = Number(brut)
-  if (!Number.isFinite(n) || n < 0 || n > 100000) {
-    emit('flash', 'Nombre de pas invalide', 'echec')
-    return
-  }
-  setSteps(props.todayIso, Math.round(n))
-  pas.value = ''
-  emit('flash', 'Pas enregistrés ✓')
-}
 </script>
 
 <template>
@@ -170,7 +135,7 @@ function enregistrerPas() {
             <b>{{ c.label }}</b>
             <small>{{ apporte(c.capabilities) }}</small>
           </span>
-          <span class="conn-e mono">{{ c.raison ? (c.configurable ? 'à configurer' : 'indisponible') : (branche(c.id) ? 'connecté ✓' : (aBrancher(c) ? 'à brancher' : 'par défaut')) }}</span>
+          <span class="conn-e mono">{{ c.raison ? (c.configurable ? 'à configurer' : 'indisponible') : (branche(c.id) ? 'connecté ✓' : 'à brancher') }}</span>
           <span class="conn-chev" aria-hidden="true">{{ ouvert === c.id ? '▴' : '▾' }}</span>
         </button>
         <div v-else class="conn-row">
@@ -181,9 +146,8 @@ function enregistrerPas() {
           </span>
           <span v-if="branche(c.id)" class="conn-e mono">connecté ✓</span>
                     <button v-else-if="aBrancher(c)" class="btn conn-b" @click="connecter(c.id)">Connecter</button>
-                    <span v-else-if="!c.raison" class="conn-e mono">par défaut</span>
                     <!-- Une marque non configurée doit rester CLIQUABLE, même ici. Sans ça,
-                         l'étape n'offrait aucun geste : quatre lignes grisées, et rien à faire.
+                         l'étape n'offrait aucun geste : des lignes grisées, et rien à faire.
                          Le détail vit dans une fenêtre, où il y a la place. -->
                     <button v-else class="btn conn-b" @click="aConfigurer = c">
                       {{ c.configurable ? 'Configurer' : 'Pourquoi ?' }}
@@ -191,44 +155,14 @@ function enregistrerPas() {
         </div>
 
         <div v-if="!props.compact && ouvert === c.id" class="conn-det">
-          <!-- 1. La saisie manuelle. Ce N'EST PAS un repli : c'est le seul mode qui
-               marche partout, et il reste utile même avec une balance — pour corriger
-               une pesée aberrante, ou noter un poids pris ailleurs. -->
-          <template v-if="c.id === 'manual'">
-            <div class="src-manual">
-              <div class="src-field">
-                <label class="src-lab" for="src-kg">Poids du jour</label>
-                <div class="src-row">
-                  <!-- Un exemple, jamais la valeur du jour : un chiffre gris dans un
-                       champ se lit comme une saisie déjà faite, on quitte l'écran en
-                       croyant avoir noté. Ce qui est enregistré se dit en dessous. -->
-                  <input id="src-kg" v-model="poids" type="number" inputmode="decimal" step="0.1" placeholder="ex. 78,4">
-                  <button class="btn" @click="enregistrerPoids()">Noter</button>
-                </div>
-                <span v-if="poidsDuJour" class="muted src-cur">Déjà noté aujourd'hui : {{ poidsDuJour }} kg</span>
-              </div>
-              <div class="src-field">
-                <label class="src-lab" for="src-pas">Pas</label>
-                <div class="src-row">
-                  <input id="src-pas" v-model="pas" type="number" inputmode="numeric" placeholder="ex. 8 400">
-                  <button class="btn" @click="enregistrerPas()">Noter</button>
-                </div>
-                <span class="muted src-cur">
-                  <template v-if="pasDuJour">Déjà noté aujourd'hui : {{ pasDuJour }} pas. </template>
-                                    Laisser vide revient à l'estimation. Les pas entrent dans ta dépense du jour.
-                </span>
-              </div>
-            </div>
-          </template>
-
-          <!-- 2 et 3. Ce qui touche aux identifiants — la raison d'un blocage, ou le
-               formulaire — est le même bloc que dans la fenêtre du parcours. -->
-          <template v-else-if="c.raison">
-            <SportConnecteurConfig :marque="c" @flash="relais" @change="chargerSources()" />
-          </template>
-
-          <!-- 4. Une marque disponible : l'état, les gestes, et de quoi la débrancher. -->
-          <template v-else>
+                  <!-- Non configurée : la raison d'un blocage, ou le formulaire — le même bloc
+                       que dans la fenêtre du parcours. -->
+                  <template v-if="c.raison">
+                    <SportConnecteurConfig :marque="c" @flash="relais" @change="chargerSources()" />
+                  </template>
+        
+                  <!-- Disponible : l'état, les gestes, et de quoi la débrancher. -->
+                  <template v-else>
             <p v-if="useConnecteur(c.id).reconnecter.value" class="muted export-warn">
               ⚠️ Autorisation expirée ou révoquée. Reconnecte le compte.
             </p>
@@ -259,9 +193,14 @@ function enregistrerPas() {
       </li>
     </ul>
 
-    <p v-if="!chargement && !dispos.length" class="muted mt-6">
-          Serveur injoignable : la liste des connecteurs n'a pas pu être chargée. La saisie
-          manuelle reste disponible dans <b>Rapport</b>.
+    <p v-if="injoignable" class="muted mt-6">
+          Serveur injoignable : la liste des connecteurs n'a pas pu être chargée.
+        </p>
+        <!-- Rien de configuré n'est pas une panne : c'est l'état d'une instance neuve. Le
+             dire évite de chercher ce qui manque, et rappelle que tout marche sans. -->
+        <p v-else-if="!chargement && !dispos.length" class="muted mt-6">
+          Aucun connecteur branché. Le poids se note à la main dans <b>Rapport</b>, et les pas
+          sont estimés à partir de ta semaine type.
         </p>
     
         <!-- La fenêtre du parcours : la liste compacte n'a pas la place du formulaire,

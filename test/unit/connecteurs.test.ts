@@ -54,10 +54,13 @@ describe('le registre et les fiches se répondent', () => {
     }
   })
 
-  it('« manual » n’est pas un adaptateur : rien à autoriser', () => {
-    expect(adaptateurPour('manual')).toBeNull()
-    expect(providerById('manual')!.identifiants).toBe(false)
-  })
+  it('ne connaît aucune marque qui ne soit pas dans le registre', () => {
+      // La saisie à la main a longtemps figuré ici comme un fournisseur. Elle n'en est
+      // pas un : il n'y a rien à autoriser, rien à synchroniser, et une ligne « À la
+      // main » dans une liste de marques à brancher n'apprenait rien.
+      expect(adaptateurPour('manual')).toBeNull()
+      expect(providerById('manual')).toBeNull()
+    })
 
   /**
    * L'URL d'autorisation est le seul endroit où une faute ne se voit pas : la marque
