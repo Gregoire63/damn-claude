@@ -121,6 +121,13 @@ calque est ouvert — `calqueOuvert` pour les feuilles et fenêtres, `sheetVisib
 la séance, qui n'y passe pas. Le sens de l'animation est posé aussi pour les
 navigations qui ne viennent pas d'un geste, sinon l'écran part du mauvais côté.
 
+**Un refus s'affiche avec le texte du serveur, pas avec son numéro.** `ofetch`
+compose son message depuis la ligne de statut HTTP, où HTTP/2 ne transporte plus
+aucune phrase : il ne reste que « 403 ». Ce que le serveur explique est dans le corps
+de la réponse — `lib/erreurs.ts` va l'y chercher. Et un secret qu'on TAPE (le code de
+démarrage) se saisit en clair, majuscule automatique et correcteur coupés : masqué, on
+ne peut pas relire ce qu'un clavier de téléphone a fait du texte.
+
 **La version du build purge les caches.** L'application enregistre
 `/sw.js?v=<version>` : pour le navigateur, une URL de script différente est un autre
 service worker, donc il l'installe et son `activate` jette tout `sport-*` d'une autre

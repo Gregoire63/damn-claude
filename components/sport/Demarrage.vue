@@ -163,6 +163,10 @@ async function poserPasskey() {
  */
 const enLocal = computed(() => import.meta.client && /^(localhost|127\.|\[::1\])/.test(location.hostname))
 
+// D'où vient le code : du journal de déploiement (« build ») ou d'une variable
+// posée à la main (« env »). Seul le premier change à chaque déploiement.
+const sourceCode = computed(() => v.state.value.bootstrapSource)
+
 const hote = computed(() => (import.meta.client ? location.host : ''))
 const urlConnecteur = computed(() => (import.meta.client ? `${location.origin}/api/mcp` : '/api/mcp'))
 const copie = ref(false)
@@ -294,12 +298,23 @@ async function charger() {
                 <template v-if="enLocal">affiché dans le terminal du serveur de développement.</template>
                 <template v-else>affiché dans le journal du dernier déploiement.</template>
               </p>
+              <!--
+                LA phrase qui manquait. Un code neuf est fabriqué à chaque build : celui
+                d'un déploiement précédent est refusé, et le refus ressemble en tout point
+                à une faute de frappe. On cherche alors l'erreur dans ce qu'on a tapé, au
+                lieu d'aller chercher le bon code — et cinq essais mènent au verrou d'un
+                quart d'heure.
+              -->
+              <p v-if="!enLocal && sourceCode === 'build'" class="dem-p">
+                Il change à chaque déploiement : prends celui du <b>dernier</b> en date,
+                un code plus ancien est refusé.
+              </p>
               <div v-if="enLocal" class="vt-warn">
                 Une clé d'accès est liée à un domaine : celle du site en ligne ne fonctionne
                 pas sur <b>{{ hote }}</b>. Il en faut une seconde, propre à cette adresse.
               </div>
               <label class="field"><span>Code de démarrage</span>
-                <input v-model="codeDemarrage" type="password" autocomplete="off" placeholder="16 caractères"></label>
+                <input v-model="codeDemarrage" class="mono" type="text" inputmode="text" autocomplete="off" autocapitalize="none" autocorrect="off" spellcheck="false" placeholder="16 caractères"></label>
               <!-- Bouton mort si le serveur ne peut pas répondre : sans NUXT_VAULT_SECRET,
                    la demande de défi rend un 500, et « 500 Server Error » n'apprend rien à
                    celui qui vient de taper son code. Mieux vaut ne pas proposer le geste. -->
