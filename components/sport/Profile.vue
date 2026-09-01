@@ -106,8 +106,16 @@ const progChanges = computed(() => {
 })
 const { soundEnabled, soundVolume, soundType, testSound, SOUND_OPTIONS, vibrationLevel, VIBRATION_OPTIONS, watchNotify, watchStatus, setWatchNotify, testWatch } = useRestTimer()
 
-// Relais montre : la fin de repos part en notification téléphone même app ouverte,
-// pour que la montre (FIT 100 S…) la répercute et vibre au poignet.
+/**
+ * La fin de repos part en notification du système, même application ouverte : c'est ce
+ * qui permet à une montre appairée de la répercuter et de vibrer au poignet.
+ *
+ * Ce réglage s'affichait dans une carte « Montre connectée », entre les connecteurs et
+ * les données. Il n'y a pourtant AUCUNE montre connectée là-dedans : rien n'est lu, rien
+ * n'est synchronisé, c'est une notification du téléphone. Le nom promettait une
+ * intégration qui n'existe pas, et la vraie — Withings, Fitbit, Polar — se cherchait
+ * ailleurs. Il vit donc avec le reste du chrono.
+ */
 const WATCH_STATUS_LABEL: Record<string, string> = {
   granted: 'Notifications autorisées',
   denied: 'Notifications bloquées',
@@ -284,10 +292,10 @@ function onYear(ev: Event) { setBirthYear(parseInt((ev.target as HTMLInputElemen
       </div>
     </div>
 
-    <!-- Son & vibration de fin de repos -->
-    <div class="card">
-      <div class="row-between mb-8">
-        <div class="section-label">Son de fin de repos</div>
+        <!-- Tout ce qui se déclenche à la fin d'un repos : son, vibration, notification. -->
+        <div class="card">
+          <div class="row-between mb-8">
+            <div class="section-label">Fin de repos</div>
         <button class="btn" :class="{ sel: soundEnabled }" @click="soundEnabled = !soundEnabled">{{ soundEnabled ? 'Activé' : 'Désactivé' }}</button>
       </div>
       <div class="form-grid">
@@ -304,11 +312,27 @@ function onYear(ev: Event) { setBirthYear(parseInt((ev.target as HTMLInputElemen
           <SportSelect v-model="vibrationLevel" :options="VIBRATION_OPTIONS" />
         </div>
       </div>
-      <div class="nav-row mt-6">
-        <button class="btn flex-1" @click="testSound">🔊 Tester son + vibration</button>
-      </div>
-      <div class="muted mt-6">Le téléphone ne permet pas de régler la <em>force</em> exacte de la vibration : « Légère / Moyenne / Forte » jouent des vibrations de plus en plus longues et répétées.<template v-if="!soundEnabled"> Son coupé — la vibration reste active.</template></div>
-    </div>
+            <div class="nav-row mt-6">
+              <button class="btn flex-1" @click="testSound">🔊 Tester son + vibration</button>
+            </div>
+            <div class="muted mt-6">Le téléphone ne permet pas de régler la <em>force</em> exacte de la vibration : « Légère / Moyenne / Forte » jouent des vibrations de plus en plus longues et répétées.<template v-if="!soundEnabled"> Son coupé — la vibration reste active.</template></div>
+      
+            <!-- La notification du système, dans la même carte : c'est le même événement,
+                 joué sur un troisième support. -->
+            <div class="rt-notif">
+              <div class="row-between">
+                <span class="muted">Notification du système</span>
+                <button class="btn" :class="{ sel: watchNotify }" @click="setWatchNotify(!watchNotify)">{{ watchNotify ? 'Activé' : 'Désactivé' }}</button>
+              </div>
+              <div class="muted mt-6">
+                Une montre appairée au téléphone répercute cette notification et vibre au poignet.
+                <b :class="{ 'export-warn': !watchStatusOk }">{{ watchStatusLabel }}</b>.
+              </div>
+              <div class="nav-row mt-6">
+                <button class="btn flex-1" :disabled="!watchNotify" @click="testWatch">⌚ Tester la notification</button>
+              </div>
+            </div>
+          </div>
 
     <!-- Appareils : la balance se branche ici, avec la montre. C'est un réglage
          d'appareil, pas une donnée de suivi — le Rapport affiche les mesures et
@@ -329,21 +353,6 @@ function onYear(ev: Event) { setBirthYear(parseInt((ev.target as HTMLInputElemen
          planifiée) : beaucoup d'installation pour un rappel qu'on peut poser en
          deux gestes dans l'horloge du téléphone. Le module a donc été supprimé
          plutôt que laissé en place à moitié fiable. -->
-
-    <!-- Relais vers la montre connectée (via les notifications du téléphone) -->
-    <div class="card">
-      <div class="row-between mb-8">
-        <div class="section-label">Montre connectée</div>
-        <span class="muted" :class="{ 'export-warn': !watchStatusOk }">{{ watchStatusLabel }}</span>
-      </div>
-      <div class="row-between">
-        <span class="muted">Notifications sur la montre</span>
-        <button class="btn" :class="{ sel: watchNotify }" @click="setWatchNotify(!watchNotify)">{{ watchNotify ? 'Activé' : 'Désactivé' }}</button>
-      </div>
-      <div class="nav-row mt-6">
-        <button class="btn flex-1" :disabled="!watchNotify" @click="testWatch">⌚ Essayer</button>
-      </div>
-    </div>
 
     <div class="card">
       <div class="section-label mb-8">Données</div>

@@ -171,5 +171,12 @@ suivant cherchera.
 | --- | --- | --- |
 | **Withings** | ✅ vérifié en vrai | Balances Body, montres ScanWatch. Répond toujours HTTP 200, le vrai statut est dans le corps. Fait tourner ses jetons de rafraîchissement. |
 | **Fitbit** | ⚠️ non déroulé | Vrais codes HTTP. `Accept-Language` décide des unités : sans lui, les poids arrivent en livres. |
+| **Polar** | ⚠️ non déroulé | Montres Vantage, Grit X, Pacer, Ignite. Inscription obligatoire (`POST /v3/users`) après l'échange du code, sans quoi tout répond 404. N'émet pas de jeton de rafraîchissement. |
 | **Oura** | ⚠️ non déroulé | Pas seulement : la bague ne pèse pas. Le champ de date est lu de trois façons, faute d'avoir pu le confirmer. |
-| **Garmin** | ⛔ impossible | Programme développeur en pause depuis 2026, formulaire de demande retiré. Aucun code n'y peut rien. La fiche reste, pour que la question ne se repose pas tous les six mois. |
+| **Garmin** | ⛔ impossible | Programme développeur en pause depuis 2026, formulaire de demande retiré (revérifié en septembre 2026). |
+| **Apple Watch** | ⛔ impossible | HealthKit est une API de l'appareil, réservée aux applications iOS. Aucun serveur ne peut lire ces données. |
+| **Wear OS / Samsung** | ⛔ impossible | Health Connect est une base locale à Android, sans accès distant ; les API web de Google Fit ont fermé. |
+
+Les trois dernières lignes ont une fiche dans `lib/providers.ts` **sans adaptateur**, avec
+un `bloque` daté. C'est délibéré : sans elles, la personne qui porte une Apple Watch
+ouvre l'écran, ne trouve rien, et cherche une manipulation qui n'existe pas.

@@ -88,8 +88,19 @@ export const PROVIDERS: Provider[] = [
     console: 'https://dev.fitbit.com/apps/new',
     note: 'Montres et bracelets Fitbit, balance Aria. Poids et pas.',
   },
-  {
-    id: 'oura',
+    {
+          id: 'polar',
+          // Polar a inventé le cardiofréquencemètre de poignet : l'icône le dit, et surtout
+          // elle ne se confond pas avec les deux autres montres de la liste.
+          icone: '❤️',
+      label: 'Polar',
+      capabilities: ['poids', 'pas'],
+      identifiants: true,
+      console: 'https://admin.polaraccesslink.com/',
+      note: 'Montres Vantage, Grit X, Pacer et Ignite, et balances Polar. Pas quotidiens et pesées.',
+    },
+    {
+      id: 'oura',
     icone: '💍',
     label: 'Oura',
     // Une bague ne pèse pas : elle compte les pas, et c'est tout ce qu'on lui demande.
@@ -108,12 +119,45 @@ export const PROVIDERS: Provider[] = [
     capabilities: ['poids', 'pas', 'composition'],
     identifiants: true,
     console: 'https://developer.garmin.com/gc-developer-program/',
-    // Vérifié en août 2026 : le formulaire de demande d'accès a été retiré et le
-    // programme est en pause sans date de réouverture annoncée. Ce n'est pas une
-    // limite de ce code — personne ne peut obtenir d'identifiants aujourd'hui.
-    bloque: 'Le programme développeur Garmin est suspendu depuis 2026 : aucun identifiant ne peut être obtenu pour le moment.',
-  },
-]
+        // Vérifié en septembre 2026 : le formulaire de demande d'accès a été retiré et le
+        // programme est en pause sans date de réouverture annoncée. Ce n'est pas une
+        // limite de ce code — personne ne peut obtenir d'identifiants aujourd'hui.
+        bloque: 'Le programme développeur Garmin est suspendu depuis 2026 : aucun identifiant ne peut être obtenu pour le moment.',
+      },
+      /**
+       * Les deux montres qu'on demande le plus, et qu'aucune application web ne peut lire.
+       *
+       * Elles figurent ici POUR ÊTRE VUES. Sans elles, quelqu'un qui porte une Apple Watch
+       * ouvre cet écran, ne trouve rien, et conclut que l'application ne sait pas faire —
+       * ou pire, cherche une manipulation qui n'existe pas. La raison tient en une ligne,
+       * elle est vérifiée, elle est datée : c'est tout ce qu'il y a à en dire.
+       *
+       * `identifiants: false` : il n'y a pas d'application à déclarer quelque part. Ce
+       * n'est pas une question d'autorisation, c'est qu'il n'existe aucune API serveur.
+       */
+      {
+        id: 'apple',
+        icone: '🍎',
+        label: 'Apple Watch',
+        capabilities: ['poids', 'pas'],
+        identifiants: false,
+        // Vérifié en septembre 2026 : HealthKit est une API de l'appareil, réservée aux
+        // applications iOS natives. Aucun serveur ne peut lire ces données, quel que soit
+        // le code écrit ici.
+        bloque: 'Les données de santé Apple ne sortent pas de l\'iPhone : elles ne sont lisibles que par une application iOS installée sur l\'appareil. Aucun site ne peut y accéder. Exporte-les depuis l\'app Santé, ou passe par une balance connectée.',
+      },
+      {
+            id: 'wearos',
+            icone: '🤖',
+        label: 'Wear OS et Samsung',
+        capabilities: ['poids', 'pas'],
+        identifiants: false,
+        // Vérifié en septembre 2026 : Health Connect est une base locale à Android, sans
+        // API distante, et Google Fit a fermé ses API REST. Samsung Health reste un SDK
+        // Android réservé à des partenaires.
+        bloque: 'Ces montres écrivent dans Health Connect, une base locale à Android sans accès distant — et les API web de Google Fit ont fermé. Aucun site ne peut lire ces données.',
+      },
+    ]
 
 export const providerById = (id: string): Provider | null =>
   PROVIDERS.find(p => p.id === id) ?? null
