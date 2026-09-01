@@ -1,7 +1,7 @@
 import { useWorkout } from '~/composables/useWorkout'
 import { useProfile } from '~/composables/useProfile'
 import { useNutrition } from '~/composables/useNutrition'
-import { useWithings } from '~/composables/useWithings'
+import { useMesures } from '~/composables/useMesures'
 import { useRestTimer } from '~/composables/useRestTimer'
 import { useProgram } from '~/composables/useProgram'
 
@@ -23,7 +23,7 @@ export function useSnapshot() {
   const { logs, bodyWeight, sessionHistory } = useWorkout()
   const { profile, weekPlan, planDays } = useProfile()
   const { exportData } = useNutrition()
-  const { snapshot: withingsData } = useWithings()
+  const { snapshot: mesuresData } = useMesures()
   const { snapshot: timerData } = useRestTimer()
   const { snapshot: programData } = useProgram()
 
@@ -36,7 +36,7 @@ export function useSnapshot() {
       weekPlan: weekPlan.value,
       planDays: planDays.value,
       nutrition: exportData(),
-      ...withingsData(),
+      ...mesuresData(),
       ...timerData(),
       ...programData(),
     }

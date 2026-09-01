@@ -12,8 +12,8 @@ import { useSeance } from '~/composables/useSeance'
 import { useFlash } from '~/composables/useFlash'
 import { useJour } from '~/composables/useJour'
 import { useProfile } from '~/composables/useProfile'
-import { useWithings } from '~/composables/useWithings'
-import { useFitbit } from '~/composables/useFitbit'
+import { useConnecteurs } from '~/composables/useConnecteur'
+import { providerById } from '~/lib/providers'
 import { usePhotos } from '~/composables/usePhotos'
 import { useNutrition } from '~/composables/useNutrition'
 import { useVault } from '~/composables/useVault'
@@ -81,10 +81,6 @@ const {
   ratioFor, restLeft, restFmt, addRest, stopRest,
 } = s
 
-// Message d'échec du retour OAuth Withings. Partagé plutôt que local : c'est la
-// coque qui reçoit la redirection du fournisseur, et l'onglet Profil qui l'affiche —
-// il n'existe pas encore au moment où l'erreur arrive.
-const withingsError = useState<string | null>('withings-erreur', () => null)
 
 /**
  * Le titre est-il assez remonté pour que la barre reprenne la main ?
@@ -164,52 +160,25 @@ function onViewport() {
 }
 
 /**
- * Retour du flux OAuth Withings : /api/withings/callback nous renvoie ici avec les
- * jetons en query. On les range, puis on NETTOIE l'URL — laisser un jeton dans la
- * barre d'adresse, c'est le laisser dans l'historique, les captures et le partage.
- */
-/**
- * Reprend une connexion Withings laissée en plan dans un autre navigateur.
+ * Reprend une connexion laissée en plan dans un autre navigateur.
  *
- * L'autorisation part de la PWA et revient dans Safari — deux stockages, deux
- * cookies. Les jetons ne peuvent donc pas revenir par l'URL : ils sont déposés côté
- * serveur, et c'est ici qu'on va les chercher, avec le nonce que l'application avait
- * gardé. C'est le premier instant du flux dont on soit sûr qu'il se joue DANS l'app.
+ * L'autorisation part de la PWA et revient dans Safari — deux stockages, deux cookies.
+ * Les jetons ne peuvent donc pas revenir par l'URL : ils sont déposés côté serveur, et
+ * c'est ici qu'on va les chercher, avec le nonce que l'application avait gardé. C'est
+ * le premier instant du flux dont on soit sûr qu'il se joue DANS l'app.
  *
- * Silencieux quand il n'y a rien : on ouvre l'application cent fois pour une
- * connexion de balance.
+ * Silencieux quand il n'y a rien : on ouvre l'application cent fois pour une connexion
+ * de balance. Et valable pour TOUTES les marques — la coque n'en connaît aucune, elle
+ * demande simplement à celles que ce navigateur a déjà branchées.
  */
-async function adoptWithings() {
+async function reprendreConnexions() {
   if (!import.meta.client) return
-  const w = useWithings()
-  const fitbit = useFitbit()
-  w.hydrate()
-
-  // Ancien flux, quand le tour se faisait entièrement dans le même navigateur.
-  // Conservé pour ne pas casser une connexion en cours au moment de la mise à jour.
-  const q = new URLSearchParams(window.location.search)
-  if (q.get('withings')) {
-    if (q.get('withings') === 'ok') w.adoptFromQuery(Object.fromEntries(q.entries()))
-    else withingsError.value = q.get('reason') || 'connexion refusée'
-    // `replace` et non `push` : le retour du fournisseur n'a rien à faire dans
-    // l'historique, et il faut de toute façon effacer les jetons de la barre
-    // d'adresse — un jeton laissé là finit dans une capture d'écran.
-    void router.replace('/profil')
-    return
-  }
-
-  if (await w.claimPending()) {
-    void router.push('/profil')
-    showFlash('⚖️ Balance connectée')
-    return
-  }
-  // Une seule marque à la fois est en cours de connexion : on ne teste la seconde
-  // que si la première n'avait rien en attente.
-  if (await fitbit.claimPending()) {
-    void router.push('/profil')
-    showFlash('⌚ Fitbit connecté')
-    await fitbit.sync()
-  }
+  const repris = await useConnecteurs().reprendreTout()
+  if (!repris) return
+  const fiche = providerById(repris)
+  void router.push('/profil')
+  showFlash(`${fiche?.icone ?? '🔌'} ${fiche?.label ?? repris} connecté`)
+  await useConnecteurs().autoSyncTout(isoOf(new Date()))
 }
 
 /**
@@ -220,10 +189,10 @@ async function adoptWithings() {
  * écoute il faudrait la fermer et la rouvrir pour que la connexion se termine —
  * c'est-à-dire deviner qu'il faut le faire.
  */
-function watchWithingsReturn() {
+function surveillerRetourAutorisation() {
   if (!import.meta.client) return
   document.addEventListener('visibilitychange', () => {
-    if (document.visibilityState === 'visible') adoptWithings()
+    if (document.visibilityState === 'visible') reprendreConnexions()
   })
 }
 
@@ -248,19 +217,19 @@ onMounted(() => {
       navigator.serviceWorker.register('/sw.js', { scope: '/' }).catch(() => {})
     }
   }
-  watchWithingsReturn()
+  surveillerRetourAutorisation()
   hydrateProfile()
   // L'onglet D'ABORD, la séance ensuite : `restoreDraft` rouvre la feuille par-dessus,
   // et c'est bien l'onglet restauré qu'on doit retrouver en la repliant.
   restoreDraft() // rouvre la séance en cours après un refresh accidentel
-  adoptWithings()
+  reprendreConnexions()
   // Les pas de la balance à l'OUVERTURE de l'app, plus seulement en visitant le
   // Rapport. Tant que c'était accroché à cet écran, la cible du jour tournait sur une
   // estimation forfaitaire pour qui n'y allait jamais — et c'est justement la cible
   // qui décide de ce qu'on met dans l'assiette du soir.
   // Volontairement non attendu : rien de ce qui s'affiche n'en dépend, et une balance
   // injoignable ne doit pas retarder le premier écran d'une milliseconde.
-  useWithings().autoSync(isoOf(new Date())).catch(() => { /* hors ligne : ce sera pour la prochaine ouverture */ })
+  useConnecteurs().autoSyncTout(isoOf(new Date())).catch(() => { /* hors ligne : ce sera pour la prochaine ouverture */ })
   // Les métadonnées des photos de plats, dès l'ouverture.
   //
   // Elles n'étaient chargées que par le panneau Nutrition : tant qu'on n'était pas

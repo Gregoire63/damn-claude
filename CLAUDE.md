@@ -134,9 +134,30 @@ Installation ; rien de fait n'est défait.
 
 **Une seule liste de connecteurs, affichée deux fois.** `components/sport/Sources.vue`
 sert le parcours (`compact`) et les réglages (dépliable), à partir de `/api/sources`,
-qui ne renvoie que des NOMS de variables d'environnement — jamais une valeur. Une
-marque non configurée reste visible, en grisé, avec la raison. Ajouter une marque =
-une fiche dans `lib/providers.ts` et une conversion ; aucun écran à toucher.
+qui ne renvoie que des identifiants de marque et un état — jamais une valeur. Une
+marque non configurée reste visible, en grisé, avec la raison.
+
+**Ajouter une marque = un fichier, une fiche, une ligne.** `server/connecteurs/<marque>.ts`
+déclare l'OAuth et la traduction ; `lib/providers.ts` décide de ce que l'écran raconte ;
+`server/connecteurs/index.ts` l'enregistre. Aucun écran, aucune route, aucun composable
+à toucher — les routes sont génériques (`/api/connect/[marque]/…`) et le navigateur ne
+connaît aucune marque par son nom. Le chemin complet est dans `docs/CONNECTEURS.md`, le
+gabarit dans `server/connecteurs/_gabarit.ts.txt`, et `test/unit/connecteurs.test.ts`
+refuse un adaptateur incomplet.
+
+**Trois règles qui se paient cher.** Un adaptateur rend des `BodyEntry`, jamais le JSON
+de la marque. Il ne lit ni `process.env` ni la configuration : ses identifiants lui sont
+donnés — d'où le fait qu'ils puissent venir de l'hébergeur (`NUXT_<MARQUE>_CLIENT_ID`,
+prioritaire) ou du coffre, chiffrés, saisis depuis l'application. Et `auth: true`
+seulement quand une réautorisation est la SEULE réparation : marquer ainsi un quota ou
+une coupure réseau ferait brûler un jeton de rafraîchissement pour rien, et beaucoup de
+marques enterrent l'ancien à la seconde où elles en émettent un neuf.
+
+**Les mesures n'appartiennent à aucune marque.** `useMesures()` tient le journal —
+fusion, quarantaine, miroir vers le module séances — et `absorber()` est le seul chemin
+d'écriture. `useConnecteur(id)` ne fait que la plomberie OAuth. Une marque qui garderait
+son propre historique donnerait deux séries du même poids : la courbe prendrait l'une,
+le métabolisme de base l'autre.
 
 ## Le modèle de données
 

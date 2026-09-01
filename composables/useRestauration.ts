@@ -2,7 +2,7 @@ import { useNutrition } from '~/composables/useNutrition'
 import { useProfile } from '~/composables/useProfile'
 import { useProgram } from '~/composables/useProgram'
 import { useRestTimer } from '~/composables/useRestTimer'
-import { useWithings } from '~/composables/useWithings'
+import { useMesures } from '~/composables/useMesures'
 import { useWorkout } from '~/composables/useWorkout'
 import type { Session } from '~/data/sportProgram'
 import type { Food, Recipe } from '~/data/nutritionProgram'
@@ -49,7 +49,7 @@ export function useRestauration() {
   const profile = useProfile()
   const nutrition = useNutrition()
   const program = useProgram()
-  const withings = useWithings()
+  const mesures = useMesures()
   const timer = useRestTimer()
 
   /**
@@ -138,7 +138,7 @@ export function useRestauration() {
   function restaurerLeReste(data: Record<string, unknown>): void {
     profile.restore(data as Parameters<typeof profile.restore>[0])
     nutrition.restore(data as Parameters<typeof nutrition.restore>[0])
-    withings.restore(data)
+    mesures.restore(data)
     timer.restore(data)
     program.restore(data)
   }

@@ -7,7 +7,7 @@ import { useNutrition } from '~/composables/useNutrition'
 import { useTraining } from '~/composables/useTraining'
 import { useProgram } from '~/composables/useProgram'
 import { setText } from '~/lib/setText'
-import { useWithings } from '~/composables/useWithings'
+import { useMesures } from '~/composables/useMesures'
 import { EFFORT_OPTIONS } from '~/utils/sportStats'
 import { variantName } from '~/data/exerciseVariants'
 import {
@@ -34,7 +34,7 @@ const { sessionLog, bodyWeightAt } = useWorkout()
 const { dayFor, setOverride, dayPlanFor, stepsFor, eatenSlots, library, stock, pickedFor, setPicked, freeMealFor } = useNutrition()
 const { burnOn, energyOn } = useEnergy()
 const { viewOf } = useDayPlan()
-const { entries: bodyEntries, suspectAts } = useWithings()
+const { entries: bodyEntries, suspectAts } = useMesures()
 
 const DOW = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanche']
 const MONTHS = ['janvier', 'février', 'mars', 'avril', 'mai', 'juin', 'juillet', 'août', 'septembre', 'octobre', 'novembre', 'décembre']

@@ -107,12 +107,18 @@ export default defineNuxtConfig({
      * préfère tout décrire dans sa configuration.
      */
     ownerName: '',
-    // Withings : NUXT_WITHINGS_CLIENT_ID / NUXT_WITHINGS_CLIENT_SECRET.
-    // Hors de `public` : le secret ne doit jamais partir dans le bundle client.
-    withings: { clientId: '', clientSecret: '' },
-    // Fitbit : NUXT_FITBIT_CLIENT_ID / NUXT_FITBIT_CLIENT_SECRET. Vides, le
-    // fournisseur ne s'affiche pas — plutôt que d'offrir un bouton qui échoue.
-    fitbit: { clientId: '', clientSecret: '' },
+    /*
+     * Les identifiants des marques ne sont PAS déclarés ici, et c'est délibéré.
+     *
+     * Ils étaient une paire de clés par marque — `withings: { clientId, clientSecret }`
+     * — ce qui obligeait à modifier la configuration de l'application pour brancher un
+     * connecteur de plus. La promesse « ajouter une marque = un fichier » était donc
+     * fausse d'une ligne, et c'est exactement le genre de ligne qu'on oublie.
+     *
+     * Ils se lisent maintenant par convention de nommage — NUXT_WITHINGS_CLIENT_ID,
+     * NUXT_FITBIT_CLIENT_SECRET… — ou dans le coffre, chiffrés, quand ils ont été
+     * saisis depuis l'application. Voir server/utils/connecteurs.ts.
+     */
     public: {
       // Données de démonstration : jamais en production sauf demande explicite.
       seedTestData: false,

@@ -1,0 +1,143 @@
+import { ofetch } from 'ofetch'
+import { ErreurConnecteur } from './types'
+import type { Adaptateur, Identifiants, Jetons, Releve } from './types'
+
+// ─────────────────────────────────────────────────────────────────────────────
+// GABARIT — copie ce fichier en <marque>.ts et remplis les trous.
+// ─────────────────────────────────────────────────────────────────────────────
+//
+// Il porte l'extension .ts.txt exprès : il ne compile pas, il n'est pas dans le
+// registre, et il ne doit surtout pas apparaître comme une marque à moitié branchée
+// dans la liste. Copie-le, renomme-le en .ts, puis suis docs/CONNECTEURS.md.
+//
+// Ce que tu écris ici : où l'on autorise, comment on échange un code contre des
+// jetons, et comment traduire les données de la marque.
+// Ce que tu n'écris PAS : le nonce, le dépôt des jetons, l'ordre entre
+// rafraîchissement et lecture, la fusion dans le journal, l'écran. Tout cela est
+// commun, écrit une fois, et éprouvé sur une vraie balance.
+//
+// Trois règles, et elles se paient cher si on les oublie :
+//   1. On rend des `BodyEntry`, jamais le JSON de la marque.
+//   2. On ne lit ni `process.env` ni la configuration : les identifiants arrivent en
+//      paramètre. C'est ce qui rend l'adaptateur testable sans serveur.
+//   3. `auth: true` UNIQUEMENT quand seule une réautorisation peut réparer. Un quota
+//      ou une coupure réseau marqués « auth » feraient brûler un jeton de
+//      rafraîchissement pour rien — et beaucoup de marques enterrent l'ancien à la
+//      seconde où elles en émettent un nouveau.
+
+const AUTH_URL = 'https://exemple.tld/oauth/authorize'
+const TOKEN_URL = 'https://api.exemple.tld/oauth/token'
+const API_URL = 'https://api.exemple.tld/v1'
+
+/** Le minimum qui suffise. Demander large fait refuser l'autorisation, ou peur. */
+const SCOPES = 'weight activity'
+
+const JOUR = 86400
+/** Première synchro : assez pour tracer une tendance tout de suite. */
+const FENETRE_JOURS = 90
+
+interface JetonsBruts { access_token: string, refresh_token: string, expires_in: number }
+
+const isoDe = (ms: number) => new Date(ms).toISOString().slice(0, 10)
+
+/**
+ * Traduire l'erreur de la marque, et surtout répondre à UNE question : faut-il
+ * réautoriser, ou juste réessayer plus tard ?
+ */
+function erreur(e: unknown): ErreurConnecteur {
+  const r = e as { status?: number, data?: { message?: string } }
+  const statut = r.status ?? 0
+  return new ErreurConnecteur('gabarit', statut, r.data?.message ?? (e as Error).message, statut === 401)
+}
+
+async function jetons(ids: Identifiants, form: Record<string, string>): Promise<Jetons> {
+  try {
+    const t = await ofetch<JetonsBruts>(TOKEN_URL, {
+      method: 'POST',
+      body: new URLSearchParams({ client_id: ids.clientId, client_secret: ids.clientSecret, ...form }).toString(),
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    })
+    return {
+      acces: t.access_token,
+      rafraichissement: t.refresh_token,
+      // Un instant ABSOLU, pas une durée : c'est lui qui décide s'il faut rafraîchir
+      // avant d'aller lire, et une durée relative se périme dans le stockage.
+      expireA: Math.floor(Date.now() / 1000) + (t.expires_in || 0),
+    }
+  }
+  catch (e) { throw erreur(e) }
+}
+
+const gabarit: Adaptateur = {
+  // Le même identifiant que dans lib/providers.ts. Un écart d'une lettre et la marque
+  // n'apparaît jamais, sans qu'aucune erreur ne le dise — le test de conformité
+  // (test/unit/connecteurs.test.ts) attrape exactement ça.
+  id: 'gabarit',
+
+  autoriser({ clientId, redirectUri, state }) {
+    const u = new URL(AUTH_URL)
+    u.searchParams.set('response_type', 'code')
+    u.searchParams.set('client_id', clientId)
+    u.searchParams.set('scope', SCOPES)
+    // `redirectUri` est fabriqué par la route, jamais ici : il doit être RIGOUREUSEMENT
+    // identique à celui déclaré dans la console de la marque.
+    u.searchParams.set('redirect_uri', redirectUri)
+    u.searchParams.set('state', state)
+    return u.toString()
+  },
+
+  echanger: (ids, code, redirectUri) =>
+    jetons(ids, { grant_type: 'authorization_code', code, redirect_uri: redirectUri }),
+
+  rafraichir: (ids, rafraichissement) =>
+    jetons(ids, { grant_type: 'refresh_token', refresh_token: rafraichissement }),
+
+  async lire(_ids, acces, depuis): Promise<Releve> {
+    const maintenant = Date.now()
+    const jours = depuis > 0
+      ? Math.max(1, Math.ceil((maintenant / 1000 - depuis) / JOUR))
+      : FENETRE_JOURS
+    const debut = isoDe(maintenant - jours * JOUR * 1000)
+    const fin = isoDe(maintenant)
+
+    let brut: { pesees?: unknown[], pas?: unknown[] }
+    try {
+      brut = await ofetch(`${API_URL}/measures?from=${debut}&to=${fin}`, {
+        headers: { Authorization: `Bearer ${acces}` },
+      })
+    }
+    catch (e) { throw erreur(e) }
+
+    return {
+      // Une pesée sans poids n'apprend rien : on la jette ici plutôt que de la laisser
+      // remonter et polluer la courbe. `at` porte l'heure — sans elle, deux pesées le
+      // même jour n'en font qu'une, et c'est justement ce jour-là qu'on veut les deux.
+      pesees: (brut.pesees ?? []).flatMap((m) => {
+        const { date, kg, fatRatio } = m as { date: string, kg: number, fatRatio?: number }
+        if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || !(kg > 0)) return []
+        return [{
+          date,
+          at: `${date}T07:00`,
+          kg: Math.round(kg * 100) / 100,
+          ...(fatRatio && fatRatio > 3 && fatRatio < 70 ? { fatRatio } : {}),
+          // Toujours l'identifiant de la marque : la provenance se relit des mois plus
+          // tard, quand un chiffre surprend.
+          source: 'gabarit',
+        }]
+      }),
+      // Zéro pas est une vraie journée, mais une marque rend aussi zéro pour un jour
+      // qu'elle ne connaît pas — et l'écrire ferait tomber la cible calorique sous
+      // l'estimation. On ne rend que le positif.
+      pas: (brut.pas ?? []).flatMap((j) => {
+        const { date, steps } = j as { date: string, steps: number }
+        return steps > 0 ? [{ date, steps: Math.round(steps) }] : []
+      }),
+      // Si la marque rend un curseur à elle (un « updatetime »), c'est LUI qu'il faut
+      // rendre : il tient compte des mesures corrigées après coup, qu'une heure locale
+      // raterait définitivement. Sinon, l'heure d'ici fait l'affaire.
+      curseur: Math.floor(maintenant / 1000),
+    }
+  },
+}
+
+export default gabarit

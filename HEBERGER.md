@@ -189,58 +189,73 @@ retombe sur une estimation tirée de ta semaine type.
 |---|---|---|
 | **Withings** | Fonctionne | `NUXT_WITHINGS_CLIENT_ID`, `NUXT_WITHINGS_CLIENT_SECRET` |
 | **Fitbit** | Écrit, **jamais déroulé en vrai** | `NUXT_FITBIT_CLIENT_ID`, `NUXT_FITBIT_CLIENT_SECRET` |
+| **Oura** | Écrit, **jamais déroulé en vrai** | `NUXT_OURA_CLIENT_ID`, `NUXT_OURA_CLIENT_SECRET` |
 | **Garmin** | **Impossible aujourd'hui** | — |
 
-Une marque dont les variables ne sont pas posées **ne s'affiche pas** dans l'écran.
-C'est délibéré : un bouton « Connecter » qui rend une erreur se lit comme une panne,
-et on cherche pendant dix minutes un problème qui n'existe pas.
+**Ces variables sont facultatives.** Depuis l'écran *Profil → Connecteurs*, chaque
+marque se configure directement dans l'application : tu colles l'identifiant et le
+secret donnés par la marque, ils sont chiffrés et rangés dans le coffre, et la marque
+apparaît sans redéploiement. Les variables d'hébergement restent possibles, et
+**prioritaires** — le secret n'atteint alors ni le navigateur ni le coffre.
 
-**Withings** — crée une application sur <https://developer.withings.com>, en
-indiquant comme URL de retour `https://ton-domaine/api/withings/callback`. L'URL doit
-correspondre **exactement**. Les jetons de chaque personne restent dans le navigateur
-de son téléphone ; le serveur n'en conserve aucun, et ils sont volontairement exclus
-de l'export JSON comme du miroir.
+Une marque dont les identifiants ne sont posés nulle part s'affiche **en grisé**, avec
+« à configurer ». C'est délibéré : un bouton « Connecter » qui rend une erreur se lit
+comme une panne, et on cherche pendant dix minutes un problème qui n'existe pas.
+
+Dans les deux cas, il reste une étape que rien ne peut faire à ta place : **déclarer
+l'URL de retour dans la console de la marque**.
+
+```
+https://<ton-domaine>/api/connect/<marque>/callback
+```
+
+L'écran l'affiche, prête à copier. Elle doit correspondre **exactement**, protocole et
+barre finale compris.
+
+**Withings** — crée une application sur <https://developer.withings.com> (type *Public
+API*). Les jetons de chaque personne restent dans le navigateur de son téléphone ; le
+serveur n'en conserve aucun, et ils sont volontairement exclus de l'export JSON comme
+du miroir.
 
 **Fitbit** — crée une application sur <https://dev.fitbit.com/apps/new>. Type
-« Personal » (c'est le seul qui donne accès aux données détaillées de ton propre
-compte), URL de rappel `https://ton-domaine/api/fitbit/callback`, et coche les
-autorisations **`weight`** et **`activity`** — sans elles l'API répond 403, et
+« Personal » (le seul qui donne accès aux données détaillées de ton propre compte), et
+coche les autorisations **`weight`** et **`activity`** — sans elles l'API répond 403, et
 réautoriser n'y changera rien.
 
-> **Ce chemin n'a jamais été déroulé sur un vrai compte.** Les points d'entrée et
-> les formats viennent de la documentation officielle, et le trajet reprend celui de
-> Withings, éprouvé lui. Mais aucun compte développeur n'était disponible pour le
-> tester de bout en bout : attends-toi à corriger un détail au premier essai. Les
+> **Ce chemin n'a jamais été déroulé sur un vrai compte.** Les points d'entrée et les
+> formats viennent de la documentation officielle, et le trajet reprend celui de
+> Withings, éprouvé lui. Attends-toi à corriger un détail au premier essai. Les
 > messages d'erreur sont écrits pour ça — ils distinguent « pas configuré » (501),
 > « autorisations manquantes dans le portail » (403), « autorisation expirée » (401)
-> et « Fitbit injoignable » (502). Si tu tombes sur l'un d'eux, il dit quoi regarder.
+> et « marque injoignable » (502).
 
 Un piège vérifié au passage : Fitbit décide des **unités** d'après l'en-tête
 `Accept-Language`. Sans lui, les poids arrivent en livres — 91,5 kg devient 201,7, et
-rien dans la réponse ne le signale. Le client force `fr_FR`.
+rien dans la réponse ne le signale. L'adaptateur force `fr_FR`.
+
+**Oura** — crée une application sur <https://cloud.ouraring.com/oauth/applications>.
+La bague ne pèse pas : elle ne remonte que les **pas**, et c'est la seule portée
+demandée (`daily`). Le poids visible dans l'application Oura est une valeur de profil
+saisie à la main, sans date — l'enregistrer comme une pesée fabriquerait une mesure qui
+n'a jamais eu lieu.
 
 **Garmin** — le programme développeur Garmin est **en pause** : le formulaire de
-demande d'accès a été retiré et aucune date de réouverture n'est annoncée
-(vérifié en août 2026). Personne ne peut obtenir d'identifiants, quel que soit le
-code écrit ici. La fiche reste dans `lib/providers.ts` pour que la question ne se
-repose pas tous les six mois.
+demande d'accès a été retiré et aucune date de réouverture n'est annoncée (vérifié en
+août 2026). Personne ne peut obtenir d'identifiants, quel que soit le code écrit ici.
+La fiche reste dans `lib/providers.ts` pour que la question ne se repose pas tous les
+six mois.
 
 ### Ajouter une marque
 
-Trois choses, et Fitbit sert de modèle complet :
+Un fichier, une fiche, une ligne — le chemin complet est dans
+**[docs/CONNECTEURS.md](docs/CONNECTEURS.md)**, avec un gabarit commenté à copier
+(`server/connecteurs/_gabarit.ts.txt`) et un test qui refuse un adaptateur incomplet.
 
-1. une fiche dans `lib/providers.ts` — le nom, ce qu'elle fournit, les variables
-   à poser — plus une fonction de conversion vers la forme de l'application ;
-2. quatre routes dans `server/api/<marque>/` : `authorize`, `callback`, `claim`,
-   `sync`. Recopie `server/api/fitbit/`, le trajet est le même pour tout le monde ;
-3. un composable qui garde SES jetons et verse dans les magasins communs —
-   `useWithings().adopt()` pour les pesées, `useNutrition().setSteps()` pour les pas.
-
-Le point à ne pas rater est le troisième. Une marque qui se construit son propre
-historique de poids donne deux séries du même chiffre : la courbe en choisit une, le
-métabolisme de base l'autre, et l'écart se découvre des semaines plus tard. `adopt`
-existe pour ça — dédoublonnage, quarantaine des pesées aberrantes et miroir vers le
-module séances viennent avec.
+Le point à ne pas rater : une marque ne garde JAMAIS son propre historique de poids.
+Elle rend des pesées, `useMesures().absorber()` les range dans le journal commun —
+dédoublonnage, quarantaine des mesures aberrantes et miroir vers le module séances
+viennent avec. Deux séries du même chiffre, et la courbe en choisirait une pendant que
+le métabolisme de base prend l'autre.
 
 ---
 

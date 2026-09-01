@@ -40,10 +40,7 @@ const HORS_SAUVEGARDE: Record<string, string> = {
   EXPORT_KEY: 'date du dernier export : une propriété de CET appareil',
   SCHEMA_KEY: 'version de schéma, réécrite à l\'hydratation',
   LAST_PUSH_KEY: 'horodatage du dernier envoi au coffre, propre à l\'appareil',
-  MIGRATED_KEY: 'drapeau de migration Withings',
-  TOK_KEY: 'JETONS Withings — ne doivent JAMAIS sortir de l\'appareil',
-  NONCE_KEY: 'nonce OAuth à usage unique, périmé en dix minutes',
-  SYNC_KEY: 'date de dernière synchro, propre à l\'appareil',
+  MIGRATED_KEY: 'drapeau de migration de l\'ancien suivi de poids',
   LEGACY_BW_KEY: 'ancienne clé, lue une fois pour migrer',
   LEGACY_SEL_KEY: 'ancienne clé, lue une fois pour migrer',
   LEGACY_START_KEY: 'ancienne clé, lue une fois pour migrer',
@@ -77,7 +74,7 @@ describe('l’aller-retour de sauvegarde', () => {
     const nutrition = lire('useNutrition.ts')
     const workout = lire('useWorkout.ts')
     const profil = lire('useProfile.ts')
-    const withings = lire('useWithings.ts')
+    const mesures = lire('useMesures.ts')
     const timer = lire('useRestTimer.ts')
     const programme = lire('useProgram.ts')
 
@@ -103,7 +100,7 @@ describe('l’aller-retour de sauvegarde', () => {
 
     const SOURCES: Record<string, string> = {
       'useNutrition.ts': nutrition, 'useWorkout.ts': workout, 'useProfile.ts': profil,
-      'useWithings.ts': withings, 'useRestTimer.ts': timer, 'useProgram.ts': programme,
+      'useMesures.ts': mesures, 'useRestTimer.ts': timer, 'useProgram.ts': programme,
     }
 
     /**
@@ -149,14 +146,26 @@ describe('l’aller-retour de sauvegarde', () => {
     }
   })
 
-  /** Les jetons Withings ne doivent pas figurer dans l'instantané. Jamais. */
-  it('garde les jetons Withings hors de toute sauvegarde', () => {
+  /**
+   * Les jetons d'une marque ne doivent figurer dans AUCUNE sauvegarde. Jamais.
+   *
+   * Ils sont liés à l'appareil et à une autorisation en cours : restaurés ailleurs,
+   * ils donneraient à un second téléphone un accès qu'on croit avoir révoqué en
+   * débranchant le premier. Et un jeton de rafraîchissement recopié dans un fichier
+   * d'export est un jeton qui traîne dans un dossier de téléchargements.
+   *
+   * Le test vise maintenant `useConnecteur`, qui les garde pour toutes les marques :
+   * la promesse ne dépend plus de la vigilance d'un fichier par marque.
+   */
+  it('garde les jetons des marques hors de toute sauvegarde', () => {
     const snapshot = readFileSync('composables/useSnapshot.ts', 'utf8')
-    expect(snapshot).not.toMatch(/TOK_KEY|access_token|refresh_token/)
-    const withings = lire('useWithings.ts')
-    const snapFn = withings.slice(withings.indexOf('function snapshot()'))
+    expect(snapshot).not.toMatch(/access_token|refresh_token|useConnecteur/)
+    const mesures = lire('useMesures.ts')
+    const snapFn = mesures.slice(mesures.indexOf('function snapshot()'))
     const corps = snapFn.slice(0, snapFn.indexOf('\n  }'))
-    expect(corps).not.toMatch(/tok|token/i)
+    expect(corps).not.toMatch(/tok|token|acces|rafraich/i)
+    // Et la plomberie OAuth n'assemble aucun instantané : elle n'a pas de snapshot().
+    expect(lire('useConnecteur.ts')).not.toMatch(/function snapshot\(/)
   })
 
   /**
