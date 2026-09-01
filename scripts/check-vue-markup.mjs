@@ -37,6 +37,48 @@ const fichiers = [
 ].filter(f => existsSync(f)).sort()
 let bad = 0
 
+/**
+ * Une page = un seul nœud à la racine, et ce nœud doit être un ÉLÉMENT.
+ *
+ * Deux garde-fous en un, parce que les deux se réparent au même endroit.
+ *
+ * 1. `<NuxtPage>` enveloppe la page dans une `<Transition>` (le glissement d'onglet),
+ *    et une transition anime UN nœud du DOM. `<Suspense>`, `<ClientOnly>` ou un
+ *    `<template>` à la racine n'existent pas dans le DOM : Vue prévient une fois en
+ *    console (« renders non-element root node that cannot be animated »), puis rend
+ *    l'écran SANS animation. Rien ne casse, rien n'échoue — le glissement ne joue
+ *    simplement pas sur cet onglet-là.
+ *
+ * 2. Un COMMENTAIRE posé à la racine, à côté de l'élément, compte comme un second
+ *    nœud : en développement le compilateur les conserve, la page rend un fragment, et
+ *    Nuxt le signale lui-même (NUXT_E4004, « does not have a single root node and will
+ *    cause errors when navigating between routes »). Le commentaire va donc DANS
+ *    l'élément racine, jamais au-dessus.
+ *
+ * Les deux ne se voient qu'en ouvrant la console du bon écran, en développement, après
+ * avoir navigué. C'est exactement le genre de faute qu'une vérification à froid attrape
+ * mieux qu'un humain.
+ */
+function racineUnique(f, ast) {
+  // On garde les commentaires : c'est le point 2. Seuls les blancs de mise en page
+  // disparaissent — eux ne produisent aucun nœud.
+  const noeuds = ast.children.filter(c => !(c.type === 2 && !c.content.trim()))
+  if (noeuds.length !== 1) {
+    const quoi = noeuds.map(c => (c.type === 3 ? 'un commentaire' : c.type === 2 ? 'du texte' : `<${c.tag}>`)).join(' + ')
+    console.error(`${f} — ${noeuds.length} nœuds à la racine (${quoi}) ; une page en veut UN. Rentre les commentaires dans l'élément racine.`)
+    return false
+  }
+  const [r] = noeuds
+  // tagType 0 = balise HTML. 1 = composant, 3 = <template> : ni l'un ni l'autre
+  // n'existe dans le DOM, donc rien à animer.
+  if (r.type !== 1 || r.tagType !== 0) {
+    const quoi = r.type === 1 ? `<${r.tag}>` : r.type === 3 ? 'un commentaire' : 'du texte'
+    console.error(`${f} — racine ${quoi} : enveloppe-la dans un élément HTML, sinon la transition d'onglet ne joue pas.`)
+    return false
+  }
+  return true
+}
+
 for (const f of fichiers) {
   const { descriptor } = parse(readFileSync(f, 'utf8'), { filename: f })
   const tpl = descriptor.template
@@ -55,10 +97,11 @@ for (const f of fichiers) {
     bad++
     console.error(`${f} — ${e.message}`)
   }
+  if (f.startsWith('pages') && tpl.ast && !racineUnique(f, tpl.ast)) bad++
 }
 
 if (bad) {
   console.error(`\n${bad} problème(s) de balisage. Le navigateur les « réparerait » à sa façon.`)
   process.exit(1)
 }
-console.log(`Balisage valide (${fichiers.length} composants).`)
+console.log(`Balisage valide (${fichiers.length} composants), pages à racine unique.`)
