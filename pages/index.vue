@@ -80,19 +80,19 @@ const todayRecord = computed(() => {
 </script>
 
 <template>
-  <!--
-    Le parcours d'installation reste tant qu'il reste une étape ; l'accueil, lui, ne
-    disparaît que si le PROFIL manque. C'est la seule étape qui barre la route, parce
-    que sans taille, sexe et année de naissance il n'y a pas de métabolisme de base :
-    tout l'écran n'aurait que des tirets à montrer, et trois cadres vides ressemblent
-    à une panne bien plus qu'à un départ. Les trois autres étapes sont des
-    invitations — on peut se servir de l'application sans elles.
-
-    `ClientOnly` parce que le programme vit dans `localStorage` : rendu côté serveur,
-    l'écran d'accueil annoncerait « ton programme est vide » à quelqu'un qui a des
-    séances, l'espace d'un battement.
-  -->
   <div class="stack">
+    <!--
+      Le parcours d'installation reste tant qu'il reste une étape ; l'accueil, lui, ne
+      disparaît que si le PROFIL manque. C'est la seule étape qui barre la route, parce
+      que sans taille, sexe et année de naissance il n'y a pas de métabolisme de base :
+      tout l'écran n'aurait que des tirets à montrer, et trois cadres vides ressemblent
+      à une panne bien plus qu'à un départ. Les trois autres étapes sont des
+      invitations — on peut se servir de l'application sans elles.
+
+      `ClientOnly` parce que le programme vit dans `localStorage` : rendu côté serveur,
+      l'écran d'accueil annoncerait « ton programme est vide » à quelqu'un qui a des
+      séances, l'espace d'un battement.
+    -->
     <!-- La séance du jour est passée EN SLOT du bandeau nutrition : les deux
          partagent la première ligne, et les compteurs s'étalent en dessous. -->
     <ClientOnly>

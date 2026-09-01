@@ -121,6 +121,14 @@ calque est ouvert — `calqueOuvert` pour les feuilles et fenêtres, `sheetVisib
 la séance, qui n'y passe pas. Le sens de l'animation est posé aussi pour les
 navigations qui ne viennent pas d'un geste, sinon l'écran part du mauvais côté.
 
+**Une page, un seul nœud à la racine, et c'est un élément HTML.** `<NuxtPage>`
+enveloppe chaque page dans une `<Transition>` ; une transition anime UN nœud du DOM.
+Une page dont la racine est `<Suspense>` ou `<ClientOnly>` — ou qui porte un
+commentaire À CÔTÉ de son élément racine, ce qui fait deux nœuds en développement — ne
+s'anime pas : Vue prévient une fois en console, Nuxt émet `NUXT_E4004`, et le
+changement d'onglet redevient un remplacement sec. Les commentaires vont donc DANS
+l'élément racine. `npm run check` le vérifie à froid sur tout `pages/`.
+
 **Une seule navigation interne.** `.onglets-int > .segmente` : le même contrôle
 segmenté dans Progression, dans Plats et partout où l'on bascule entre des vues d'un
 même écran. Trois dessins différents cohabitaient ; le même geste doit avoir la même
