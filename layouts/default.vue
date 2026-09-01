@@ -60,6 +60,11 @@ const TABS = ONGLETS
 const pageTitle = computed(() => titreDe(route.path))
 const { flash, flashTon, showFlash } = useFlash()
 const maj = useMaj()
+
+// Les propositions de Claude : le badge de l'en-tête, et la feuille qu'il ouvre.
+// `vault` est déclaré plus bas (c'est lui qui donne l'initiale de la marque) — même
+// état de module, une seule instance.
+const propositionsOuvertes = ref(false)
 // Le parcours d'installation : tant qu'il reste une étape, il occupe l'écran seul.
 const demarrage = useDemarrage()
 
@@ -140,6 +145,8 @@ function onScroll() { titreReplie.value = window.scrollY > 34 }
  * seul dès qu'on se renomme depuis Profil.
  */
 const vault = useVault()
+/** Le nombre écrit sur la cloche. Zéro : pas de badge, le bouton reste. */
+const propositionsEnAttente = computed(() => vault.pendingCount.value)
 const brandMark = computed(() => {
   const mots = (vault.state.value.ownerName || 'Moi').trim().split(/\s+/).filter(Boolean)
   const lettres = mots.slice(0, 2).map(m => [...m][0] ?? '').join('')
@@ -273,6 +280,9 @@ onMounted(() => {
   // C'est ce qui remplace l'export manuel qu'il fallait penser à faire.
   const { buildSnapshot } = useSnapshot()
   demarrage.hydrate()
+  // `hydrate()` alimente aussi la cloche de l'en-tête : sans lui, elle n'aurait
+  // aucun compte à afficher tant qu'on n'a pas ouvert les réglages — c'est-à-dire
+  // précisément l'écran qu'elle sert à éviter.
   vault.hydrate()
     .then(() => vault.push(buildSnapshot))
     .catch(() => { /* hors ligne : le coffre est un confort, pas une dépendance */ })
@@ -358,6 +368,31 @@ onUnmounted(() => {
           <span class="brand-eyebrow">Damn Claude</span>
           <span class="header-titre">{{ pageTitle }}</span>
         </span>
+        <!--
+          Les propositions de Claude, atteignables depuis PARTOUT.
+
+          Elles vivaient derrière un bouton, dans la carte du coffre, en bas des
+          réglages. Or c'est la seule chose de l'application qui attend quelque chose
+          de toi : tant qu'une proposition n'est ni appliquée ni refusée, rien n'est
+          écrit. Une file d'attente qu'il faut penser à aller consulter n'est pas une
+          file d'attente, c'est un oubli programmé.
+
+          Le bouton reste même à zéro : c'est aussi par là qu'on DÉFAIT une
+          modification déjà acceptée, et ce chemin-là doit exister quand rien
+          n'attend. Seul le badge apparaît et disparaît.
+        -->
+        <button
+          v-if="demarrage.fini.value"
+          class="header-alerte"
+          :class="{ some: propositionsEnAttente > 0 }"
+          :aria-label="propositionsEnAttente
+            ? `Propositions de Claude : ${propositionsEnAttente} en attente`
+            : 'Propositions de Claude'"
+          @click="propositionsOuvertes = true"
+        >
+          <Glyphe nom="cloche" :taille="20" />
+          <span v-if="propositionsEnAttente" class="header-badge mono">{{ propositionsEnAttente > 9 ? '9+' : propositionsEnAttente }}</span>
+        </button>
       </div>
       <!-- Desktop : navigation en haut -->
       <nav v-if="demarrage.fini.value" class="topnav">
@@ -840,6 +875,10 @@ onUnmounted(() => {
       </button>
       <button class="mini-abandon" aria-label="Annuler la séance" @click="askCancel">✕</button>
     </div>
+
+    <ClientOnly>
+      <SportPropositions v-if="propositionsOuvertes" @close="propositionsOuvertes = false" @flash="showFlash" />
+    </ClientOnly>
 
     <!--
       Nouvelle version installée.

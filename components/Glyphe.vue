@@ -27,6 +27,10 @@ const TRACES: Record<string, string> = {
   courbe: '<path d="M4 3.6v15.2a1.6 1.6 0 0 0 1.6 1.6H20"/><path d="m7.6 15.6 3.6-4.3 2.9 2.4 4.7-5.6"/>',
   personne: '<circle cx="12" cy="8" r="3.7"/><path d="M4.8 20.6a7.2 7.2 0 0 1 14.4 0"/>',
   haltere: '<path d="M2.6 9.4v5.2M5.6 7.2v9.6M18.4 7.2v9.6M21.4 9.4v5.2"/><path d="M5.6 12h12.8"/>',
+  // La cloche des propositions en attente. Un point d'exclamation aurait dit
+  // « attention » ; ici rien n'est cassé, quelque chose ATTEND — ce n'est pas la
+  // même chose, et un écran qui crie à tort finit par ne plus être cru.
+  cloche: '<path d="M18 8.4a6 6 0 1 0-12 0c0 6-2.4 7.2-2.4 7.2h16.8S18 14.4 18 8.4"/><path d="M13.7 19.2a2 2 0 0 1-3.4 0"/>',
 }
 
 const trace = computed(() => TRACES[props.nom] ?? '')

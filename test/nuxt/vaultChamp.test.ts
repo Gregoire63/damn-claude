@@ -1,7 +1,7 @@
 import { mount } from '@vue/test-utils'
 import { describe, expect, it } from 'vitest'
 import { registerEndpoint } from '@nuxt/test-utils/runtime'
-import Vault from '../../components/sport/Vault.vue'
+import Propositions from '../../components/sport/Propositions.vue'
 import type { RawProposal } from '../../lib/proposals'
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -38,9 +38,8 @@ describe('une écriture générique dans la boîte de réception', () => {
   it('traduit le chemin en mots, et s’applique d’un tap', async () => {
     localStorage.clear()
     localStorage.setItem('gr-bodyweight-v1', JSON.stringify([{ date: '2026-08-18', kg: 91.5 }]))
-    const w = mount(Vault, { props: { snapshot: () => ({}) }, attachTo: document.body, global: { stubs: { transition: false } } })
+    const w = mount(Propositions, { attachTo: document.body, global: { stubs: { transition: false } } })
     await attendre(); await attendre()
-    await w.get('.vt-inbox').trigger('click')
     await attendre(); await attendre()
 
     const txt = document.body.textContent ?? ''

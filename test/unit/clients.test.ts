@@ -1,4 +1,7 @@
+import { readFileSync } from 'node:fs'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+
+const lire = (f: string) => readFileSync(new URL(`../../${f}`, import.meta.url), 'utf8')
 
 /*
  * L'inscription d'un client est OUVERTE : n'importe qui peut demander un
@@ -119,5 +122,24 @@ describe('ce qu\'on accorde à l\'inscription', () => {
   it('n\'accorde rien quand rien de demandé n\'est réalisable', async () => {
     const { grantsAccordes } = await utils()
     expect(grantsAccordes(['implicit', 'password'])).toEqual([])
+  })
+})
+
+describe('la réponse d\'inscription reste conforme', () => {
+  const src = () => lire('server/api/oauth/register.post.ts')
+
+  /*
+   * `client_secret_expires_at: 0` traînait dans la réponse. La RFC 7591 ne prévoit
+   * ce champ que lorsqu'un secret est DÉLIVRÉ — et ce client public n'en reçoit
+   * aucun. Annoncer l'expiration d'un secret qui n'existe pas laisse un client
+   * conformant conclure qu'il en attendait un, et rejeter la réponse entière.
+   */
+  it('n\'annonce pas l\'expiration d\'un secret qu\'elle ne délivre pas', () => {
+    expect(src()).not.toMatch(/^\s*client_secret_expires_at:/m)
+    expect(src()).not.toMatch(/^\s*client_secret:/m)
+  })
+
+  it('annonce un client public : aucune authentification au guichet', () => {
+    expect(src()).toContain("token_endpoint_auth_method: 'none'")
   })
 })

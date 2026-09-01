@@ -52,10 +52,9 @@ const attendre = () => new Promise(r => setTimeout(r, 60))
  */
 async function monter() {
   vi.resetModules()
-  const Vault = (await import('../../components/sport/Vault.vue')).default
-  const w = mount(Vault, { props: { snapshot: () => ({}) }, attachTo: document.body, global: { stubs: { transition: false } } })
+  const Propositions = (await import('../../components/sport/Propositions.vue')).default
+  const w = mount(Propositions, { attachTo: document.body, global: { stubs: { transition: false } } })
   await attendre(); await attendre()
-  await w.get('.vt-inbox').trigger('click')
   await attendre(); await attendre()
   return w
 }

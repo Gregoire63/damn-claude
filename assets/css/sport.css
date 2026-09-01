@@ -68,6 +68,61 @@
 .sport-header.titre-replie { border-bottom-color: color-mix(in srgb, var(--bg-accent) 80%, transparent); }
 .header-top { display: flex; align-items: center; gap: 10px; min-height: 34px; }
 /* Les deux textes partagent une case de grille : ils se croisent sans bouger la barre. */
+/* La cloche des propositions, à droite de l'en-tête. `margin-left: auto` la pousse
+   au bord : le titre garde toute la place restante, et la cloche ne bouge pas d'un
+   écran à l'autre — c'est ce qui permet de la viser sans regarder. */
+.header-alerte {
+  margin-left: auto; flex: 0 0 auto; position: relative;
+  display: flex; align-items: center; justify-content: center;
+  width: 38px; height: 38px; margin-right: -6px;
+  background: none; border: none; border-radius: 11px;
+  color: var(--text-secondary); cursor: pointer;
+}
+.header-alerte:hover { background: var(--bg-accent); color: var(--text-primary); }
+/* Quelque chose attend : la cloche prend la couleur d'accent, et le badge dit
+   combien. Sans le badge, « il y a du neuf » demande d'ouvrir pour le savoir. */
+.header-alerte.some { color: var(--accent-primary); }
+.header-badge {
+  position: absolute; top: 1px; right: 0;
+  min-width: 17px; height: 17px; padding: 0 4px;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--accent-primary); color: var(--bg-primary);
+  border: 2px solid var(--bg-primary);
+  border-radius: 999px; font-size: 10px; font-weight: 700; line-height: 1;
+}
+/* Qui mange, sur la fiche de recette. Des pastilles et non des cases à cocher :
+   c'est un état qu'on lit d'un coup d'œil avant de peser, pas un formulaire. */
+.rs-convives { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-bottom: 10px; }
+.rs-conv { display: inline-flex; align-items: center; gap: 5px; background: var(--bg-secondary); border: 1px solid var(--bg-accent); color: var(--text-secondary); border-radius: 999px; padding: 5px 11px; font-family: inherit; font-size: 13px; cursor: pointer; }
+.rs-conv.on { background: var(--accent-primary); border-color: var(--accent-primary); color: var(--bg-primary); }
+/* « Moi » ne se décoche pas : c'est l'unité de compte, et un bouton qui ne fait rien
+   doit avoir l'air de ne rien faire. */
+.rs-conv.fige { cursor: default; opacity: 0.9; }
+.rs-conv-p { font-size: 11px; opacity: 0.8; }
+.rs-facteur { margin-left: auto; font-size: 13px; font-weight: 700; color: var(--accent-primary); }
+
+/* Une validation déjà défaite : elle reste lisible — c'est l'historique — mais elle
+   ne se propose plus, et ça doit se voir sans lire le bouton. */
+.vt-prop.faite { opacity: 0.55; }
+
+/* Le foyer, dans les réglages : une ligne par convive, l'appétit au milieu.
+   `grid` et non `flex` — les noms n'ont pas la même longueur, et une colonne qui
+   danse d'une ligne à l'autre se lit mal quand on compare des pourcentages. */
+.fo-ligne { display: grid; grid-template-columns: 1fr auto auto; align-items: center; gap: 8px; padding: 6px 0; border-bottom: 1px solid var(--bg-accent); }
+.fo-ligne:last-of-type { border-bottom: none; }
+.fo-nom { min-width: 0; font-size: 14px; font-weight: 500; }
+input.fo-nom { margin: 0; }
+.fo-appetit { display: flex; align-items: center; gap: 4px; }
+.fo-pm { padding: 5px 10px; font-size: 15px; line-height: 1; }
+.fo-part { font-size: 13px; min-width: 46px; text-align: center; color: var(--text-secondary); }
+.fo-note { font-size: 12px; }
+.fo-x { padding: 5px 9px; font-size: 12px; }
+
+/* Le programme modifié, dans la feuille des propositions : un bloc à part, sous ce
+   qui attend. Le trait du haut sépare « ce qu'on te demande » de « ce que tu as
+   déjà accepté » — deux lectures différentes du même sujet. */
+.pg-bloc { border-top: 1px solid var(--bg-accent); padding-top: 14px; margin-top: 4px; }
+
 .header-txt { display: grid; min-width: 0; }
 .header-txt > * { grid-area: 1 / 1; align-self: center; transition: opacity 0.22s var(--ease-out), transform 0.22s var(--ease-out); }
 .header-titre {
@@ -1228,6 +1283,12 @@ button.conn-row { cursor: pointer; }
 .session-sheet .session-main { padding-bottom: calc(28px + env(safe-area-inset-bottom, 0px)); }
 
 /* ─── Popup de confirmation « annuler la séance » ─── */
+/* Une confirmation ouverte DEPUIS une fenêtre doit passer au-dessus d'elle.
+   Le rang 70 des confirmations a été choisi face aux feuilles (60) ; une fenêtre
+   monte à 80, et la boîte se retrouvait dessous — visible à travers le voile, donc
+   d'apparence normale, mais INCLIQUABLE : les taps allaient à la fenêtre. Un bouton
+   qu'on voit et qui ne répond pas se lit comme une application gelée. */
+.confirm-overlay.au-dessus { z-index: 90; }
 .confirm-overlay {
   position: fixed; inset: 0; z-index: 70;
   display: flex; align-items: center; justify-content: center; padding: 24px;

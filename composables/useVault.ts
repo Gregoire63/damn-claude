@@ -271,7 +271,16 @@ export function useVault() {
    * les mêmes fonctions que l'interface : rien de spécial, donc rien qui puisse
    * diverger de ce qu'un tap fait déjà.
    */
-  async function apply(p: RawProposal): Promise<boolean> {
+  /**
+   * `archiver: false` — appliquer SANS rien dire au serveur.
+   *
+   * Sert à défaire une proposition validée : l'inverse est fabriqué localement
+   * (voir `defaireProposition`), il n'a jamais existé côté serveur, et l'archiver
+   * échouerait sur « proposition introuvable ». L'écriture, elle, a bien eu lieu —
+   * répondre `false` ferait croire le contraire, et c'est le pire des deux mondes :
+   * la donnée change et l'écran annonce un échec.
+   */
+  async function apply(p: RawProposal, { archiver = true }: { archiver?: boolean } = {}): Promise<boolean> {
     const plan = planFor(p, ctx)
     if (!plan) { error.value = 'Cette proposition ne peut pas être appliquée automatiquement.'; return false }
     // On passe par les MÊMES fonctions que l'interface : `assign` tient ensemble le
@@ -377,7 +386,7 @@ export function useVault() {
       if (!id) { error.value = 'Semaine invalide.'; return false }
       nutrition.applyMenuFrom(plan.lundi, id)
     }
-    return resolve(p, 'applied')
+    return archiver ? resolve(p, 'applied') : true
   }
 
   async function resolve(p: RawProposal, status: 'applied' | 'refused'): Promise<boolean> {

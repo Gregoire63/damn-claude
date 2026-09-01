@@ -46,64 +46,10 @@ hydrateNutrition()
 // ce qui touche à la SAUVEGARDE, qui est la responsabilité de cet écran.
 const { snapshot: mesuresData, hydrate: hydrateMesures } = useMesures()
 hydrateMesures()
-/**
- * Le programme modifié, et le chemin du retour.
- *
- * Les modifications arrivent surtout d'une conversation, validées d'un tap. Sans
- * cette section, une mauvaise idée acceptée trop vite ne se défaisait qu'en
- * redemandant à Claude de proposer l'inverse — c'est-à-dire en dépendant du
- * connecteur pour réparer ce que le connecteur a fait. Un réglage qu'on ne peut
- * pas annuler seul n'est pas un réglage, c'est un engagement.
- *
- * On ne montre RIEN quand rien n'a bougé : le programme livré n'a pas besoin d'être
- * annoncé, il est déjà là, en haut de l'accueil.
- */
-const {
-  custom: progCustom, exerciseName: progName,
-  resetExercise, enableExercise, disableExercise, sessionById: progSession, setOrder,
-} = useProgram()
-
-const progChanges = computed(() => {
-  const c = progCustom.value
-  const out: { cle: string, texte: string, defaire: () => void }[] = []
-  for (const id of Object.keys(c.patches ?? {})) {
-    const q = c.patches![id]
-    const quoi = [
-      q.sets !== undefined ? `${q.sets} séries` : '',
-      q.reps !== undefined ? `${q.reps} reps` : '',
-      q.rest !== undefined ? `repos ${fmtRest(q.rest)}` : '',
-      q.name !== undefined ? 'nom' : '',
-      q.machine !== undefined ? 'machine' : '',
-      q.cues !== undefined ? 'consignes' : '',
-      q.muscles !== undefined ? 'muscles' : '',
-    ].filter(Boolean).join(', ')
-    out.push({ cle: `p:${id}`, texte: `${progName(id)} — ${quoi}`, defaire: () => resetExercise(id) })
-  }
-  for (const id of c.disabled ?? []) {
-    out.push({ cle: `d:${id}`, texte: `${progName(id)} — retiré du programme`, defaire: () => enableExercise(id) })
-  }
-  for (const [sid, ids] of Object.entries(c.order ?? {})) {
-    if (!ids.length) continue
-    out.push({
-      cle: `o:${sid}`,
-      texte: `${progSession(sid)?.name ?? sid} — ordre changé`,
-      defaire: () => setOrder(sid, []),
-    })
-  }
-  // Défaire un AJOUT, c'est le retirer — pas l'effacer. Si on a déjà chargé dessus,
-  // l'effacer emporterait les séries enregistrées ; le retirer les laisse lisibles.
-  for (const [sid, list] of Object.entries(c.added ?? {})) {
-    for (const e of list) {
-      if ((c.disabled ?? []).includes(e.id)) continue
-      out.push({
-        cle: `a:${e.id}`,
-        texte: `${e.name} — ajouté à ${progSession(sid)?.name ?? sid}`,
-        defaire: () => disableExercise(e.id),
-      })
-    }
-  }
-  return out
-})
+// Le programme modifié et son retour arrière ont déménagé dans la feuille des
+// propositions (components/sport/Propositions.vue) : c'est là qu'on ACCEPTE ces
+// modifications, c'est donc là qu'on doit pouvoir les défaire. Les réparer depuis un
+// écran de configuration ouvert une fois par mois n'avait pas de sens.
 const { soundEnabled, soundVolume, soundType, testSound, SOUND_OPTIONS, vibrationLevel, VIBRATION_OPTIONS, watchStatus } = useRestTimer()
 
 /**
@@ -218,6 +164,12 @@ async function onImport(ev: Event) {
  * Rien n'est effacé : seules les décisions de reporter le sont. Ce qui est fait reste
  * fait, et ses étapes se rouvrent déjà cochées.
  */
+const foyer = useFoyer()
+const nouveauConvive = ref('')
+function ajouterConvive() {
+  if (foyer.ajouter(nouveauConvive.value)) nouveauConvive.value = ''
+}
+
 const demarrage = useDemarrage()
 function revoirInstallation() {
   demarrage.rejouer()
@@ -284,21 +236,6 @@ const { version } = useMaj()
       </div>
     </div>
 
-    <!-- Programme modifié : n'apparaît que s'il l'est. Ce n'est pas un éditeur,
-         c'est le chemin du retour — les modifications, elles, arrivent d'une
-         conversation, et il faut pouvoir en défaire une sans redemander. -->
-    <div v-if="progChanges.length" class="card">
-      <div class="section-label mb-8">Programme modifié</div>
-      <div v-for="c in progChanges" :key="c.cle" class="row-between pg-line">
-        <span>{{ c.texte }}</span>
-        <button class="btn" @click="c.defaire()">↺</button>
-      </div>
-      <div class="muted mt-6">
-        ↺ rétablit la version d'origine. Un exercice retiré reste dans les séances déjà
-                enregistrées, avec ses records.
-      </div>
-    </div>
-
         <!-- Tout ce qui se déclenche à la fin d'un repos : son, vibration, notification. -->
         <div class="card">
           <div class="row-between mb-8">
@@ -351,6 +288,50 @@ const { version } = useMaj()
          planifiée) : beaucoup d'installation pour un rappel qu'on peut poser en
          deux gestes dans l'horloge du téléphone. Le module a donc été supprimé
          plutôt que laissé en place à moitié fiable. -->
+
+    <!--
+      Le foyer : qui mange à la maison, et combien chacun mange.
+
+      Tout le module nutrition compte en portions, et une portion c'est la tienne.
+      Cuisiner à deux se réglait donc en multipliant par deux — sauf que deux
+      personnes ne mangent presque jamais pareil : trop pour l'un, pas assez pour
+      l'autre, et on corrige de tête à chaque plat.
+
+      L'appétit se déclare UNE fois ici. Qui est au repas ce soir se coche là où l'on
+      cuisine, sur la fiche de recette : c'est le geste qui change souvent.
+    -->
+    <div class="card">
+      <div class="section-label mb-8">Foyer</div>
+      <div v-for="c in foyer.convives.value" :key="c.id" class="fo-ligne">
+        <template v-if="c.id === 'moi'">
+          <span class="fo-nom">{{ c.nom }}</span>
+          <span class="fo-part mono">100 %</span>
+          <span class="muted fo-note">l'unité de référence</span>
+        </template>
+        <template v-else>
+          <input
+            class="note-input fo-nom" :value="c.nom" maxlength="24"
+            :aria-label="`Nom de ${c.nom}`"
+            @change="foyer.modifier(c.id, { nom: ($event.target as HTMLInputElement).value })"
+          >
+          <div class="fo-appetit">
+            <button class="btn fo-pm" :aria-label="`Moins pour ${c.nom}`" @click="foyer.modifier(c.id, { appetit: c.appetit - 0.1 })">−</button>
+            <span class="fo-part mono">{{ Math.round(c.appetit * 100) }} %</span>
+            <button class="btn fo-pm" :aria-label="`Plus pour ${c.nom}`" @click="foyer.modifier(c.id, { appetit: c.appetit + 0.1 })">+</button>
+          </div>
+          <button class="btn fo-x" :aria-label="`Retirer ${c.nom}`" @click="foyer.retirer(c.id)">✕</button>
+        </template>
+      </div>
+      <div class="nav-row mt-6">
+        <input v-model="nouveauConvive" class="note-input flex-1" placeholder="Prénom" maxlength="24" @keyup.enter="ajouterConvive">
+        <button class="btn" :disabled="!nouveauConvive.trim()" @click="ajouterConvive">+ Ajouter</button>
+      </div>
+      <p class="muted mt-6">
+        L'appétit se compte par rapport au tien : 100 % = mange autant que toi, 60 % =
+        les deux tiers. Les quantités à peser et à acheter suivent ; tes macros, elles,
+        restent celles de <b>ta</b> part.
+      </p>
+    </div>
 
     <div class="card">
       <div class="section-label mb-8">Données</div>
