@@ -39,8 +39,9 @@ https://<ton-domaine>/api/connect/<marque>/callback
 
 `<marque>` est l'identifiant que tu choisiras à l'étape 3, en minuscules.
 L'application affiche cette URL, prête à copier, dans **Profil → Connecteurs → la
-marque**. Recopie-la au caractère près : un écart d'un slash fait échouer l'échange
-avec un message qui ne dit jamais lequel des deux est faux.
+marque** — et depuis l'étape *Connecteurs* du parcours d'installation, en touchant
+**Configurer**. Recopie-la au caractère près : un écart d'un slash fait échouer
+l'échange avec un message qui ne dit jamais lequel des deux est faux.
 
 Note l'**identifiant** (client ID) et le **secret** (client secret). Demande les
 portées minimales : une autorisation qui réclame le sommeil et la position pour compter
