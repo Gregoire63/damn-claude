@@ -121,6 +121,15 @@ calque est ouvert — `calqueOuvert` pour les feuilles et fenêtres, `sheetVisib
 la séance, qui n'y passe pas. Le sens de l'animation est posé aussi pour les
 navigations qui ne viennent pas d'un geste, sinon l'écran part du mauvais côté.
 
+**Les clients OAuth s'inscrivent, et rien n'est stocké.** `/api/oauth/register`
+(RFC 7591) rend un `client_id` qui EST un jeton signé portant ses redirections :
+aucune table, donc aucun quota ni purge — la même idée que les sessions et les codes.
+L'inscription est ouverte parce qu'elle ne donne rien : l'autorisation passe toujours
+par la clé d'accès, et la redirection est cuite dans l'identifiant, donc un
+identifiant recopié ne peut pas détourner le code. `NUXT_MCP_CLIENT_ID/SECRET`
+restent acceptées pour les instances d'avant, mais ne sont plus obligatoires — une
+instance neuve n'a plus que `NUXT_VAULT_SECRET` à poser.
+
 **Un refus s'affiche avec le texte du serveur, pas avec son numéro.** `ofetch`
 compose son message depuis la ligne de statut HTTP, où HTTP/2 ne transporte plus
 aucune phrase : il ne reste que « 403 ». Ce que le serveur explique est dans le corps

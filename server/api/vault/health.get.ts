@@ -25,6 +25,22 @@ export default defineEventHandler(async () => {
    */
   const env = {
     NUXT_VAULT_SECRET: raw('NUXT_VAULT_SECRET').trim().length >= 24,
+  }
+
+  /**
+   * Les identifiants MCP ne sont plus OBLIGATOIRES, et c'est ce qui a changé.
+   *
+   * Ils étaient dans `env`, donc leur absence rendait `pret` faux : sur une
+   * installation neuve, l'écran annonçait « Serveur incomplet » et barrait la
+   * création de la clé d'accès tant qu'on n'avait pas inventé deux valeurs et
+   * recopié la seconde dans Claude.
+   *
+   * Depuis que les clients s'inscrivent tout seuls (RFC 7591, voir
+   * server/api/oauth/register.post.ts), il n'y a plus rien à inventer ni à recopier.
+   * La paire reste acceptée — une instance déjà branchée continue de marcher — mais
+   * elle est le VIEUX chemin, et rien ne doit plus s'arrêter parce qu'elle manque.
+   */
+  const clientManuel = {
     NUXT_MCP_CLIENT_ID: !!raw('NUXT_MCP_CLIENT_ID').trim(),
     NUXT_MCP_CLIENT_SECRET: !!raw('NUXT_MCP_CLIENT_SECRET').trim(),
   }
@@ -72,6 +88,10 @@ export default defineEventHandler(async () => {
   return {
     pret: Object.values(env).every(Boolean) && store === 'ok',
     env,
+    /** Le client OAuth recopié à la main : facultatif depuis l'inscription automatique. */
+    client_manuel: clientManuel,
+    /** L'inscription automatique des clients est-elle disponible ? */
+    inscription_auto: true,
     bootstrap,
     store,
     driver,
