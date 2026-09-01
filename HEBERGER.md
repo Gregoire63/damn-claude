@@ -189,8 +189,11 @@ retombe sur une estimation tirée de ta semaine type.
 |---|---|---|
 | **Withings** | Fonctionne | `NUXT_WITHINGS_CLIENT_ID`, `NUXT_WITHINGS_CLIENT_SECRET` |
 | **Fitbit** | Écrit, **jamais déroulé en vrai** | `NUXT_FITBIT_CLIENT_ID`, `NUXT_FITBIT_CLIENT_SECRET` |
+| **Polar** | Écrit, **jamais déroulé en vrai** | `NUXT_POLAR_CLIENT_ID`, `NUXT_POLAR_CLIENT_SECRET` |
 | **Oura** | Écrit, **jamais déroulé en vrai** | `NUXT_OURA_CLIENT_ID`, `NUXT_OURA_CLIENT_SECRET` |
 | **Garmin** | **Impossible aujourd'hui** | — |
+| **Apple Watch** | **Impossible** | — |
+| **Wear OS / Samsung** | **Impossible** | — |
 
 **Ces variables sont facultatives.** Depuis l'écran *Profil → Connecteurs*, chaque
 marque se configure directement dans l'application : tu colles l'identifiant et le
@@ -238,6 +241,20 @@ La bague ne pèse pas : elle ne remonte que les **pas**, et c'est la seule port�
 demandée (`daily`). Le poids visible dans l'application Oura est une valeur de profil
 saisie à la main, sans date — l'enregistrer comme une pesée fabriquerait une mesure qui
 n'a jamais eu lieu.
+
+**Polar** — crée une application sur <https://admin.polaraccesslink.com/>. L'inscription
+est libre et gratuite. Une particularité à connaître : après l'autorisation, Polar exige
+que l'application **inscrive** le compte (`POST /v3/users`) ; sans cette étape, toutes
+les lectures répondent 404, ce qui se lit comme « pas de données ». L'adaptateur le fait
+tout seul, et traite « déjà inscrit » comme un succès. AccessLink n'émet pas de jeton de
+rafraîchissement : celui d'accès vit très longtemps.
+
+**Apple Watch, Wear OS, Samsung** — aucune de ces montres n'est lisible depuis un
+serveur, et ce n'est pas une limite de ce code. HealthKit ne sort pas de l'iPhone ;
+Health Connect est une base locale à Android sans accès distant, et les API web de Google
+Fit ont fermé. Elles apparaissent quand même dans la liste, en grisé, avec cette raison :
+sans elles, on cherche une manipulation qui n'existe pas. Pour ces appareils, le chemin
+qui marche est une **balance connectée** pour le poids, ou la saisie à la main.
 
 **Garmin** — le programme développeur Garmin est **en pause** : le formulaire de
 demande d'accès a été retiré et aucune date de réouverture n'est annoncée (vérifié en

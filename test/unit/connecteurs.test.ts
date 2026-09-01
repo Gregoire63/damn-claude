@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { PROVIDERS, providerById } from '../../lib/providers'
+import { PROVIDERS, availableProviders, providerById } from '../../lib/providers'
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Le contrat des connecteurs : ce qu'un adaptateur DOIT faire, quelle que soit la marque.
@@ -238,5 +238,88 @@ describe('Oura — une marque qui ne pèse pas', () => {
     const opts = appels[0]!.opts as { body: string, headers: Record<string, string> }
     expect(opts.headers.Authorization).toMatch(/^Basic /)
     expect(opts.body).not.toContain('secret')
+  })
+})
+
+describe('Polar — l’inscription en plus', () => {
+  const p = adaptateurPour('polar')!
+
+  /**
+   * Le détail qui coûte une soirée : sans `POST /v3/users`, toutes les lectures
+   * répondent 404 — et un 404 sur une donnée se lit comme « pas de données », pas
+   * comme « il manque une inscription ».
+   */
+  it('inscrit l’utilisateur juste après l’échange du code', async () => {
+    reponses = [{ access_token: 'a', expires_in: 86400 }, { 'polar-user-id': 42 }]
+    await p.echanger(IDS, 'code', 'https://x.fr/cb')
+    expect(appels.map(a => a.url)).toEqual([
+      'https://polarremote.com/v2/oauth2/token',
+      'https://www.polaraccesslink.com/v3/users',
+    ])
+  })
+
+  it('traite « déjà inscrit » comme un succès, pas comme une panne', async () => {
+    // C'est le cas NORMAL d'une reconnexion. Le laisser remonter ferait échouer un
+    // raccordement qui a parfaitement fonctionné.
+    reponses = [{ access_token: 'a', expires_in: 86400 }, Object.assign(new Error('conflict'), { status: 409 })]
+    await expect(p.echanger(IDS, 'code', 'https://x.fr/cb')).resolves.toMatchObject({ acces: 'a' })
+  })
+
+  it('n’annonce aucun jeton de rafraîchissement quand la marque n’en émet pas', async () => {
+    // Une chaîne vide dit « rien à rafraîchir » : la route de synchro ne tentera donc
+    // jamais un rafraîchissement qui ne peut pas aboutir.
+    reponses = [{ access_token: 'a', expires_in: 86400 }, {}]
+    const j = await p.echanger(IDS, 'code', 'https://x.fr/cb')
+    expect(j.rafraichissement).toBe('')
+  })
+
+  it('lit les pas et les pesées, quelle que soit l’enveloppe rendue', async () => {
+    // Polar rend une liste nue ici, un objet englobant là. Deviner et se tromper
+    // donnerait une marque qui « ne remonte rien » sans qu'on sache pourquoi.
+    reponses = [
+      { activities: [{ date: '2026-09-01', 'active-steps': 9100 }, { date: '2026-09-02', 'active-steps': 0 }] },
+      [{ created: '2026-09-01T07:12:00', weight: 74.3 }],
+    ]
+    const r = await p.lire(IDS, 'acces', 0)
+    expect(r.pas).toEqual([{ date: '2026-09-01', steps: 9100 }])
+    expect(r.pesees).toEqual([{ date: '2026-09-01', at: '2026-09-01T07:00', kg: 74.3, source: 'polar' }])
+  })
+
+  it('rend les pas même sans balance', async () => {
+    // Une montre seule ne rend aucune information physique : l'échec de cet appel ne
+    // doit pas emporter les pas, qui sont le sujet.
+    reponses = [
+      [{ date: '2026-09-01', steps: 8000 }],
+      Object.assign(new Error('not found'), { status: 404 }),
+    ]
+    const r = await p.lire(IDS, 'acces', 0)
+    expect(r.pas).toHaveLength(1)
+    expect(r.pesees).toEqual([])
+  })
+})
+
+describe('les montres qu’on ne peut pas brancher', () => {
+  /**
+   * Apple Watch et Wear OS figurent dans les fiches POUR ÊTRE VUES. Sans elles,
+   * quelqu'un qui en porte une ouvre l'écran, ne trouve rien, et conclut que
+   * l'application ne sait pas faire — ou cherche une manipulation qui n'existe pas.
+   */
+  it('sont listées, avec une raison qui tient debout', () => {
+    for (const id of ['apple', 'wearos', 'garmin']) {
+      const f = providerById(id)!
+      expect(f, id).toBeTruthy()
+      expect(f.bloque, `${id} doit dire pourquoi`).toBeTruthy()
+      expect(f.bloque!.length, `${id} : une raison en trois mots n'explique rien`).toBeGreaterThan(60)
+      expect(adaptateurPour(id), `${id} ne doit PAS avoir d'adaptateur`).toBeNull()
+    }
+  })
+
+  it('n’apparaissent jamais comme branchables, même tout configuré', () => {
+    const configures = PROVIDERS.map(p => p.id)
+    const dispo = availableProviders(configures).map(p => p.id)
+    expect(dispo).not.toContain('apple')
+    expect(dispo).not.toContain('wearos')
+    expect(dispo).not.toContain('garmin')
+    expect(dispo).toEqual(['withings', 'fitbit', 'polar', 'oura'])
   })
 })

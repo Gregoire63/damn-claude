@@ -18,9 +18,9 @@ const soundEnabled = ref(true)
 const soundVolume = ref(0.7) // 0 → 1
 const soundType = ref('bip')
 const vibrationLevel = ref('strong') // aucune / légère / moyenne / forte
-// Relais vers une montre connectée (Decathlon FIT 100 S…) : voir plus bas.
-// Actif par défaut — c'est le comportement attendu en salle ; le réglage Profil
-// est là pour le couper, pas pour l'allumer.
+// Notification du système à la fin du repos : voir plus bas. Actif par défaut —
+// c'est le comportement attendu en salle ; le réglage sert à le couper, pas à
+// l'allumer.
 const watchNotify = ref(true)
 // Statut affiché à titre d'information : le web ne voit pas la montre, seulement
 // si le navigateur nous autorise à poster la notification qu'elle relaiera.
@@ -174,10 +174,12 @@ function unlockAudio() {
   } catch { /* audio indisponible */ }
 }
 
-// ─── Notification système & relais montre connectée ─────────────────────────
-// Aucune montre Decathlon (FIT 100 S…) n'expose de SDK tiers : impossible d'y
-// installer une app. Le seul canal ouvert est le relais de notifications du
-// téléphone — Decathlon Hub répercute la notification et fait vibrer le poignet.
+// ─── La notification de fin de repos ────────────────────────────────────────
+// Ce n'est PAS une intégration de montre : rien n'est lu, rien n'est synchronisé.
+// Les montres d'entrée de gamme n'exposent aucun SDK tiers, et le seul canal ouvert
+// est le relais de notifications du téléphone — l'application compagnon de la montre
+// répercute la notification et fait vibrer le poignet. Les vraies intégrations, qui
+// lisent des données, sont dans server/connecteurs/.
 // Or la notification n'était envoyée QUE page masquée : en salle l'app reste
 // ouverte, donc rien au poignet. `watchNotify` la déclenche aussi app visible.
 const NOTIF_TAG = 'rest-timer'

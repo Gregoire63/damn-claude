@@ -1,6 +1,7 @@
 import withings from './withings'
 import fitbit from './fitbit'
 import oura from './oura'
+import polar from './polar'
 import type { Adaptateur } from './types'
 
 /**
@@ -12,7 +13,7 @@ import type { Adaptateur } from './types'
  * disparaître une marque mal nommée sans un mot, à l'exécution, chez quelqu'un
  * d'autre.
  */
-export const ADAPTATEURS: Adaptateur[] = [withings, fitbit, oura]
+export const ADAPTATEURS: Adaptateur[] = [withings, fitbit, polar, oura]
 
 export const adaptateurPour = (id: string): Adaptateur | null =>
   ADAPTATEURS.find(a => a.id === id) ?? null

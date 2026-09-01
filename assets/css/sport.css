@@ -443,6 +443,10 @@ input::-webkit-outer-spin-button, input::-webkit-inner-spin-button { -webkit-app
 .ex-opt { opacity: 0.72; }
 .ex-opt:hover, .ex-opt:focus-within { opacity: 1; }
 .ex-opt-tag { margin-left: 7px; font-size: 9.5px; text-transform: uppercase; letter-spacing: 0.07em; color: var(--text-muted); border: 1px solid var(--bg-accent); border-radius: 6px; padding: 1px 5px; vertical-align: middle; white-space: nowrap; }
+/* Le bloc « notification » du chrono : séparé du son par un filet, parce que c'est un
+   support de plus pour le même événement — pas un réglage sans rapport. */
+.rt-notif { margin-top: 14px; padding-top: 12px; border-top: 1px dotted var(--bg-accent); }
+
 /* ─── La liste des connecteurs ────────────────────────────────────────────── */
 /* Une seule liste pour deux écrans : le parcours d'installation la montre à plat
    (la marque, ce qu'elle apporte, un bouton), les réglages la déplient. Deux jeux
