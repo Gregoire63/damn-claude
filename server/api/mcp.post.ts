@@ -60,8 +60,13 @@ export default defineEventHandler(async (event) => {
   if (!claims || claims.scope !== 'suivi') {
     // L'en-tête pointe vers le document de découverte : un client MCP qui reçoit ce
     // 401 sait alors tout seul où aller s'authentifier, sans configuration.
+    //
+    // L'adresse annoncée est celle de la RFC 9728 — le segment bien-connu s'insère
+    // AVANT le chemin de la ressource. Elle pointait vers la racine, qui n'est pas
+    // ce que la règle décrit ; les deux répondent aujourd'hui, mais on annonce la
+    // bonne, parce que c'est elle qu'un client strict recalculera de son côté.
     const base = getRequestURL(event).origin
-    setHeader(event, 'WWW-Authenticate', `Bearer resource_metadata="${base}/.well-known/oauth-protected-resource"`)
+    setHeader(event, 'WWW-Authenticate', `Bearer resource_metadata="${base}/.well-known/oauth-protected-resource/api/mcp"`)
     throw createError({ statusCode: 401, statusMessage: 'Jeton absent ou invalide' })
   }
 
