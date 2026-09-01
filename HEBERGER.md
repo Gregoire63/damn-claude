@@ -89,13 +89,14 @@ téléphone » — sans quoi tu dépends d'un redéploiement.
 
 ### Pour le connecteur Claude
 
-| Variable | À quoi ça sert |
-|---|---|
-| `NUXT_MCP_CLIENT_ID` | Identifiant du client OAuth que tu donneras à Claude |
-| `NUXT_MCP_CLIENT_SECRET` | Son secret |
+**Rien à poser.** Claude s'inscrit tout seul auprès de ton serveur (RFC 7591) : il
+demande un identifiant, ton serveur lui en signe un, et il n'y a ni identifiant ni
+secret à recopier nulle part.
 
-Invente-les — ce sont **tes** identifiants, pas ceux d'un service tiers.
-`openssl rand -hex 16` fait très bien l'affaire pour les deux.
+`NUXT_MCP_CLIENT_ID` et `NUXT_MCP_CLIENT_SECRET` restent acceptées, pour les
+instances installées avant. Les poser sur une instance neuve n'apporte rien — et
+c'est un secret de plus, identique pour tous ceux qui installeraient l'application à
+partir de la tienne.
 
 ### Facultative
 
@@ -158,8 +159,10 @@ l'installation : c'est ton double des clés.
 Dans Claude → Paramètres → Connecteurs → « Ajouter un connecteur personnalisé » :
 
 - URL : `https://ton-domaine/api/mcp`
-- Identifiant client : ton `NUXT_MCP_CLIENT_ID`
-- Secret client : ton `NUXT_MCP_CLIENT_SECRET`
+
+C'est tout : Claude s'inscrit tout seul, il n'y a aucun identifiant à saisir. (Si tu
+as posé `NUXT_MCP_CLIENT_ID` / `NUXT_MCP_CLIENT_SECRET`, tu peux aussi les coller
+dans les options avancées du connecteur — les deux chemins fonctionnent.)
 
 Claude t'enverra sur une page d'autorisation servie par ton propre site, qui te
 demandera ton passkey avant d'accorder quoi que ce soit.

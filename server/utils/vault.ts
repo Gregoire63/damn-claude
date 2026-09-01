@@ -533,3 +533,11 @@ export const SESSION_TTL = 60 * 60 * 24 * 30 // 30 jours : c'est un téléphone 
 export const CHALLENGE_TTL = 60 * 5
 export const CODE_TTL = 60 * 2
 export const ACCESS_TTL = 60 * 60 * 24 * 90 // le connecteur ne doit pas se déconnecter tous les matins
+/*
+ * L'identifiant d'un client inscrit. Dix ans : ce n'est pas un accès, c'est un NOM.
+ * Il ne donne rien par lui-même — chaque autorisation repasse par la clé d'accès —
+ * et le faire expirer obligerait à réinstaller le connecteur sans raison. Il cesse
+ * de valoir quelque chose si l'on change NUXT_VAULT_SECRET, ce qui est la bonne
+ * porte de sortie : tout se réinscrit, rien à purger.
+ */
+export const CLIENT_TTL = 60 * 60 * 24 * 365 * 10

@@ -338,8 +338,8 @@ async function charger() {
             <template v-else>
               <div class="vt-ok"><b>Clé d'accès créée ✓</b></div>
               <p class="dem-p">
-                Ajoute le connecteur dans Claude avec cette adresse, puis l'identifiant et le
-                secret MCP.
+                Ajoute le connecteur dans Claude avec cette adresse. Rien d'autre à saisir :
+                Claude s'inscrit tout seul, et te demandera ta clé d'accès au premier appel.
               </p>
               <pre class="dem-prompt mono">{{ urlConnecteur }}</pre>
               <button class="btn btn-bloc" @click="copierUrl">{{ copie ? 'Copié ✓' : '⧉ Copier l’adresse' }}</button>

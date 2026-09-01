@@ -1,5 +1,6 @@
 import { OWNER_SUB, session } from '../auth/_auth'
 import { CODE_TTL, signToken } from '../../utils/vault'
+import { redirectionValide, verifierClient } from '../../utils/clients'
 
 /**
  * L'écran où l'on autorise Claude — et où l'on prouve d'abord que c'est bien soi.
@@ -26,10 +27,23 @@ export default defineEventHandler((event) => {
   const challenge = String(q.code_challenge ?? '')
   const method = String(q.code_challenge_method ?? '')
 
-  const expectedClient = (process.env.NUXT_MCP_CLIENT_ID || '').trim()
-  if (!expectedClient) throw createError({ statusCode: 503, statusMessage: 'NUXT_MCP_CLIENT_ID non configuré' })
-  if (clientId !== expectedClient) throw createError({ statusCode: 400, statusMessage: 'client_id inconnu' })
-  if (!redirectUri.startsWith('https://')) throw createError({ statusCode: 400, statusMessage: 'redirect_uri invalide' })
+  if (!redirectionValide(redirectUri)) {
+    throw createError({ statusCode: 400, statusMessage: 'redirect_uri invalide : il faut une adresse https sans fragment' })
+  }
+  /*
+   * Deux sortes de clients, une seule porte.
+   *
+   * Celui des variables d'environnement, qu'il faut recopier à la main, et ceux qui
+   * se sont INSCRITS — dont l'identifiant porte lui-même ses redirections, donc rien
+   * n'est stocké. Le second cas vérifie que la redirection demandée est bien l'une
+   * des siennes : c'est ce qui empêche un identifiant recopié ailleurs de faire
+   * renvoyer le code chez quelqu'un d'autre.
+   */
+  const verdict = verifierClient(clientId, redirectUri)
+  if (verdict === 'inconnu') throw createError({ statusCode: 400, statusMessage: 'client_id inconnu' })
+  if (verdict === 'redirection') {
+    throw createError({ statusCode: 400, statusMessage: 'redirect_uri non déclarée par ce client' })
+  }
   if (!challenge || method !== 'S256') {
     throw createError({ statusCode: 400, statusMessage: 'PKCE S256 obligatoire' })
   }
@@ -38,7 +52,10 @@ export default defineEventHandler((event) => {
   // Le code n'est fabriqué QUE si la session est déjà valide : la page ne doit
   // jamais porter un code exploitable avant que l'utilisateur se soit authentifié.
   const code = signedIn
-    ? signToken({ sub: OWNER_SUB, scope: 'code', challenge, redirectUri }, CODE_TTL, Date.now())
+    // `clientId` est DANS le code : sans lui, un client inscrit pourrait présenter
+    // au guichet un code remis à un autre. Le secret partagé jouait ce rôle ; il
+    // n'existe plus pour un client public, c'est donc la signature qui le tient.
+    ? signToken({ sub: OWNER_SUB, scope: 'code', challenge, redirectUri, clientId }, CODE_TTL, Date.now())
     : ''
 
   setHeader(event, 'content-type', 'text/html; charset=utf-8')
