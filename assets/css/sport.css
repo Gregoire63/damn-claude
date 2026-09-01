@@ -1158,6 +1158,18 @@ button.conn-row { cursor: pointer; }
   background: var(--bg-primary); color: var(--text-primary); font-weight: 600;
   box-shadow: 0 1px 3px rgba(42, 40, 38, 0.13), 0 0 0 0.5px rgba(42, 40, 38, 0.05);
 }
+/* Sans sa piste : dans une fenêtre au fond clair, le gris du rail dessinait un bloc
+   de couleur en travers de l'en-tête. La piste sert à détacher le contrôle d'un fond
+   chargé — il n'y en a pas ici, elle ne fait que du bruit.
+
+   La sélection change alors de camp : c'est le bouton ACTIF qui se remplit, au lieu
+   de se détacher d'un rail. Sans ça, un fond blanc sur un fond blanc ne dirait plus
+   où l'on se trouve. */
+.onglets-nu { background: transparent; }
+.onglets-nu .segmente { background: transparent; padding: 0; gap: 6px; }
+.onglets-nu .segmente > button { border-radius: 999px; padding: 7px 12px; }
+.onglets-nu .segmente > button.sel { background: var(--bg-accent); box-shadow: none; }
+
 /* Posé dans l'en-tête d'une carte, à côté d'un titre : même dessin, moins de place. */
 .segmente-mini > button { padding: 5px 9px; font-size: 12px; }
 .profil-summary { display: flex; flex-wrap: wrap; gap: 8px 16px; margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--bg-secondary); }

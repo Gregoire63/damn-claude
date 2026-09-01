@@ -33,15 +33,26 @@ async function monter() {
   return w
 }
 const texte = () => document.body.textContent ?? ''
+
+/** Le programme a son onglet : c'est un ÉTAT, pas une file d'attente. */
+async function ongletProgramme() {
+  const bouton = [...document.body.querySelectorAll('[role="tab"]')]
+    .find(b => (b.textContent ?? '').includes('Programme')) as HTMLButtonElement | undefined
+  expect(bouton, 'un onglet « Programme » doit exister').toBeTruthy()
+  bouton!.click()
+  await attendre()
+}
 function nettoyer(w: { unmount: () => void }) {
   w.unmount()
   document.body.querySelectorAll('.sport-portal').forEach(n => n.remove())
 }
 
 describe('le programme modifié, dans la feuille des propositions', () => {
-  it('ne montre rien tant que rien n’a bougé', async () => {
+  it('annonce un programme d’origine tant que rien n’a bougé', async () => {
     const w = await monter()
-    expect(texte()).not.toContain('Programme modifié')
+    await ongletProgramme()
+    expect(texte()).toContain('Le programme est celui d\'origine')
+    expect(document.body.querySelector('.pg-line')).toBe(null)
     nettoyer(w)
   })
 
@@ -52,7 +63,7 @@ describe('le programme modifié, dans la feuille des propositions', () => {
     prog.patchExercise(ex.id, { sets: 9 })
 
     const w = await monter()
-    expect(texte()).toContain('Programme modifié')
+    await ongletProgramme()
     expect(texte()).toContain('9 séries')
 
     const defaire = document.body.querySelector('.pg-line button') as HTMLButtonElement
@@ -62,7 +73,7 @@ describe('le programme modifié, dans la feuille des propositions', () => {
     // Défait pour de vrai : ce n'est pas la ligne qui disparaît, c'est le programme
     // qui retrouve sa valeur.
     expect(useProgram().exerciseById(ex.id)?.sets).not.toBe(9)
-    expect(texte()).not.toContain('Programme modifié')
+    expect(document.body.querySelector('.pg-line')).toBe(null)
     nettoyer(w)
   })
 })

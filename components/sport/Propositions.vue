@@ -45,14 +45,18 @@ async function doRefuse(p: RawProposal) {
 }
 
 /**
- * Deux onglets, et pourquoi les refusées n'en ont pas un.
+ * Trois onglets, et pourquoi les refusées n'en ont pas un.
  *
  * « En attente » est ce qui te demande quelque chose ; « Validées » est ce que tu as
- * accepté, et donc ce qui a ÉCRIT quelque part. Une proposition refusée n'a rien
- * écrit : il n'y a rien à relire et rien à défaire, un troisième onglet ne
- * porterait qu'un historique.
+ * accepté, et donc ce qui a ÉCRIT quelque part ; « Programme » est l'ÉTAT qui en
+ * résulte, et qu'on vient corriger sans forcément savoir laquelle des propositions
+ * l'a mis là. Il était affiché sous les deux autres : deux listes empilées dans une
+ * fenêtre qui défile déjà, et on tombait dessus en cherchant autre chose.
+ *
+ * Une proposition refusée n'a rien écrit : il n'y a rien à relire et rien à défaire,
+ * un quatrième onglet ne porterait qu'un historique.
  */
-const onglet = ref<'attente' | 'validees'>('attente')
+const onglet = ref<'attente' | 'validees' | 'programme'>('attente')
 const validees = computed(() => v.recent.value.filter(r => r.status === 'applied'))
 
 /**
@@ -392,7 +396,11 @@ const progChanges = computed(() => {
     <template #default>
       <!-- Le même contrôle segmenté que partout ailleurs dans l'application : le
            même geste doit avoir la même forme, sinon chaque écran se réapprend. -->
-      <nav class="onglets-int">
+      <!-- `onglets-nu` : le même contrôle segmenté que partout, sans sa piste grise.
+           Posée sur le fond clair d'une fenêtre, elle dessinait un bloc de couleur en
+           travers de l'en-tête — la piste sert à détacher le contrôle d'un fond
+           chargé, et il n'y en a pas ici. -->
+      <nav class="onglets-int onglets-nu">
         <div class="segmente" role="tablist">
           <button role="tab" :aria-selected="onglet === 'attente'" :class="{ sel: onglet === 'attente' }" @click="onglet = 'attente'">
             En attente<span v-if="v.pendingCount.value" class="mono"> · {{ v.pendingCount.value }}</span>
@@ -400,10 +408,28 @@ const progChanges = computed(() => {
           <button role="tab" :aria-selected="onglet === 'validees'" :class="{ sel: onglet === 'validees' }" @click="onglet = 'validees'">
             Validées<span v-if="validees.length" class="mono"> · {{ validees.length }}</span>
           </button>
+          <button role="tab" :aria-selected="onglet === 'programme'" :class="{ sel: onglet === 'programme' }" @click="onglet = 'programme'">
+            Programme<span v-if="progChanges.length" class="mono"> · {{ progChanges.length }}</span>
+          </button>
         </div>
       </nav>
 
-      <template v-if="onglet === 'validees'">
+      <template v-if="onglet === 'programme'">
+        <p v-if="!progChanges.length" class="muted vt-txt">
+          Le programme est celui d'origine. Ce que tu acceptes ici et qui le modifie
+          apparaîtra dans cette liste, avec de quoi le rétablir.
+        </p>
+        <div v-for="c in progChanges" :key="c.cle" class="row-between pg-line">
+          <span>{{ c.texte }}</span>
+          <button class="btn" :aria-label="`Défaire : ${c.texte}`" @click="c.defaire()">↺</button>
+        </div>
+        <p v-if="progChanges.length" class="muted mt-6">
+          ↺ rétablit la version d'origine. Un exercice retiré reste dans les séances déjà
+          enregistrées, avec ses records.
+        </p>
+      </template>
+
+      <template v-else-if="onglet === 'validees'">
         <p v-if="!validees.length" class="muted vt-txt">
           Rien de validé pour l'instant. Ce que tu acceptes atterrit ici, et peut se
           défaire tant que la donnée n'a pas rebougé depuis.
@@ -542,20 +568,6 @@ const progChanges = computed(() => {
 
       </template>
 
-      <!-- Le programme modifié : visible dans les DEUX onglets. Ce n'est pas une
-           proposition, c'est l'état du programme — et on vient le corriger sans
-           forcément savoir laquelle des propositions l'a mis là. -->
-      <div v-if="progChanges.length" class="pg-bloc">
-        <div class="section-label mb-8">Programme modifié</div>
-        <div v-for="c in progChanges" :key="c.cle" class="row-between pg-line">
-          <span>{{ c.texte }}</span>
-          <button class="btn" :aria-label="`Défaire : ${c.texte}`" @click="c.defaire()">↺</button>
-        </div>
-        <p class="muted mt-6">
-          ↺ rétablit la version d'origine. Un exercice retiré reste dans les séances déjà
-          enregistrées, avec ses records.
-        </p>
-      </div>
 
     </template>
   </Popup>
