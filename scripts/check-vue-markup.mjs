@@ -80,7 +80,24 @@ function racineUnique(f, ast) {
 }
 
 for (const f of fichiers) {
-  const { descriptor } = parse(readFileSync(f, 'utf8'), { filename: f })
+  /*
+   * Les erreurs de `parse` SONT lues, et ça a coûté un écran entier.
+   *
+   * On ne prenait que le descripteur. Or `parse` ne lève pas sur un fichier mal
+   * fermé : il range « Element is missing end tag » dans `errors` et rend quand même
+   * un descripteur, dont le `<template>` compile parfaitement — puisqu'il s'arrête
+   * à la fin du fichier. Un `</template>` manquant passait donc ce contrôle en vert,
+   * et n'échouait qu'au `nuxt build`, plusieurs minutes plus tard.
+   *
+   * C'est exactement ce qui est arrivé : une coupe de trop dans un composant, un
+   * garde-fou qui dit « balisage valide », et l'écran des réglages qui ne s'affiche
+   * plus. Le rôle de ce fichier est de voir ça AVANT.
+   */
+  const { descriptor, errors } = parse(readFileSync(f, 'utf8'), { filename: f })
+  for (const e of errors) {
+    bad++
+    console.error(`${f}:${e.loc?.start?.line ?? 0} — ${e.message}`)
+  }
   const tpl = descriptor.template
   if (!tpl) continue
   // `compile` ne voit que le contenu du <template> : ses lignes repartent de 1.

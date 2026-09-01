@@ -1,3 +1,4 @@
+import { useFoyer } from '~/composables/useFoyer'
 import { computed, ref } from 'vue'
 import type { Food, Recipe } from '~/data/nutritionProgram'
 import type { DayOverride, DayPlan, Extra, Library, MenuDay, MenuWeek, PrepMode, PriceMap, ShoppingList, WeekTemplate } from '~/lib/nutritionStats'
@@ -483,11 +484,15 @@ export function useNutrition() {
   const selection = computed(() => (activeWeek.value ? cookSelection(activeWeek.value, gymDays.value, library.value) : {}))
   const selectionSummary = computed(() => selectionTotals(selection.value, library.value))
   const daysCovered = computed(() => (activeWeek.value ? weekDaysOn(activeWeek.value) : 0))
+  // Les quantités suivent le foyer : cuisiner à deux toute une semaine change la
+  // liste de fond en comble, et la refaire de tête est ce qu'une liste de courses
+  // doit éviter. Le facteur vaut 1 quand on cuisine seul — rien ne change alors.
+  const foyer = useFoyer()
   const selectionShopping = computed(() =>
-    (activeWeek.value ? shoppingFromWeek(activeWeek.value, gymDays.value, library.value) : []))
+    (activeWeek.value ? shoppingFromWeek(activeWeek.value, gymDays.value, library.value, foyer.facteur.value) : []))
   /** Les sessions de cuisine : dimanche, mercredi si besoin, et le soir même. */
   const cookSessions = computed(() =>
-    (activeWeek.value ? cookPlan(activeWeek.value, gymDays.value, library.value, { freezer: freezer.value }) : []))
+    (activeWeek.value ? cookPlan(activeWeek.value, gymDays.value, library.value, { freezer: freezer.value, facteur: foyer.facteur.value }) : []))
   function setFreezer(has: boolean) {
     freezer.value = has
     writeRaw(FREEZER_KEY, has ? '1' : '0')

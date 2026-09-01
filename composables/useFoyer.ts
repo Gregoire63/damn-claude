@@ -72,11 +72,19 @@ export function useFoyer() {
     ecrire()
   }
 
-  /** Remplace tout le foyer d'un coup — ce que fait une restauration ou un import. */
-  function remplacer(brut: unknown): void {
+  /**
+   * Remplace tout le foyer d'un coup : une restauration, un import, un miroir relu.
+   *
+   * Le nom n'est pas libre — `test/unit/sauvegarde.test.ts` vérifie que chaque
+   * composable qui ÉCRIT dans l'instantané expose un `restore` qui le relit. C'est ce
+   * qui empêche une section de partir dans la sauvegarde sans jamais en revenir : on
+   * ne s'en apercevrait qu'en restaurant, c'est-à-dire le jour où l'on a déjà tout
+   * perdu.
+   */
+  function restore(brut: unknown): void {
     convives.value = normaliserConvives(brut)
     ecrire()
   }
 
-  return { convives, facteur, aDuMonde, libelle, hydrate, ajouter, modifier, retirer, remplacer }
+  return { convives, facteur, aDuMonde, libelle, hydrate, ajouter, modifier, retirer, restore }
 }

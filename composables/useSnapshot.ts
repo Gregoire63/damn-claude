@@ -3,6 +3,7 @@ import { useProfile } from '~/composables/useProfile'
 import { useNutrition } from '~/composables/useNutrition'
 import { useMesures } from '~/composables/useMesures'
 import { useRestTimer } from '~/composables/useRestTimer'
+import { useFoyer } from '~/composables/useFoyer'
 import { useProgram } from '~/composables/useProgram'
 
 /**
@@ -26,6 +27,7 @@ export function useSnapshot() {
   const { snapshot: mesuresData } = useMesures()
   const { snapshot: timerData } = useRestTimer()
   const { snapshot: programData } = useProgram()
+  const foyer = useFoyer()
 
   function buildSnapshot(): Record<string, unknown> {
     return {
@@ -39,6 +41,16 @@ export function useSnapshot() {
       ...mesuresData(),
       ...timerData(),
       ...programData(),
+      /*
+       * Le foyer part avec le reste, et ça débloque deux choses d'un coup.
+       *
+       * Il est dans la sauvegarde, donc il survit à un changement de téléphone comme
+       * le reste. Et il est dans le miroir, donc Claude le LIT — et peut proposer d'y
+       * ajouter quelqu'un ou d'y corriger un appétit par le chemin d'écriture
+       * générique, sans qu'on ait à inventer une action de plus. Ces propositions se
+       * relisent, se valident et se défont comme toutes les autres.
+       */
+      foyer: foyer.convives.value,
     }
   }
 

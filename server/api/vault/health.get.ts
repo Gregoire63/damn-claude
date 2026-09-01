@@ -1,4 +1,5 @@
 import { bootstrapArme, origineBootstrap, readMirror, readProposals } from '../../utils/vault'
+import { session } from '../auth/_auth'
 import { trace } from '../../utils/trace'
 
 /**
@@ -12,7 +13,7 @@ import { trace } from '../../utils/trace'
  * Rien de sensible n'en sort : des booléens de PRÉSENCE, jamais une valeur. Savoir
  * qu'un secret est configuré n'aide personne à le deviner.
  */
-export default defineEventHandler(async () => {
+export default defineEventHandler(async (event) => {
   const raw = (k: string) => process.env[k] || ''
   /**
    * `NUXT_VAULT_BOOTSTRAP` n'est PLUS dans cette liste, et c'est une correction.
@@ -100,8 +101,20 @@ export default defineEventHandler(async () => {
     // panne ; vu d'ici, ça se lit en un coup d'œil.
     miroir,
     propositions_en_attente: propositions,
-    // De quoi trancher « la requête n'arrive pas » contre « elle arrive et échoue ».
-    // Voir server/utils/trace.ts : rien n'est écrit, tout est en mémoire du processus.
-    instance: trace(),
+    /*
+     * Le bloc de diagnostic ne sort QUE pour une session ouverte.
+     *
+     * Le reste de ce point d'entrée est volontairement public : il répond
+     * « pourquoi ça ne marche pas » à quelqu'un qui n'a pas encore de clé d'accès, ce
+     * qui est précisément le moment où l'on en a besoin. Mais la trace, elle, dit qui
+     * appelle et qui s'inscrit — des noms de clients, des adresses de retour. Rien de
+     * secret, et pourtant : ça n'a aucune raison d'être lisible par un passant, et un
+     * point d'entrée public qui s'enrichit avec le temps finit toujours par en dire
+     * plus qu'on ne voulait.
+     *
+     * `null` plutôt qu'une absence de clé : l'écran qui la lit doit pouvoir dire
+     * « déverrouille pour voir » au lieu de croire le serveur muet.
+     */
+    instance: session(event) ? trace() : null,
   }
 })
