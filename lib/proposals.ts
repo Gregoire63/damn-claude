@@ -1077,3 +1077,80 @@ export function detailLines(p: RawProposal): { label: string, value: string }[] 
   }
   return out.slice(0, 8)
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Défaire une proposition déjà validée.
+// ─────────────────────────────────────────────────────────────────────────────
+//
+// Une proposition acceptée d'un tap est une ÉCRITURE. Jusqu'ici, la seule façon de
+// revenir dessus était de redemander à Claude de proposer l'inverse — c'est-à-dire
+// de dépendre du connecteur pour réparer ce que le connecteur a fait, et d'attendre
+// une conversation pour corriger un geste d'une seconde.
+//
+// L'inverse d'une proposition est une AUTRE proposition : on échange « avant » et
+// « après », et on la fait passer par le chemin d'application habituel. Rien de
+// neuf à écrire côté application, et surtout : `applicable()` continue de garder la
+// porte. Après l'échange, « de » vaut ce que la proposition d'origine a écrit —
+// donc le contrôle devient « la donnée est-elle encore telle que je l'ai laissée ? ».
+// Si quelqu'un l'a modifiée depuis, on refuse de défaire plutôt que d'écraser son
+// travail avec une valeur d'il y a trois jours.
+//
+// Tout n'est pas réversible, et on le DIT plutôt que de griser un bouton en
+// silence : ajouter un élément à une liste ne se défait pas sans savoir lequel
+// retirer, et une pesée supprimée ne se recrée pas par ce chemin.
+
+export type Defaire = { inverse: RawProposal } | { raison: string }
+
+const echange = (p: RawProposal, patch: Record<string, unknown>): RawProposal => ({
+  ...p,
+  id: `${p.id}~defaire`,
+  at: new Date().toISOString(),
+  summary: `Annuler : ${p.summary}`,
+  patch,
+  status: 'pending',
+})
+
+export function defaireProposition(p: RawProposal): Defaire {
+  const d = (p.patch ?? {}) as Record<string, unknown>
+  const quoi = String(pick(d, ['quoi', 'type']) ?? '')
+
+  if (quoi === 'champ') {
+    const chemin = pick(d, ['chemin', 'path'])
+    const op = String(pick(d, ['op', 'geste']) ?? 'remplacer')
+    const de = pick(d, ['de', 'avant'])
+    const vers = pick(d, ['vers', 'apres'])
+    if (typeof chemin !== 'string') return { raison: 'Le chemin de cette écriture n’est pas lisible.' }
+
+    // Remplacer se défait en remplaçant dans l'autre sens.
+    if (op === 'remplacer') {
+      if (de === undefined) return { raison: 'La valeur d’avant n’a pas été enregistrée avec la proposition.' }
+      return { inverse: echange(p, { quoi: 'champ', op: 'remplacer', chemin, de: vers, vers: de }) }
+    }
+    // Ce qui a été créé se supprime ; ce qui a été supprimé se recrée.
+    if (op === 'creer') return { inverse: echange(p, { quoi: 'champ', op: 'supprimer', chemin, de: vers }) }
+    if (op === 'supprimer') {
+      if (de === undefined) return { raison: 'La valeur supprimée n’a pas été enregistrée avec la proposition.' }
+      return { inverse: echange(p, { quoi: 'champ', op: 'creer', chemin, vers: de }) }
+    }
+    // `ajouter` pose un élément à la FIN d'une liste. Le défaire demanderait de
+    // savoir lequel retirer — et une liste qui a bougé depuis n'a plus le même
+    // dernier élément. Retirer le mauvais serait pire que ne rien faire.
+    return { raison: 'Un ajout à une liste ne se défait pas d’ici : retire la ligne depuis l’écran concerné.' }
+  }
+
+  if (quoi === 'pesee') {
+    const date = pick(d, ['date'])
+    const de = pick(d, ['de', 'avant'])
+    const vers = pick(d, ['vers', 'apres'])
+    if (!isIsoDate(date)) return { raison: 'La date de cette pesée n’est pas lisible.' }
+    if (vers === null || vers === undefined) {
+      return { raison: 'Une pesée supprimée se ressaisit depuis le journal, pas d’ici.' }
+    }
+    if (de === null || de === undefined) return { raison: 'Le poids d’avant n’a pas été enregistré avec la proposition.' }
+    return { inverse: echange(p, { quoi: 'pesee', date, de: vers, vers: de }) }
+  }
+
+  return {
+    raison: 'Ce geste ne se défait pas automatiquement. Une modification de programme se reprend dans « Programme modifié », juste en dessous.',
+  }
+}

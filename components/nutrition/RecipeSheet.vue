@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
+import { useFoyer } from '~/composables/useFoyer'
 import { useNutrition } from '~/composables/useNutrition'
+import { pourConvives } from '~/lib/foyer'
 import { FAT_STEPS, expandItems, keepsOf, macrosOf, rebalanceDairy, roundMacros, splitIngredients } from '~/lib/nutritionStats'
 import { cookedWeight } from '~/lib/cooked'
 
@@ -40,6 +42,20 @@ const sauceMacros = computed(() => (sauce.value
   ? roundMacros(macrosOf(sauce.value.items, library.value.foods))
   : null))
 const keeps = computed(() => (recipe.value ? keepsOf(recipe.value, library.value) : null))
+
+/**
+ * Cuisiner pour le foyer, et ce que le facteur ne touche PAS.
+ *
+ * Les grammages affichés sont ceux à peser : ils suivent la somme des appétits de
+ * ceux qui sont au repas (voir lib/foyer.ts). Les MACROS, elles, ne bougent pas —
+ * c'est ce que tu manges, ta part, et la seule chose que ce suivi mesure. Les
+ * multiplier ferait entrer dans ton bilan ce que quelqu'un d'autre a avalé.
+ *
+ * Le poids cuit suit les grammages : c'est le même aliment, pesé pour tout le monde.
+ */
+const foyer = useFoyer()
+const facteur = computed(() => foyer.facteur.value)
+const pese = (g: number) => pourConvives(g, facteur.value)
 
 /**
  * Les ingrédients, en DEUX listes titrées : le plat, puis le pot.
@@ -108,6 +124,7 @@ const openFat = ref<string | null>(null)
           <div class="sheet-title">{{ recipe.name }}</div>
           <div v-if="macros" class="muted mono">
             {{ macros.kcal }} kcal · {{ macros.p }} P / {{ macros.g }} G / {{ macros.l }} L
+            <template v-if="facteur !== 1"> · <b>ta part</b></template>
             <template v-if="keeps"> · se garde {{ keeps }} j au frigo</template>
           </div>
         </div>
@@ -117,18 +134,42 @@ const openFat = ref<string | null>(null)
         <!-- DEUX listes titrées. Une annotation collée au nom ne portait pas la
              distinction « dans la poêle » / « dans le pot » : elle se lisait comme une
              note de bas de page alors que c'est une étape de la recette. -->
-        <div class="section-label">{{ sauce ? 'Pour le plat' : 'Ingrédients' }}</div>
+        <!--
+          Qui mange, coché ICI et pas dans les réglages : c'est le geste qui change
+          d'un soir à l'autre, et il doit se faire là où l'on pèse. L'appétit de
+          chacun, lui, se déclare une fois pour toutes dans Réglages → Foyer.
+
+          La barre ne s'affiche que si le foyer compte quelqu'un d'autre : pour qui
+          cuisine seul, cette notion n'existe pas et n'a pas à occuper une ligne.
+        -->
+        <div v-if="foyer.convives.value.length > 1" class="rs-convives">
+          <button
+            v-for="c in foyer.convives.value" :key="c.id"
+            class="rs-conv" :class="{ on: c.actif, fige: c.id === 'moi' }"
+            :disabled="c.id === 'moi'"
+            :aria-pressed="c.actif"
+            @click="foyer.modifier(c.id, { actif: !c.actif })"
+          >
+            {{ c.nom }}<span v-if="c.id !== 'moi'" class="mono rs-conv-p">{{ Math.round(c.appetit * 100) }}%</span>
+          </button>
+          <span v-if="facteur !== 1" class="mono rs-facteur">×{{ facteur.toFixed(2).replace(/[.,]?0+$/, '').replace('.', ',') }}</span>
+        </div>
+
+        <div class="section-label">
+          {{ sauce ? 'Pour le plat' : 'Ingrédients' }}
+          <span v-if="facteur !== 1" class="muted">· pour {{ foyer.libelle.value.toLowerCase() }}</span>
+        </div>
         <ul class="rs-items">
           <li v-for="l in split.dish" :key="l.food" class="rs-item">
             <span class="rs-q mono">
-              {{ l.g }} g
+              {{ pese(l.g) }} g
               <!-- Le poids une fois cuit, pour les féculents seulement : ce sont les
                    seuls qu'on ne peut pas répartir en les comptant. -->
-              <small v-if="cuit(l.food, l.total)" class="rs-cuit">≈ {{ cuit(l.food, l.total) }} g cuit</small>
+              <small v-if="cuit(l.food, l.total)" class="rs-cuit">≈ {{ pese(cuit(l.food, l.total)!) }} g cuit</small>
             </span>
             <span class="rs-n">
               {{ dairy(l.food) ? dairyName(l.food) : foodName(l.food) }}
-              <span v-if="l.total > l.g" class="muted">{{ l.total }} g en tout avec la sauce</span>
+              <span v-if="l.total > l.g" class="muted">{{ pese(l.total) }} g en tout avec la sauce</span>
               <span v-else-if="foodBuy(l.food)" class="muted">{{ foodBuy(l.food) }}</span>
               <!-- Le taux se règle ICI, sur l'ingrédient, au moment où on a le pot en
                    main. Le réglage existait déjà mais vivait dans un autre onglet :
@@ -158,7 +199,7 @@ const openFat = ref<string | null>(null)
           <div class="section-label">Pour la sauce — {{ sauce.name }}</div>
           <ul class="rs-items">
             <li v-for="l in split.sauce" :key="l.food" class="rs-item">
-              <span class="rs-q mono">{{ l.g }} g</span>
+              <span class="rs-q mono">{{ pese(l.g) }} g</span>
               <span class="rs-n">
                 {{ dairy(l.food) ? dairyName(l.food) : foodName(l.food) }}
                 <span v-if="l.total > l.g" class="muted">{{ l.total }} g en tout avec le plat</span>

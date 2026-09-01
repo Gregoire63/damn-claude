@@ -77,11 +77,33 @@ export function noteCall(method: string, at: Date): void {
   if (recent.length > 12) recent.shift()
 }
 
+/**
+ * Les dernières tentatives d'INSCRIPTION d'un client, et ce qu'on en a fait.
+ *
+ * Un client qui n'arrive pas à s'inscrire n'affiche jamais la raison : il dit
+ * « impossible de s'inscrire », propose de saisir un identifiant à la main, et donne
+ * une référence qui ne veut rien dire de ce côté-ci. On ne peut ni voir sa requête,
+ * ni savoir laquelle des sept vérifications l'a refusée — c'est chercher une panne
+ * les yeux fermés.
+ *
+ * On note donc ce qu'on a REÇU et ce qu'on a répondu. Rien de secret n'y passe : une
+ * inscription ne contient que des métadonnées publiques — des adresses de retour, un
+ * nom d'application, une liste d'autorisations souhaitées. Et rien n'est écrit, comme
+ * le reste de ce fichier : douze lignes en mémoire, perdues au redémarrage.
+ */
+const inscriptions: Record<string, unknown>[] = []
+
+export function noteInscription(details: Record<string, unknown>): void {
+  inscriptions.push({ a: new Date().toISOString().slice(11, 19), ...details })
+  if (inscriptions.length > 8) inscriptions.shift()
+}
+
 export function trace(): Record<string, unknown> {
   return {
     instance: INSTANCE,
     demarree_depuis_s: Math.round((Date.now() - bootedAt) / 1000),
     appels_mcp: calls,
     derniers: [...recent],
+    inscriptions: [...inscriptions],
   }
 }

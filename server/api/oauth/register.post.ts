@@ -1,4 +1,5 @@
 import { grantsAccordes, inscrireClient, redirectionValide } from '../../utils/clients'
+import { noteInscription } from '../../utils/trace'
 
 /**
  * L'inscription d'un client — RFC 7591.
@@ -25,39 +26,48 @@ import { grantsAccordes, inscrireClient, redirectionValide } from '../../utils/c
  */
 export default defineEventHandler(async (event) => {
   const body = await readBody<Record<string, unknown>>(event) ?? {}
-
   const brutes = Array.isArray(body.redirect_uris) ? body.redirect_uris.map(String) : []
-  if (!brutes.length) {
-    throw createError({ statusCode: 400, statusMessage: 'invalid_redirect_uri : redirect_uris est obligatoire' })
+  const demandes = Array.isArray(body.grant_types) ? body.grant_types.map(String) : []
+
+  /*
+   * On NOTE ce qu'on a reçu, avant de décider quoi que ce soit.
+   *
+   * Un client qui n'arrive pas à s'inscrire n'affiche jamais la raison : il dit
+   * « impossible de s'inscrire » et propose de saisir un identifiant à la main. De
+   * ce côté-ci, rien — ni sa requête, ni laquelle des vérifications l'a refusée.
+   * `/api/vault/health` les montre maintenant, en mémoire et sans rien écrire.
+   */
+  const refuser = (message: string): never => {
+    noteInscription({ nom: String(body.client_name ?? ''), uris: brutes, grants: demandes, clefs: Object.keys(body), issue: message.slice(0, 80) })
+    throw createError({ statusCode: 400, statusMessage: message })
   }
-  if (brutes.length > 5) {
-    throw createError({ statusCode: 400, statusMessage: 'invalid_redirect_uri : cinq redirections au maximum' })
-  }
+
+  if (!brutes.length) refuser('invalid_redirect_uri : redirect_uris est obligatoire')
+  // Une limite qui ne protège de rien coûte une inscription refusée : rien n'est
+  // stocké ici, une adresse de plus n'allonge que l'identifiant rendu.
+  if (brutes.length > 10) refuser('invalid_redirect_uri : dix redirections au maximum')
   const mauvaise = brutes.find(u => !redirectionValide(u))
-  if (mauvaise) {
-    throw createError({ statusCode: 400, statusMessage: `invalid_redirect_uri : ${mauvaise} — il faut une adresse https sans fragment` })
-  }
+  if (mauvaise) refuser(`invalid_redirect_uri : ${mauvaise} — il faut une adresse https sans fragment`)
 
   // Ce qu'on accorde face à ce qui est demandé : voir server/utils/clients.ts.
-  const demandes = Array.isArray(body.grant_types) ? body.grant_types.map(String) : []
   const accordes = grantsAccordes(demandes)
-  if (!accordes.length) {
-    throw createError({
-      statusCode: 400,
-      statusMessage: `invalid_client_metadata : seul authorization_code est supporté (demandé : ${demandes.join(', ')})`,
-    })
-  }
+  if (!accordes.length) refuser(`invalid_client_metadata : seul authorization_code est supporté (demandé : ${demandes.join(', ')})`)
 
   const nom = String(body.client_name ?? '').trim().slice(0, 60)
-  const emisA = Math.floor(Date.now() / 1000)
+  noteInscription({ nom, uris: brutes, grants: demandes, clefs: Object.keys(body), issue: 'ok' })
 
   setResponseStatus(event, 201)
   return {
     client_id: inscrireClient(brutes, nom),
-    client_id_issued_at: emisA,
-    // 0 = ne expire jamais. L'identifiant n'est pas un accès : le faire expirer
-    // déconnecterait un connecteur qui marche, sans rien protéger de plus.
-    client_secret_expires_at: 0,
+    client_id_issued_at: Math.floor(Date.now() / 1000),
+    /*
+     * PAS de `client_secret_expires_at`.
+     *
+     * Il valait 0 — « n'expire jamais ». La RFC 7591 ne prévoit ce champ que
+     * lorsqu'un secret est DÉLIVRÉ, et ce client public n'en reçoit aucun. Annoncer
+     * l'expiration d'un secret qui n'existe pas laisse un client conformant conclure
+     * qu'il en attendait un, et rejeter la réponse entière.
+     */
     redirect_uris: brutes,
     grant_types: accordes,
     response_types: ['code'],
