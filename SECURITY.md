@@ -18,10 +18,17 @@ Ce qui est en place :
   redéploiement. Verrou de quinze minutes après cinq échecs, le bon code compris.
   Aucun secret permanent n'est nécessaire ; `NUXT_VAULT_BOOTSTRAP` reste acceptée en
   repli et constitue l'option la plus faible.
-- **OAuth 2.1 + PKCE (S256 obligatoire)** pour le connecteur MCP. Un seul client,
-  dont l'identifiant et le secret sont des variables d'environnement. Pas
-  d'enregistrement dynamique de client : c'est une porte de moins à surveiller pour
-  un besoin qui n'existe pas ici.
+- **OAuth 2.1 + PKCE (S256 obligatoire)** pour le connecteur MCP. Les clients
+  **s'inscrivent** (RFC 7591) et l'inscription est ouverte : elle ne donne rien.
+  L'identifiant rendu est un jeton signé qui porte ses propres redirections — rien
+  n'est stocké, donc aucune table à purger — et trois contrôles le tiennent :
+  l'autorisation exige la clé d'accès du propriétaire avant de fabriquer le moindre
+  code ; la redirection demandée doit être l'une de celles déclarées à l'inscription,
+  donc un identifiant recopié ne peut pas détourner le code ; et le code
+  d'autorisation porte le client à qui il a été remis, donc un client ne peut pas
+  échanger celui d'un autre. `NUXT_MCP_CLIENT_ID` / `NUXT_MCP_CLIENT_SECRET` restent
+  acceptées pour les instances installées avant, et ce chemin-là exige toujours son
+  secret.
 - **Jetons HMAC sans état**, avec expiration portée par le jeton. Le serveur ne
   retient rien entre deux requêtes.
 - **Le connecteur n'écrit jamais.** Il dépose des propositions ; l'application les
@@ -54,3 +61,5 @@ projet personnel, et la promesse est simplement de lire, de répondre et de corr
   fichier ne répare rien, seule la régénération répare.
 - `GET /api/vault/health` dit quelles variables manquent, sans jamais révéler de
   valeur — des booléens de présence, rien d'autre.
+- **Une seule variable est obligatoire** : `NUXT_VAULT_SECRET`. Le code de démarrage
+  est fabriqué au build, et les clients OAuth s'inscrivent seuls.

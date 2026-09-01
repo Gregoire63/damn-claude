@@ -373,16 +373,6 @@ onUnmounted(() => {
 
     <div v-if="flash" class="flash" :class="flashTon">{{ flash }}</div>
 
-    <!--
-      Nouvelle version installée. On ne recharge pas d'autorité : une séance peut être
-      ouverte, et personne n'échange une série contre une mise à jour. Le bandeau reste
-      jusqu'au rechargement — ce n'est pas une notification qu'on peut manquer, c'est
-      un état.
-    -->
-    <div v-if="maj.majDisponible.value" class="maj-bar" role="status">
-      <span>Nouvelle version prête.</span>
-      <button class="maj-go" @click="maj.recharger()">Recharger</button>
-    </div>
 
     <!--
       Le grand titre vit HORS de la barre collante, et c'est tout le mécanisme : il
@@ -840,6 +830,27 @@ onUnmounted(() => {
         <span class="mini-chevron" aria-hidden="true">⌃</span>
       </button>
       <button class="mini-abandon" aria-label="Annuler la séance" @click="askCancel">✕</button>
+    </div>
+
+    <!--
+      Nouvelle version installée.
+
+      Une pastille FIXE en bas à droite, pas un bandeau en haut de page. Le bandeau
+      partait avec le défilement : on le manquait, ou on le voyait une seconde en
+      revenant en haut. Ce n'est pas un événement qui passe, c'est un état qui dure
+      jusqu'au rechargement, et un état s'affiche là où il reste visible.
+
+      On ne recharge JAMAIS d'autorité : une séance peut être ouverte, et personne
+      n'échange une série contre une mise à jour. Elle se ferme d'un geste — et
+      revient au retour dans l'application, voir composables/useMaj.ts.
+    -->
+    <div v-if="maj.majVisible.value" class="maj-pop" role="status">
+      <div class="maj-txt">
+        <b>Nouvelle version</b>
+        <span class="muted">Recharge pour l'appliquer.</span>
+      </div>
+      <button class="maj-go" @click="maj.recharger()">Recharger</button>
+      <button class="maj-x" aria-label="Fermer" @click="maj.masquer()">✕</button>
     </div>
 
     <!-- Mobile : navigation en bas (barre d'onglets) -->
