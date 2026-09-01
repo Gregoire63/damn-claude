@@ -104,27 +104,26 @@ const progChanges = computed(() => {
   }
   return out
 })
-const { soundEnabled, soundVolume, soundType, testSound, SOUND_OPTIONS, vibrationLevel, VIBRATION_OPTIONS, watchNotify, watchStatus, setWatchNotify, testWatch } = useRestTimer()
+const { soundEnabled, soundVolume, soundType, testSound, SOUND_OPTIONS, vibrationLevel, VIBRATION_OPTIONS, watchStatus } = useRestTimer()
 
 /**
- * La fin de repos part en notification du système, même application ouverte : c'est ce
- * qui permet à une montre appairée de la répercuter et de vibrer au poignet.
+ * La fin de repos part aussi en notification du système, ce qu'une montre appairée
+ * répercute au poignet.
  *
- * Ce réglage s'affichait dans une carte « Montre connectée », entre les connecteurs et
- * les données. Il n'y a pourtant AUCUNE montre connectée là-dedans : rien n'est lu, rien
- * n'est synchronisé, c'est une notification du téléphone. Le nom promettait une
- * intégration qui n'existe pas, et la vraie — Withings, Fitbit, Polar — se cherchait
- * ailleurs. Il vit donc avec le reste du chrono.
+ * Ça s'affichait dans une carte « Montre connectée », avec son propre interrupteur.
+ * Deux problèmes : aucune montre n'y était connectée — rien n'est lu, rien n'est
+ * synchronisé —, et la carte du chrono portait déjà un interrupteur, si bien qu'on
+ * devait en régler deux pour être averti d'une seule chose.
+ *
+ * Il n'en reste qu'une phrase, affichée UNIQUEMENT quand le navigateur refuse ou n'a
+ * pas encore accordé la permission. Quand tout va bien, il n'y a rien à dire.
  */
-const WATCH_STATUS_LABEL: Record<string, string> = {
-  granted: 'Notifications autorisées',
-  denied: 'Notifications bloquées',
-  default: 'Notifications à autoriser',
-  unsupported: 'Non géré par ce navigateur',
-  unknown: '…',
+const AVERTISSEMENT_NOTIF: Record<string, string> = {
+  denied: 'Notifications bloquées par le navigateur : rien n’arrivera au poignet.',
+  default: 'Touche « Tester » une fois pour autoriser les notifications.',
+  unsupported: 'Ce navigateur ne sait pas envoyer de notification.',
 }
-const watchStatusLabel = computed(() => WATCH_STATUS_LABEL[watchStatus.value] ?? '…')
-const watchStatusOk = computed(() => watchStatus.value === 'granted')
+const avertissementNotif = computed(() => AVERTISSEMENT_NOTIF[watchStatus.value] ?? '')
 const volPct = computed({
   get: () => Math.round(soundVolume.value * 100),
   set: (v: number) => { soundVolume.value = Math.min(1, Math.max(0, (Number(v) || 0) / 100)) },
@@ -313,26 +312,15 @@ function onYear(ev: Event) { setBirthYear(parseInt((ev.target as HTMLInputElemen
         </div>
       </div>
             <div class="nav-row mt-6">
-              <button class="btn flex-1" @click="testSound">🔊 Tester son + vibration</button>
+                      <button class="btn flex-1" @click="testSound">🔊 Tester</button>
             </div>
-            <div class="muted mt-6">Le téléphone ne permet pas de régler la <em>force</em> exacte de la vibration : « Légère / Moyenne / Forte » jouent des vibrations de plus en plus longues et répétées.<template v-if="!soundEnabled"> Son coupé — la vibration reste active.</template></div>
+            <div class="muted mt-6">« Légère / Moyenne / Forte » jouent des vibrations de plus en plus longues : la force exacte n'est pas réglable.<template v-if="!soundEnabled"> Son coupé, la vibration reste active.</template></div>
       
-            <!-- La notification du système, dans la même carte : c'est le même événement,
-                 joué sur un troisième support. -->
-            <div class="rt-notif">
-              <div class="row-between">
-                <span class="muted">Notification du système</span>
-                <button class="btn" :class="{ sel: watchNotify }" @click="setWatchNotify(!watchNotify)">{{ watchNotify ? 'Activé' : 'Désactivé' }}</button>
-              </div>
-              <div class="muted mt-6">
-                Une montre appairée au téléphone répercute cette notification et vibre au poignet.
-                <b :class="{ 'export-warn': !watchStatusOk }">{{ watchStatusLabel }}</b>.
-              </div>
-              <div class="nav-row mt-6">
-                <button class="btn flex-1" :disabled="!watchNotify" @click="testWatch">⌚ Tester la notification</button>
-              </div>
-            </div>
-          </div>
+                  <!-- Rien sur la notification quand elle fonctionne : elle part avec le son et la
+                       vibration, et le bouton « Tester » les envoie tous les trois. On ne parle que
+                       du cas où le navigateur l'empêche. -->
+                  <div v-if="avertissementNotif" class="muted mt-6 export-warn">{{ avertissementNotif }}</div>
+                </div>
 
     <!-- Appareils : la balance se branche ici, avec la montre. C'est un réglage
          d'appareil, pas une donnée de suivi — le Rapport affiche les mesures et
