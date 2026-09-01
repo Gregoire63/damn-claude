@@ -21,7 +21,15 @@ const vibrationLevel = ref('strong') // aucune / légère / moyenne / forte
 // Notification du système à la fin du repos : voir plus bas. Actif par défaut —
 // c'est le comportement attendu en salle ; le réglage sert à le couper, pas à
 // l'allumer.
-const watchNotify = ref(true)
+/**
+ * La notification de fin de repos n'a plus de réglage.
+ *
+ * Elle en avait un, et il faisait double emploi : la carte portait déjà un
+ * interrupteur — le son — et un second, juste en dessous, laissait deviner qu'il
+ * fallait les régler tous les deux pour être averti. Le vrai interrupteur est ailleurs,
+ * dans les permissions du navigateur : sans elles rien ne part, avec elles tout part.
+ * Un réglage de plus ne pouvait qu'entrer en contradiction avec lui.
+ */
 // Statut affiché à titre d'information : le web ne voit pas la montre, seulement
 // si le navigateur nous autorise à poster la notification qu'elle relaiera.
 const watchStatus = ref<'unknown' | 'unsupported' | 'default' | 'granted' | 'denied'>('unknown')
@@ -70,15 +78,14 @@ function hydrateSettings() {
       if (typeof s.enabled === 'boolean') soundEnabled.value = s.enabled
       if (typeof s.volume === 'number') soundVolume.value = Math.min(1, Math.max(0, s.volume))
       if (typeof s.type === 'string' && SOUNDS[s.type]) soundType.value = s.type
-      if (typeof s.vibration === 'string' && VIBRATION_LEVELS[s.vibration]) vibrationLevel.value = s.vibration
-      if (typeof s.watch === 'boolean') watchNotify.value = s.watch
-    }
+            if (typeof s.vibration === 'string' && VIBRATION_LEVELS[s.vibration]) vibrationLevel.value = s.vibration
+          }
   } catch { /* réglages illisibles */ }
   refreshWatchStatus()
 }
 if (import.meta.client) {
-  watch([soundEnabled, soundVolume, soundType, vibrationLevel, watchNotify], () => {
-    try { localStorage.setItem(SETTINGS_KEY, JSON.stringify({ enabled: soundEnabled.value, volume: soundVolume.value, type: soundType.value, vibration: vibrationLevel.value, watch: watchNotify.value })) } catch { /* ignore */ }
+    watch([soundEnabled, soundVolume, soundType, vibrationLevel], () => {
+      try { localStorage.setItem(SETTINGS_KEY, JSON.stringify({ enabled: soundEnabled.value, volume: soundVolume.value, type: soundType.value, vibration: vibrationLevel.value })) } catch { /* ignore */ }
   })
 }
 
@@ -181,7 +188,7 @@ function unlockAudio() {
 // répercute la notification et fait vibrer le poignet. Les vraies intégrations, qui
 // lisent des données, sont dans server/connecteurs/.
 // Or la notification n'était envoyée QUE page masquée : en salle l'app reste
-// ouverte, donc rien au poignet. `watchNotify` la déclenche aussi app visible.
+// ouverte, donc rien au poignet. Elle part donc AUSSI application visible.
 const NOTIF_TAG = 'rest-timer'
 const TEST_TAG = 'rest-timer-test'
 const NOTIF_TITLE = "⏱️ C'est reparti"
@@ -250,18 +257,14 @@ function prepareNotify() {
   } catch { /* notifications indisponibles */ }
 }
 
-// Active le relais montre : la permission de notifier doit être demandée depuis
-// le tap qui l'active, sinon le navigateur ignore la demande.
-async function setWatchNotify(on: boolean): Promise<boolean> {
-  watchNotify.value = on
-  if (!on) return false
-  const ok = await askNotifPermission()
-  if (ok) getSwReg()
-  return ok
-}
-
-// Essai du relais : envoie exactement la notification de fin de repos telle
-// qu'elle partira app ouverte, réglages courants compris.
+/**
+ * L'essai envoie la notification telle qu'elle partira, réglages courants compris.
+ *
+ * C'est aussi lui qui DEMANDE la permission, et c'est pourquoi il ne peut pas
+ * disparaître : un navigateur n'accorde la permission de notifier que depuis un geste.
+ * Sans ce bouton, elle ne serait jamais demandée et la notification ne partirait
+ * jamais — sans que rien ne l'explique.
+ */
 async function testWatch(): Promise<'granted' | 'denied' | 'unsupported'> {
   if (!notifSupported()) { watchStatus.value = 'unsupported'; return 'unsupported' }
   if (!(await askNotifPermission())) return 'denied'
@@ -282,12 +285,19 @@ function beep() {
   try { playTones(ctx, soundVolume.value, SOUNDS[soundType.value] || SOUNDS.bip) } catch { /* audio indisponible */ }
 }
 
-// Bouton « Tester » : joue le son choisi (même si désactivé) + la vibration choisie
+/**
+ * Le bouton « Tester » : tout ce qui se déclenche à la fin d'un repos, d'un seul geste
+ * — le son choisi (même coupé), la vibration, et la notification du système.
+ *
+ * Les trois ensemble, parce que c'est ainsi qu'ils arrivent en vrai. Deux boutons
+ * séparés laissaient croire à deux fonctions à régler l'une après l'autre.
+ */
 function testSound() {
   unlockAudio()
   const ctx = getCtx()
   if (ctx) { try { playTones(ctx, soundVolume.value, SOUNDS[soundType.value] || SOUNDS.bip) } catch { /* ignore */ } }
   try { const vp = vibratePattern(); if (import.meta.client && navigator.vibrate && vp.length) navigator.vibrate(vp) } catch { /* ignore */ }
+  void testWatch()
 }
 
 // Alerte de fin : vibration au premier plan + notification (son + vibration) en arrière-plan
@@ -299,9 +309,9 @@ function alertEnd() {
   beep()
   const vp = vibratePattern()
   try { if (navigator.vibrate && vp.length) navigator.vibrate(vp) } catch { /* ignore */ }
-  if (hidden || watchNotify.value) {
+    // Toujours, y compris application au premier plan : en salle elle reste ouverte, et
+    // sans ça rien n'arrivait au poignet. La permission du navigateur tranche seule.
     showRestNotification('Repos terminé — série suivante 💪', silentNotif, !hidden)
-  }
 }
 
 function clear() {
@@ -375,9 +385,8 @@ export function useRestTimer() {
         enabled: soundEnabled.value,
         volume: soundVolume.value,
         type: soundType.value,
-        vibration: vibrationLevel.value,
-        watch: watchNotify.value,
-      },
+                vibration: vibrationLevel.value,
+              },
     }
   }
 
@@ -388,15 +397,15 @@ export function useRestTimer() {
     if (typeof s.enabled === 'boolean') soundEnabled.value = s.enabled
     if (typeof s.volume === 'number') soundVolume.value = Math.min(1, Math.max(0, s.volume))
     if (typeof s.type === 'string' && SOUNDS[s.type]) soundType.value = s.type
-    if (typeof s.vibration === 'string' && VIBRATION_LEVELS[s.vibration as keyof typeof VIBRATION_LEVELS]) vibrationLevel.value = s.vibration as typeof vibrationLevel.value
-    if (typeof s.watch === 'boolean') watchNotify.value = s.watch
-  }
+        if (typeof s.vibration === 'string' && VIBRATION_LEVELS[s.vibration as keyof typeof VIBRATION_LEVELS]) vibrationLevel.value = s.vibration as typeof vibrationLevel.value
+        // `s.watch` d'une sauvegarde plus ancienne est ignoré : ce réglage n'existe plus.
+      }
 
   return {
     secondsLeft, totalSeconds, start, stop, addTime,
     soundEnabled, soundVolume, soundType, testSound, SOUND_OPTIONS,
     vibrationLevel, VIBRATION_OPTIONS,
-    watchNotify, watchStatus, setWatchNotify, testWatch,
+        watchStatus,
     snapshot, restore,
   }
 }
