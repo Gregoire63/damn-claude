@@ -721,23 +721,6 @@ function creer() {
     } catch { try { localStorage.removeItem(DRAFT_KEY) } catch { /* ignore */ } }
   }
 
-  /**
-   * Retour du flux OAuth Withings : /api/withings/callback nous renvoie ici avec les
-   * jetons en query. On les range, puis on NETTOIE l'URL — laisser un jeton dans la
-   * barre d'adresse, c'est le laisser dans l'historique, les captures et le partage.
-   */
-  /**
-   * Reprend une connexion Withings laissée en plan dans un autre navigateur.
-   *
-   * L'autorisation part de la PWA et revient dans Safari — deux stockages, deux
-   * cookies. Les jetons ne peuvent donc pas revenir par l'URL : ils sont déposés côté
-   * serveur, et c'est ici qu'on va les chercher, avec le nonce que l'application avait
-   * gardé. C'est le premier instant du flux dont on soit sûr qu'il se joue DANS l'app.
-   *
-   * Silencieux quand il n'y a rien : on ouvre l'application cent fois pour une
-   * connexion de balance.
-   */
-
   return {
     // état
     activeSession, editingRecord, previewSession, openEx, sessionNote,

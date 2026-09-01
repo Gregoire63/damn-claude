@@ -2,7 +2,7 @@
 import { computed, onMounted, ref } from 'vue'
 import { useWorkout } from '~/composables/useWorkout'
 import { useNutrition } from '~/composables/useNutrition'
-import { useWithings } from '~/composables/useWithings'
+import { useMesures } from '~/composables/useMesures'
 import { useProfile } from '~/composables/useProfile'
 import { useSnapshot } from '~/composables/useSnapshot'
 import { useRestTimer } from '~/composables/useRestTimer'
@@ -14,7 +14,7 @@ import { useDemarrage } from '~/composables/useDemarrage'
 import { fmtRest } from '~/lib/rest'
 
 // Vue « Profil » extraite de /sport (chargée à la demande). État partagé via composables.
-const props = defineProps<{ todayIso: string | null, withingsError?: string | null }>()
+const props = defineProps<{ todayIso: string | null }>()
 const emit = defineEmits<{ flash: [msg: string, ton?: 'ok' | 'echec'] }>()
 
 const { currentWeight, exportJSON, lastExportAt, daysSinceExport, backupDate, restoreBackup } = useWorkout()
@@ -44,8 +44,8 @@ hydrateNutrition()
 // Les pesées Withings partent dans la même sauvegarde : c'est le même suivi.
 // La connexion et les pesées sont passées dans SportSources ; il ne reste ici que
 // ce qui touche à la SAUVEGARDE, qui est la responsabilité de cet écran.
-const { snapshot: withingsData, hydrate: hydrateWithings } = useWithings()
-hydrateWithings()
+const { snapshot: mesuresData, hydrate: hydrateMesures } = useMesures()
+hydrateMesures()
 /**
  * Le programme modifié, et le chemin du retour.
  *
@@ -319,7 +319,7 @@ function onYear(ev: Event) { setBirthYear(parseInt((ev.target as HTMLInputElemen
         <!-- D'où viennent le poids et les pas. La saisie à la main y est en premier :
          c'est le seul mode qui marche sans aucun objet connecté, et il était enterré
          au fond de la carte Withings, là où personne ne le trouvait. -->
-    <SportSources :today-iso="props.todayIso" :withings-error="props.withingsError" @flash="relayer" />
+    <SportSources :today-iso="props.todayIso" @flash="relayer" />
 
     <!-- Le coffre : miroir des données et boîte de réception des propositions -->
     <SportVault :snapshot="buildSnapshot" @flash="emit('flash', $event)" />

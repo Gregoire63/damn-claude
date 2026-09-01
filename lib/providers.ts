@@ -1,6 +1,6 @@
 // Import relatif : testé dans le projet « unit », qui tourne en Node pur sans la
 // résolution de chemins de Nuxt.
-import type { BodyEntry } from './withings'
+import type { BodyEntry } from './mesures'
 
 // ─────────────────────────────────────────────────────────────────────────────
 // D'où viennent le poids et les pas.
@@ -45,10 +45,22 @@ export interface Provider {
   icone: string
   capabilities: Capability[]
   /**
-   * `null` = rien à configurer, le fournisseur est toujours disponible.
-   * Sinon, les variables d'environnement à poser pour qu'il apparaisse.
+   * `false` = rien à configurer, le fournisseur marche partout (la saisie à la main).
+   * `true` = la marque veut une application déclarée chez elle, donc un identifiant
+   * et un secret — posés soit dans l'application, soit chez l'hébergeur.
+   *
+   * On ne liste plus les NOMS des variables ici : ils se déduisent de l'identifiant
+   * (`NUXT_WITHINGS_CLIENT_ID`, voir server/utils/connecteurs.ts). Les écrire à la
+   * main dans chaque fiche, c'était une occasion de faute de frappe par marque, et
+   * une raison de plus de toucher ce fichier en ajoutant un connecteur.
    */
-  env: string[] | null
+  identifiants: boolean
+  /**
+   * Où déclarer cette application. Affiché tel quel dans l'écran de configuration :
+   * chercher soi-même « portail développeur <marque> » est la première marche, et la
+   * plus bête, de toutes celles qui découragent.
+   */
+  console?: string
   /** Ce qu'on affiche quand le fournisseur n'est pas disponible. */
   note?: string
   /** Pourquoi il est indisponible même correctement configuré. Rare, et documenté. */
@@ -68,7 +80,7 @@ export const PROVIDERS: Provider[] = [
     icone: '✍️',
     label: 'À la main',
     capabilities: ['poids', 'pas'],
-    env: null,
+    identifiants: false,
     note: 'Aucun objet connecté. Tu saisis ton poids au réveil et tes pas si tu les connais — c\'est ce que faisaient les carnets, et ça suffit à tout calculer.',
   },
   {
@@ -76,7 +88,8 @@ export const PROVIDERS: Provider[] = [
     icone: '⚖️',
     label: 'Withings',
     capabilities: ['poids', 'pas', 'composition'],
-    env: ['NUXT_WITHINGS_CLIENT_ID', 'NUXT_WITHINGS_CLIENT_SECRET'],
+    identifiants: true,
+    console: 'https://developer.withings.com/dashboard/',
     note: 'Balances Body / Body+ / Body Scan et montres ScanWatch. Donne aussi la masse grasse, maigre, hydrique et osseuse.',
   },
   {
@@ -84,15 +97,30 @@ export const PROVIDERS: Provider[] = [
     icone: '⌚',
     label: 'Fitbit',
     capabilities: ['poids', 'pas'],
-    env: ['NUXT_FITBIT_CLIENT_ID', 'NUXT_FITBIT_CLIENT_SECRET'],
+    identifiants: true,
+    console: 'https://dev.fitbit.com/apps/new',
     note: 'Montres Fitbit et balance Aria. L\'inscription développeur passe désormais par un compte Google.',
+  },
+  {
+    id: 'oura',
+    icone: '💍',
+    label: 'Oura',
+    // Une bague ne pèse pas : elle compte les pas, et c'est tout ce qu'on lui demande.
+    // La liste des capacités n'est pas décorative — c'est elle qui décide de ce que
+    // l'écran promet, et promettre un poids qui n'arrivera jamais est pire que se
+    // taire.
+    capabilities: ['pas'],
+    identifiants: true,
+    console: 'https://cloud.ouraring.com/oauth/applications',
+    note: 'Bague Oura. Compte les pas et l\'activité ; ne mesure aucun poids — la valeur du profil Oura est saisie à la main, sans date, et n\'a rien à faire dans une courbe.',
   },
   {
     id: 'garmin',
     icone: '🧭',
     label: 'Garmin',
     capabilities: ['poids', 'pas', 'composition'],
-    env: ['NUXT_GARMIN_CLIENT_ID', 'NUXT_GARMIN_CLIENT_SECRET'],
+    identifiants: true,
+    console: 'https://developer.garmin.com/gc-developer-program/',
     // Vérifié en août 2026 : le formulaire de demande d'accès a été retiré et le
     // programme est en pause sans date de réouverture annoncée. Ce n'est pas une
     // limite de ce code — personne ne peut obtenir d'identifiants aujourd'hui.
@@ -106,23 +134,26 @@ export const providerById = (id: string): Provider | null =>
 /**
  * Les fournisseurs réellement proposables sur CETTE instance.
  *
- * `configured` dit quelles variables d'environnement sont posées — le serveur le sait,
- * le navigateur ne doit pas connaître les valeurs. On ne transmet donc que des noms.
+ * `configures` est la liste des marques dont le serveur a les identifiants — d'où
+ * qu'ils viennent, variables d'hébergement ou coffre. Le navigateur reçoit des
+ * identifiants de marque, jamais une valeur : savoir que Withings est configuré
+ * n'aide personne à s'en servir.
  */
-export function availableProviders(configured: string[]): Provider[] {
-  const set = new Set(configured)
-  return PROVIDERS.filter(p => !p.bloque && (p.env === null || p.env.every(v => set.has(v))))
+export function availableProviders(configures: string[]): Provider[] {
+  const set = new Set(configures)
+  return PROVIDERS.filter(p => !p.bloque && (!p.identifiants || set.has(p.id)))
 }
 
 /** Les fournisseurs qu'on montre en grisé, avec la raison. Ne rien montrer du tout
- *  ferait croire que l'application ne les connaît pas. */
-export function unavailableProviders(configured: string[]): { provider: Provider, raison: string }[] {
-  const set = new Set(configured)
+ *  ferait croire que l'application ne les connaît pas — et on irait chercher
+ *  ailleurs une intégration qui n'attend qu'un formulaire. */
+export function unavailableProviders(configures: string[]): { provider: Provider, raison: string }[] {
+  const set = new Set(configures)
   return PROVIDERS
-    .filter(p => p.bloque || (p.env !== null && !p.env.every(v => set.has(v))))
+    .filter(p => p.bloque || (p.identifiants && !set.has(p.id)))
     .map(p => ({
       provider: p,
-      raison: p.bloque ?? `À configurer sur l'hébergement : ${p.env!.join(', ')}.`,
+      raison: p.bloque ?? 'Pas encore configuré : il faut déclarer une application chez la marque, puis coller son identifiant et son secret ici.',
     }))
 }
 

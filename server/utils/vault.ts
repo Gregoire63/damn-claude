@@ -168,6 +168,18 @@ async function readJson<T>(key: string, fallback: T): Promise<T> {
 const writeJson = async (key: string, value: unknown) =>
   avecReprise(s => s.set(key, JSON.stringify(value)))
 
+/**
+ * Lecture et écriture brutes du coffre, pour les modules qui y rangent leurs propres
+ * clés — aujourd'hui server/utils/connecteurs.ts.
+ *
+ * Exportées à contrecœur, et sous un nom qui le dit. L'alternative était de faire de
+ * ce fichier le dépotoir de tout ce qui doit persister : le magasin de jetons de
+ * marques n'a rien à voir avec les passkeys, et les mélanger ici aurait rendu les
+ * deux plus difficiles à relire.
+ */
+export const lireCoffre = readJson
+export const ecrireCoffre = writeJson
+
 // ─── Miroir ──────────────────────────────────────────────────────────────────
 export const readMirror = () => readJson<VaultMirror | null>(KEY_MIRROR, null)
 export const writeMirror = (m: VaultMirror) => writeJson(KEY_MIRROR, m)

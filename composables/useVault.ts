@@ -8,7 +8,7 @@ import { useWorkout } from '~/composables/useWorkout'
 import { useProfile } from '~/composables/useProfile'
 import { useProgram } from '~/composables/useProgram'
 import { useRestTimer } from '~/composables/useRestTimer'
-import { useWithings } from '~/composables/useWithings'
+import { useMesures } from '~/composables/useMesures'
 import { useSnapshot } from '~/composables/useSnapshot'
 import { createAt, pushAt, removeAt, setAt as setPointer } from '~/lib/pointer'
 
@@ -77,7 +77,7 @@ export function useVault() {
   const profileStore = useProfile()
   const program = useProgram()
   const restTimer = useRestTimer()
-  const withings = useWithings()
+  const mesures = useMesures()
   const { buildSnapshot } = useSnapshot()
 
   /**
@@ -259,7 +259,7 @@ export function useVault() {
     workout.restoreData(snap)
     profileStore.restore(snap as never)
     nutrition.restore({ nutrition: snap.nutrition } as never)
-    withings.restore(snap as never)
+    mesures.restore(snap as never)
     program.restore(snap)
     restTimer.restore(snap)
   }

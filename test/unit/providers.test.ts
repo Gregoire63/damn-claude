@@ -14,7 +14,10 @@ import {
 // erreur qui n'existe pas. Ne rien proposer est une réponse ; proposer dans le vide
 // n'en est pas une.
 
-const TOUT = ['NUXT_WITHINGS_CLIENT_ID', 'NUXT_WITHINGS_CLIENT_SECRET', 'NUXT_FITBIT_CLIENT_ID', 'NUXT_FITBIT_CLIENT_SECRET']
+// La liste des marques dont le serveur a les identifiants — d'où qu'ils viennent,
+// variables d'hébergement ou coffre. On ne transmet plus des noms de variables : la
+// configuration peut venir de deux endroits, et l'écran n'a pas à savoir lequel.
+const TOUT = ['withings', 'fitbit']
 
 describe('ce que l’instance propose', () => {
   it('la saisie manuelle est toujours là, sans rien à configurer', () => {
@@ -22,15 +25,15 @@ describe('ce que l’instance propose', () => {
     // qu'une instance fraîchement déployée soit utilisable.
     const sansRien = availableProviders([])
     expect(sansRien.map(p => p.id)).toEqual(['manual'])
-    expect(providerById('manual')!.env).toBeNull()
+    expect(providerById('manual')!.identifiants).toBe(false)
   })
 
-  it('un fournisseur à moitié configuré ne s’affiche pas', () => {
-    // L'identifiant sans le secret est le cas le plus fréquent — une variable
-    // oubliée dans l'interface Netlify. Il ne doit pas produire un bouton.
-    expect(availableProviders(['NUXT_WITHINGS_CLIENT_ID']).map(p => p.id)).toEqual(['manual'])
-    expect(availableProviders(['NUXT_WITHINGS_CLIENT_ID', 'NUXT_WITHINGS_CLIENT_SECRET']).map(p => p.id))
-      .toEqual(['manual', 'withings'])
+  it('une marque non configurée ne produit aucun bouton', () => {
+    // Le serveur ne met une marque dans la liste que s'il a l'identifiant ET le
+    // secret (voir server/utils/connecteurs.ts) : le cas « à moitié configuré » — une
+    // variable oubliée, un formulaire à demi rempli — n'arrive donc jamais jusqu'ici.
+    expect(availableProviders([]).map(p => p.id)).toEqual(['manual'])
+    expect(availableProviders(['withings']).map(p => p.id)).toEqual(['manual', 'withings'])
   })
 
   it('tout configuré donne manuel, Withings et Fitbit — jamais Garmin', () => {
@@ -50,10 +53,20 @@ describe('ce que l’instance propose', () => {
     expect(dehors.find(d => d.provider.id === 'garmin')!.raison).toMatch(/pause/i)
   })
 
-  it('les indisponibles disent quoi poser pour les activer', () => {
-    const raison = unavailableProviders([]).find(d => d.provider.id === 'withings')!.raison
-    expect(raison).toContain('NUXT_WITHINGS_CLIENT_ID')
-    expect(raison).toContain('NUXT_WITHINGS_CLIENT_SECRET')
+  it('les indisponibles disent ce qu’il reste à faire', () => {
+    const d = unavailableProviders([]).find(x => x.provider.id === 'withings')!
+    expect(d.raison).toMatch(/déclarer une application/i)
+    // Et surtout : ce n'est pas la marque qui bloque, un formulaire y suffit. C'est
+    // ce booléen qui décide entre « à configurer » et « indisponible » à l'écran.
+    expect(d.provider.bloque).toBeUndefined()
+    expect(d.provider.console, 'sans la console, on cherche le portail à la main').toMatch(/^https:/)
+  })
+
+  it('chaque marque à identifiants dit où les obtenir', () => {
+    for (const p of PROVIDERS) {
+      if (p.identifiants) expect(p.console, p.id).toMatch(/^https:/)
+      else expect(p.console, p.id).toBeUndefined()
+    }
   })
 
   it('chaque fiche annonce ce qu’elle sait fournir', () => {

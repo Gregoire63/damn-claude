@@ -2,7 +2,7 @@
 import { computed, onMounted, ref } from 'vue'
 import { useNutrition } from '~/composables/useNutrition'
 import { useProfile } from '~/composables/useProfile'
-import { useWithings } from '~/composables/useWithings'
+import { useMesures } from '~/composables/useMesures'
 import { useEnergy } from '~/composables/useEnergy'
 import { useDayPlan } from '~/composables/useDayPlan'
 import { useWorkout } from '~/composables/useWorkout'
@@ -28,7 +28,7 @@ const {
 onMounted(hydrate)
 const { profile } = useProfile()
 const { currentWeight, sessionLog } = useWorkout()
-const { bodyComp } = useWithings()
+const { bodyComp } = useMesures()
 // Âge, métabolisme, dépense, cible protéique : le socle partagé.
 const { burnOn, energyOn, proteinTarget } = useEnergy()
 const { viewOf } = useDayPlan()

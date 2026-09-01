@@ -2,7 +2,7 @@ import { computed } from 'vue'
 import { useNow } from '~/composables/useNow'
 import { useNutrition } from '~/composables/useNutrition'
 import { useProfile } from '~/composables/useProfile'
-import { useWithings } from '~/composables/useWithings'
+import { useMesures } from '~/composables/useMesures'
 import { useWorkout } from '~/composables/useWorkout'
 import { SESSION_FORFAIT, ageOn, sessionBurn } from '~/lib/energy'
 import { bmrMifflin, dayEnergy, isDayPlayed, proteinPlan, sessionsOn } from '~/lib/nutritionStats'
@@ -36,7 +36,7 @@ export function useEnergy() {
   const { profile } = useProfile()
   const { sessionLog, bodyWeightAt, currentWeight } = useWorkout()
   const { dayFor, stepsFor } = useNutrition()
-  const { bodyComp } = useWithings()
+  const { bodyComp } = useMesures()
   const { nowHour } = useNow()
 
   /** Aujourd'hui, calculé ici et pas reçu en prop : « la journée est-elle finie »

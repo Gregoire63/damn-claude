@@ -267,22 +267,21 @@ une comptabilité. C'est toujours la moyenne de poids sur 7 jours qui tranche.
 ### Mise en service
 
 1. Crée une application sur <https://developer.withings.com> (type *Public API*).
-2. URL de rappel : `https://<ton-domaine>/api/withings/callback` — et, pour le
-   développement, `http://localhost:3000/api/withings/callback`. Withings exige que
-   l'URL corresponde **exactement**, protocole et barre finale compris.
-3. Dans `.env` :
-
-```
-NUXT_WITHINGS_CLIENT_ID=xxxxxxxx
-NUXT_WITHINGS_CLIENT_SECRET=xxxxxxxx
-```
-
-4. Nutrition → Corps → **Connecter Withings**. Une seule fois : le jeton de
+2. URL de rappel : `https://<ton-domaine>/api/connect/withings/callback` — et, pour le
+   développement, `http://localhost:3000/api/connect/withings/callback`. Withings exige
+   que l'URL corresponde **exactement**, protocole et barre finale compris. L'écran
+   *Profil → Connecteurs* l'affiche, prête à copier.
+3. Colle l'identifiant et le secret dans **Profil → Connecteurs → Withings** (ils sont
+   chiffrés dans le coffre), ou pose-les chez ton hébergeur — `NUXT_WITHINGS_CLIENT_ID`
+   et `NUXT_WITHINGS_CLIENT_SECRET`, qui restent prioritaires.
+4. Profil → Connecteurs → **Connecter**. Une seule fois : le jeton de
    rafraîchissement se renouvelle tout seul ensuite.
 
 ### Où vit le secret
 
-Le `client_secret` ne quitte jamais `server/api/withings/`. Le navigateur ne détient
+Le `client_secret` ne quitte jamais le serveur : il vit dans les variables de
+l'hébergeur, ou chiffré dans le coffre (AES-256-GCM, clé dérivée de
+`NUXT_VAULT_SECRET`), et n'est jamais relu vers le navigateur. Le navigateur ne détient
 que les jetons du compte, dans son `localStorage`, comme le reste des données de
 l'application. Un jeton volé donne accès aux pesées ; un secret volé donne accès à
 l'application entière et à tous ses utilisateurs. Ce n'est pas la même perte.

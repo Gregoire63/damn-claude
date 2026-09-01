@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import { useNutrition } from '~/composables/useNutrition'
-import { useWithings } from '~/composables/useWithings'
+import { useMesures } from '~/composables/useMesures'
 import { useWorkout } from '~/composables/useWorkout'
 import type { DayMeal, DayStatus } from '~/lib/nutritionStats'
 import type { FreeMeal } from '~/lib/freeMeal'
@@ -35,7 +35,7 @@ const { currentWeight, sessionLog } = useWorkout()
 // Âge, métabolisme, dépense, cible protéique : un seul chemin pour tous les écrans.
 const { burnOn, energyOn, proteinTarget } = useEnergy()
 const { viewOf } = useDayPlan()
-const { bodyComp } = useWithings()
+const { bodyComp } = useMesures()
 
 const sheet = ref<DayMeal | null>(null)
 /**

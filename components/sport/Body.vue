@@ -1,10 +1,12 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
-import { useWithings } from '~/composables/useWithings'
+import { useMesures } from '~/composables/useMesures'
+import { useConnecteurs } from '~/composables/useConnecteur'
+import { providerById } from '~/lib/providers'
 import { useNutrition } from '~/composables/useNutrition'
 import { useWorkout } from '~/composables/useWorkout'
 import { useProfile } from '~/composables/useProfile'
-import { IMPEDANCE_CAVEAT, dailySeries, weeklySlope } from '~/lib/withings'
+import { IMPEDANCE_CAVEAT, dailySeries, weeklySlope } from '~/lib/mesures'
 import { STEPS_ONSITE, STEPS_TT } from '~/lib/nutritionStats'
 import { isoOf, shiftIso } from '~/utils/sportStats'
 
@@ -18,12 +20,32 @@ import { isoOf, shiftIso } from '~/utils/sportStats'
 // glissante, sa pente, et la répartition gras / muscle de ce qui a été perdu.
 
 const {
-  hydrate, connected, needsReconnect, connect, entries, latest,
-  syncing, syncError, lastSync, syncAndPush, autoSync, addManual, removeEntry, confirmEntry,
+  hydrate, entries, latest, addManual, removeEntry, confirmEntry,
   weightSeries, slope, comp, suspects, suspectAts,
-} = useWithings()
-// stepsFor vient de la NUTRITION, pas de Withings : c'est la copie persistée.
-// Celle de Withings lit le tampon de synchronisation, vide après un rechargement.
+} = useMesures()
+/**
+ * Les marques branchées, vues comme une seule.
+ *
+ * Cet écran parlait de « la balance » au singulier, et le bouton synchronisait
+ * Withings. Avec deux sources, il fallait deviner laquelle était à jour. On agrège
+ * donc : un état, un bouton, et les noms de ce qui est branché — qui a une balance et
+ * une montre n'a pas envie de les synchroniser à tour de rôle.
+ */
+const conn = useConnecteurs()
+const connected = computed(() => conn.branchees.value.length > 0)
+const syncing = conn.occupe
+const syncError = conn.erreur
+const lastSync = conn.derniere
+const needsReconnect = computed(() => conn.aReconnecter.value.length > 0)
+const nomsBranches = computed(() =>
+  conn.branchees.value.map(c => providerById(c.id)?.label ?? c.id).join(' · '))
+const nomsARebrancher = computed(() =>
+  conn.aReconnecter.value.map(c => providerById(c.id)?.label ?? c.id).join(' et '))
+function reconnecter() {
+  conn.aReconnecter.value[0]?.connecter()
+}
+// stepsFor vient de la NUTRITION : c'est la copie persistée. Le relevé d'une synchro,
+// lui, ne survit pas à un rechargement.
 const { dayFor, overrides, stepsFor } = useNutrition()
 const { addBodyWeight } = useWorkout()
 const { profile } = useProfile()
@@ -42,11 +64,11 @@ onMounted(() => {
   // La synchro d'ouverture vit maintenant dans la page : elle ne doit plus dépendre
   // du fait qu'on passe par cet écran. On la redemande quand même ici — elle se
   // court-circuite d'elle-même si elle a déjà tourné dans l'heure.
-  autoSync(today).catch(() => { /* hors ligne */ })
+  conn.autoSyncTout(today).catch(() => { /* hors ligne */ })
 })
 
 /** Le bouton « Synchroniser » : forcé, sans le pas de temps d'une heure. */
-const runSync = (full = false) => syncAndPush(today, { full })
+const runSync = (complet = false) => conn.synchroniserTout(today, { complet })
 
 function submitManual() {
   if (!manualKg.value || manualKg.value <= 0) return
@@ -157,18 +179,18 @@ const fmt = (n: number, d = 1) => (n > 0 ? '+' : '') + n.toFixed(d)
          Ici on ne montre que l'état et le bouton de synchronisation : cet écran sert
          à lire ses mesures, pas à administrer un compte OAuth. -->
     <section v-if="!connected" class="card nu-wi-connect">
-      <h3 class="nu-mode">Balance non connectée</h3>
+      <h3 class="nu-mode">Aucun connecteur branché</h3>
       <p class="nu-note">
-        Les pesées se saisissent à la main pour l'instant. Connecte le compte Withings
-        une fois et l'appli récupère tout toute seule — poids, masse grasse, muscle,
-        eau, os, et les pas si l'appli Withings est reliée à Samsung Health.
+        Les pesées se saisissent à la main, et tout fonctionne comme ça. Brancher une
+        balance ou une montre une fois, et l'application récupère seule le poids, la
+        composition et les pas — sans rien avoir à noter.
       </p>
-      <button class="btn primary" @click="emit('navigate', 'profil')">⚙️ Connecter depuis Profil</button>
+      <button class="btn primary" @click="emit('navigate', 'profil')">⚙️ Voir les connecteurs</button>
     </section>
 
     <section v-else class="card nu-wi-bar">
       <div>
-        <div class="mono nu-wi-state">Balance connectée</div>
+        <div class="mono nu-wi-state">{{ nomsBranches }}</div>
         <div class="nu-wi-sub">
           {{ entries.length }} pesée(s) · dernière synchro
           {{ lastSync ? new Date(lastSync * 1000).toLocaleString('fr-FR', { dateStyle: 'short', timeStyle: 'short' }) : 'jamais' }}
@@ -188,12 +210,12 @@ const fmt = (n: number, d = 1) => (n > 0 ? '+' : '') + n.toFixed(d)
     <section v-if="needsReconnect" class="card nu-wi-reco">
       <h3 class="nu-mode">🔌 Autorisation à renouveler</h3>
       <p class="nu-note">
-        Withings a révoqué l'accès de l'appli. Ça arrive quand une autorisation expire
-        ou qu'une synchro s'est interrompue au mauvais moment.
+        {{ nomsARebrancher }} a révoqué l'accès de l'application. Ça arrive quand une
+        autorisation expire ou qu'une synchro s'est interrompue au mauvais moment.
         <b>Tes mesures déjà récupérées ne bougent pas</b> — elles sont sur ce téléphone,
-        pas chez Withings.
+        pas chez la marque.
       </p>
-      <button class="btn primary" @click="connect()">Reconnecter le compte Withings</button>
+      <button class="btn primary" @click="reconnecter()">Reconnecter {{ nomsARebrancher }}</button>
     </section>
 
     <p v-else-if="syncError" class="nu-note nu-wi-err">{{ syncError }}</p>
