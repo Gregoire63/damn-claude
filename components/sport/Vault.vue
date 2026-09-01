@@ -43,7 +43,7 @@ const appareils = computed(() => v.state.value.appareils ?? [])
 async function doSecours() {
   if (await v.ajouterSecours(labelSecours.value.trim())) {
     labelSecours.value = ''
-    emit('flash', 'Passkey de secours ajouté ✓')
+    emit('flash', 'Clé d’accès ajoutée ✓')
   }
 }
 const showDetail = ref<string | null>(null)
@@ -84,7 +84,7 @@ async function doReset() {
     bootstrap.value = ''
     showReset.value = false
     await v.refresh()
-    emit('flash', 'Passkey effacé — tu peux en poser un nouveau')
+    emit('flash', 'Clés d’accès effacées')
   }
   catch { emit('flash', 'Code de démarrage invalide') }
 }
@@ -338,7 +338,7 @@ const nom = ref('')
 async function doRegister() {
   if (await v.register(bootstrap.value.trim(), nom.value.trim())) {
     bootstrap.value = ''
-    emit('flash', 'Passkey enregistré ✓')
+    emit('flash', 'Clé d’accès créée ✓')
     await v.push(props.snapshot, true)
   }
 }
@@ -356,7 +356,7 @@ async function doLogin() {
   if (await v.login()) emit('flash', 'Déverrouillé ✓')
 }
 async function doPush() {
-  emit('flash', (await v.push(props.snapshot, true)) ? 'Miroir envoyé ✓' : (v.error.value ?? 'Envoi impossible'))
+  emit('flash', (await v.push(props.snapshot, true)) ? 'Données envoyées ✓' : (v.error.value ?? 'Envoi impossible'))
 }
 async function doApply(p: RawProposal) {
   if (await v.apply(p)) { emit('flash', 'Appliqué ✓'); await v.push(props.snapshot, true) }
@@ -372,7 +372,7 @@ async function doRefuse(p: RawProposal) {
     <div class="row-between mb-8">
       <div class="section-label">Connecteur Claude</div>
       <span class="muted" :class="{ 'export-warn': statut !== 'ouvert' }">
-        {{ statut === 'ouvert' ? 'Déverrouillé' : statut === 'verrouille' ? 'Verrouillé' : 'Aucun passkey' }}
+        {{ statut === 'ouvert' ? 'Déverrouillé' : statut === 'verrouille' ? 'Verrouillé' : 'À configurer' }}
       </span>
     </div>
 
@@ -380,7 +380,7 @@ async function doRefuse(p: RawProposal) {
          sur une page publique, ce serait donner un nom à un inconnu. -->
     <div v-if="statut === 'ouvert'" class="vt-owner">
       <template v-if="!renommage">
-        <span class="muted">Instance de <b>{{ v.state.value.ownerName || 'Moi' }}</b></span>
+        <span class="muted">Compte de <b>{{ v.state.value.ownerName || 'sans nom' }}</b></span>
         <button class="vt-p-toggle" @click="nouveauNom = v.state.value.ownerName || ''; renommage = true">renommer</button>
       </template>
       <template v-else>
@@ -390,18 +390,17 @@ async function doRefuse(p: RawProposal) {
           <button class="btn flex-1" @click="renommage = false">Annuler</button>
         </div>
         <p class="muted vt-txt">
-          Ce nom apparaît dans la fenêtre de passkey de ton téléphone et dans ce que le
-          connecteur dit à Claude. Vide, l'instance redevient anonyme.
+          Ce nom apparaît à la demande de clé d'accès et dans les réponses de Claude.
         </p>
       </template>
     </div>
 
     <!-- Ce qui manque côté serveur, dit avant qu'on cherche ailleurs -->
     <div v-if="health && !health.pret" class="vt-warn">
-      <b>Le serveur n'est pas prêt.</b>
-      <template v-if="manquantes.length">
-        Variables absentes dans Netlify : <b>{{ manquantes.join(', ') }}</b>.
-      </template>
+      <b>Serveur incomplet.</b>
+                <template v-if="manquantes.length">
+                  Variables manquantes chez l'hébergeur : <b>{{ manquantes.join(', ') }}</b>.
+                </template>
       <template v-if="health.store !== 'ok'">
         Stockage ({{ health.driver }}) : {{ health.store }}.
       </template>
@@ -412,46 +411,41 @@ async function doRefuse(p: RawProposal) {
          dit « je n'ai pas accès à tes données », ce qui se lit comme une panne du
          connecteur. Vu d'ici, c'est un bouton à presser une fois. -->
     <div v-else-if="health && health.pret && health.miroir === null" class="vt-warn">
-      <b>Le serveur est prêt, mais il n'a encore aucune donnée.</b>
-      Tant que le miroir n'est pas envoyé, Claude répondra qu'il n'a rien à lire.
-      Déverrouille et touche <b>⬆ Envoyer maintenant</b>.
+      <b>Aucune donnée envoyée.</b> Claude ne pourra rien lire tant que la copie n'a pas été
+              transmise : déverrouille, puis touche <b>⬆ Envoyer maintenant</b>.
     </div>
 
     <!-- 1. Poser le premier passkey -->
     <template v-if="statut === 'a-poser'">
       <p class="muted vt-txt">
-        Pose ton passkey pour ouvrir le coffre. Le code de démarrage ne sert
-        <b>qu'une fois</b> : une fois posé, il est consommé. Tu pourras ensuite ajouter un
-        passkey de secours depuis cet écran, sans aucun code.
+        Crée une clé d'accès pour autoriser Claude à lire tes données. Le code de démarrage
+                ne sert qu'une fois ; les clés suivantes s'ajoutent depuis cet écran, sans code.
       </p>
       <p v-if="v.state.value.bootstrapSource !== 'env'" class="muted vt-txt">
-        <b>Où le trouver :</b> il est fabriqué à chaque déploiement et imprimé dans le
-        <b>journal du build</b> — Netlify → Deploys → le dernier déploiement. Cherche
-        « Code de démarrage de ce déploiement ». Il n'y a rien à configurer.
+        <b>Où le trouver :</b> dans le journal du dernier déploiement, à la ligne
+                « Code de démarrage de ce déploiement ». Il est renouvelé à chaque déploiement.
       </p>
       <p v-else class="muted vt-txt">
-        <b>Où le trouver :</b> c'est la valeur de <b>NUXT_VAULT_BOOTSTRAP</b> dans les
-        variables de ton hébergeur, que tu as posée à la main.
+        <b>Où le trouver :</b> c'est la valeur de <b>NUXT_VAULT_BOOTSTRAP</b>, dans les
+                variables de ton hébergeur.
       </p>
       <div v-if="!v.state.value.bootstrapReady" class="vt-warn">
-        ⚠️ Aucun code de démarrage utilisable — il a <b>déjà servi</b>. Relance un
-        déploiement : le journal du nouveau build en contiendra un neuf.
+        ⚠️ Le code de démarrage a déjà servi. Relance un déploiement pour en obtenir un
+                  nouveau.
       </div>
       <template v-else>
         <!-- Le prénom est demandé ICI, et pas dans une variable d'hébergement : c'est
              le moment où l'on déclare que cette instance est la sienne, et la fenêtre
              du système va l'afficher dans la seconde qui suit. -->
-        <input v-model="nom" class="note-input mt-6" type="text" placeholder="Ton prénom (facultatif)" autocomplete="given-name" maxlength="40">
+        <input v-model="nom" class="note-input mt-6" type="text" placeholder="Prénom (facultatif)" autocomplete="given-name" maxlength="40">
         <input v-model="bootstrap" class="note-input mt-6" type="password" placeholder="Code de démarrage" autocomplete="off">
         <p v-if="indice" class="muted vt-hint mono">{{ indice }}</p>
         <button class="btn-primary vt-go mt-6" :disabled="v.busy.value || !bootstrap.trim()" @click="doRegister">
-          🔐 Enregistrer mon passkey
+          🔐 Créer une clé d'accès
         </button>
         <p class="muted vt-txt">
-          Tu n'as pas encore de passkey&nbsp;: <b>ton appareil va en créer un</b>. Après ce
-          bouton, il te demandera ton visage, ton empreinte ou ton code de déverrouillage.
-          Le champ ci-dessus n'est pas le passkey, c'est le code de démarrage de tes
-          variables Netlify.
+          Ton appareil demandera ensuite ton empreinte, ton visage ou ton code de
+                    déverrouillage.
         </p>
       </template>
     </template>
@@ -459,8 +453,7 @@ async function doRefuse(p: RawProposal) {
     <!-- 2. Se déverrouiller -->
     <template v-else-if="statut === 'verrouille'">
       <p class="muted vt-txt">
-        Cette page est publique. Déverrouille avec ton visage ou ton empreinte pour envoyer
-        tes données au coffre et relever les propositions.
+        Déverrouille pour envoyer tes données et relever les propositions de Claude.
       </p>
       <button class="btn-primary vt-go mt-6" :disabled="v.busy.value" @click="doLogin">
         🔓 Déverrouiller
@@ -470,12 +463,11 @@ async function doRefuse(p: RawProposal) {
     <!-- 3. Ouvert -->
     <template v-else>
       <div class="row-between vt-row">
-        <span class="muted">Miroir des données</span>
+        <span class="muted">Copie des données</span>
         <span class="mono">{{ miroirLabel }}</span>
       </div>
       <p class="muted vt-txt">
-        C’est la copie que Claude lit depuis l’app sur ton téléphone. Elle sert aussi de
-        sauvegarde : plus besoin d’exporter le JSON à la main.
+        Copie de tes données que Claude peut lire. Elle sert aussi de sauvegarde.
       </p>
       <div class="nav-row mt-6">
         <button class="btn flex-1" :disabled="v.busy.value" @click="doPush">⬆ Envoyer maintenant</button>
@@ -503,17 +495,15 @@ async function doRefuse(p: RawProposal) {
           </li>
         </ul>
         <div v-if="appareils.length < 2" class="vt-warn mt-6">
-          <b>Un seul appareil.</b> Si tu le perds, il faudra passer par ton hébergeur pour
-          rouvrir le coffre. Pose un passkey de secours sur ton ordinateur — ça prend dix
-          secondes et ça supprime ce risque.
+          <b>Un seul appareil autorisé.</b> Le perdre coûterait un passage par l'hébergeur pour
+                    revenir. Ajoute une clé d'accès depuis un autre appareil.
         </div>
-        <input v-model="labelSecours" class="note-input mt-6" type="text" placeholder="Nom de cet appareil (ex. Portable)" maxlength="30">
+        <input v-model="labelSecours" class="note-input mt-6" type="text" placeholder="Nom de l'appareil" maxlength="30">
         <button class="btn vt-go mt-6" :disabled="v.busy.value" @click="doSecours">
-          ➕ Ajouter un passkey de secours
+          ➕ Ajouter une clé d'accès
         </button>
         <p class="muted vt-txt">
-          Aucun code demandé : tu es déjà déverrouillé, ça suffit à prouver que le coffre
-          est le tien. Fais-le depuis l'appareil que tu veux autoriser.
+          À faire depuis l'appareil à autoriser. Aucun code n'est demandé.
         </p>
       </div>
 
@@ -523,13 +513,11 @@ async function doRefuse(p: RawProposal) {
       </button>
       <template v-if="showReset">
         <p class="muted vt-txt">
-          Efface <b>tous</b> les passkeys pour pouvoir en reposer un. Le code de
-          l'installation a été consommé : relance un déploiement et lis le code du
-          nouveau build dans son journal. C'est délibéré — se rouvrir la porte doit
-          demander l'accès au déploiement.
+          Efface toutes les clés d'accès pour pouvoir en recréer une. Il faut le code du
+                    dernier déploiement, lisible dans son journal.
         </p>
         <input v-model="bootstrap" class="note-input mt-6" type="password" placeholder="Code du dernier déploiement" autocomplete="off">
-        <button class="btn mt-6 vt-go" :disabled="!bootstrap.trim()" @click="doReset">🗝 Effacer les passkeys</button>
+        <button class="btn mt-6 vt-go" :disabled="!bootstrap.trim()" @click="doReset">🗝 Effacer les clés d'accès</button>
       </template>
 
       <!-- Boîte de réception : un BOUTON, pas une liste dépliée.
@@ -649,8 +637,7 @@ async function doRefuse(p: RawProposal) {
             </tbody>
           </table>
           <p v-if="champ(p)!.danger" class="vt-prog-n">
-            ⚠️ Une suppression ne se défait pas d'un tap. Vérifie la valeur de gauche : c'est
-            exactement ce qui disparaît.
+            ⚠️ Suppression définitive. La valeur de gauche est ce qui disparaît.
           </p>
         </div>
         <button class="vt-p-toggle" @click="showDetail = showDetail === p.id ? null : p.id">
@@ -670,9 +657,8 @@ async function doRefuse(p: RawProposal) {
           message doit le dire, sinon on refait le travail soi-même pour rien.
         -->
         <p v-if="!applicable(p)" class="vt-p-manual">
-          ⏳ Cette proposition ne colle plus à tes données — la valeur qu’elle voulait
-          remplacer a changé depuis. Redemande-la à Claude plutôt que de la refaire à la
-          main, il relira la valeur à jour.
+          ⏳ Cette proposition n'est plus applicable : la valeur qu'elle remplace a changé
+                    depuis. Redemande-la à Claude, il repartira de la valeur à jour.
         </p>
         <div class="nav-row">
           <button v-if="applicable(p)" class="btn-primary flex-1" @click="doApply(p)">Appliquer</button>

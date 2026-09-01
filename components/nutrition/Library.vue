@@ -186,15 +186,15 @@ const kindLabel = (k: RecipeKind) => KINDS.find(x => x.id === k)?.label ?? k
     <template v-if="tab === 'plats'">
       <button class="btn-primary" @click="newRecipe()">＋ Créer un plat</button>
       <p class="muted">
-        Les calories et les macros se calculent toutes seules à partir des ingrédients.
-        Un plat mis de côté reste consultable mais ne tombe plus dans le planning.
+        Calories et macros sont calculées à partir des ingrédients. Un plat mis de côté
+                reste consultable mais n'apparaît plus dans le planning.
       </p>
 
       <!-- Ne reste que ce sur quoi on peut agir. Le total occupé s'affichait ici :
            un chiffre qu'on ne peut ni changer ni utiliser, à côté de photos de
            gamelles. Les orphelines, elles, se nettoient d'un bouton. -->
       <div v-if="orphans.length" class="nu-photo-usage">
-        <span class="flex-1">📷 {{ orphans.length }} photo(s) de plats supprimés occupent encore de la place.</span>
+        <span class="flex-1">📷 {{ orphans.length }} photo(s) de plats supprimés à nettoyer.</span>
         <button class="btn" :disabled="pruning" @click="cleanPhotos">Nettoyer</button>
       </div>
 
@@ -278,9 +278,8 @@ const kindLabel = (k: RecipeKind) => KINDS.find(x => x.id === k)?.label ?? k
     <template v-else-if="tab === 'aliments'">
       <button class="btn-primary" @click="newFood()">＋ Ajouter un aliment</button>
       <p class="muted">
-        Valeurs pour 100 g, telles qu'elles figurent sur l'emballage. Pour les viandes,
-        poissons et féculents, prends celles du produit <b>cru</b> — c'est ainsi que tout
-        le plan est calculé.
+        Valeurs pour 100 g, telles qu'indiquées sur l'emballage. Pour les viandes, poissons
+                et féculents, utilise celles du produit <b>cru</b> : c'est la base de tous les calculs.
       </p>
 
       <!-- Le plan est écrit en 0 %, le rayon n'en a pas toujours. Sans ce réglage,
@@ -288,9 +287,8 @@ const kindLabel = (k: RecipeKind) => KINDS.find(x => x.id === k)?.label ?? k
       <div class="card nu-fat">
         <div class="section-label mb-8">Taux de matière grasse acheté</div>
         <p class="muted mb-8">
-          Le plan est écrit en 0 %. Si ton magasin n'en a pas, déclare ici ce que tu
-          achètes vraiment : les quantités du plan baissent en conséquence, et la
-          protéine en poudre déjà présente dans la recette compense ce qui peut l'être.
+          Les recettes supposent la version la plus maigre. Indique ici le taux réellement
+                    acheté : les quantités sont ajustées en conséquence.
         </p>
         <div v-for="d in dairyFoods" :key="d.food.id" class="nu-fat-row">
           <div class="nu-fat-name">
@@ -318,13 +316,12 @@ const kindLabel = (k: RecipeKind) => KINDS.find(x => x.id === k)?.label ?? k
             <span>Lipides</span><span>{{ dairyCost.l > 0 ? '+' : '' }}{{ dairyCost.l }} g</span>
           </div>
           <small>
-            Sans rééquilibrage, ce taux coûterait <b>+{{ dairyCost.rawKcal }} kcal</b> par
-            jour. Réduire les quantités en rattrape la plus grande part ; il reste
-            <b>{{ dairyCost.kcal > 0 ? '+' : '' }}{{ dairyCost.kcal }} kcal</b>, dont
-            l'ajustement du soir se charge.
+            Sans ajustement, ce taux ajouterait <b>{{ dairyCost.rawKcal }} kcal</b> par jour.
+                        La réduction des quantités en compense la majeure partie ; il reste
+                        <b>{{ dairyCost.kcal > 0 ? '+' : '' }}{{ dairyCost.kcal }} kcal</b>, absorbées par
+                        l'ajustement du soir.
             <template v-if="dairyCost.l > 6">
-              Les lipides, eux, restent hauts : c'est du gras laitier, il ne se retire
-              que du pot.
+              Les lipides restent élevés : ils viennent du produit lui-même.
             </template>
           </small>
         </div>
@@ -423,8 +420,7 @@ const kindLabel = (k: RecipeKind) => KINDS.find(x => x.id === k)?.label ?? k
             <div v-for="(e, i) in foodErrors" :key="i">⚠️ {{ e }}</div>
           </div>
           <p class="muted">
-            Un contrôle vérifie que les macros expliquent bien les calories annoncées —
-            c'est le meilleur moyen d'attraper une faute de frappe sur l'étiquette.
+            Un contrôle vérifie la cohérence entre les macros et les calories saisies.
           </p>
           <button class="btn-primary" @click="saveFood()">Enregistrer</button>
       </Sheet>

@@ -32,7 +32,7 @@ export default defineEventHandler(async (event) => {
      * lui, n'importe qui posant son propre passkey deviendrait propriétaire.
      */
     if (creds.length && !session(event)) {
-      throw createError({ statusCode: 409, statusMessage: 'Un passkey est déjà enregistré — connecte-toi pour en ajouter un second' })
+      throw createError({ statusCode: 409, statusMessage: 'Une clé d\'accès existe déjà. Déverrouille pour en ajouter une seconde.' })
     }
     // Le nom voyage AVEC la demande de défi : la fenêtre du système l'affiche au
     // moment même où l'on pose le passkey, et il n'existe encore nulle part —
@@ -56,7 +56,7 @@ export default defineEventHandler(async (event) => {
     return options
   }
 
-  if (!creds.length) throw createError({ statusCode: 404, statusMessage: 'Aucun passkey enregistré' })
+  if (!creds.length) throw createError({ statusCode: 404, statusMessage: 'Aucune clé d\'accès enregistrée' })
   const options = await generateAuthenticationOptions({
     rpID: id,
     // TOUS : c'est l'authentificateur qui choisit celui qu'il présente, et le

@@ -285,6 +285,6 @@ describe('le message affiché après un import', () => {
 
   it('ne prétend pas avoir importé quelque chose quand il n’y avait rien', () => {
     expect(phraseBilan({ ok: true, rebase: false, seances: 0, aliments: 0, recettes: 0, menus: 0, journal: 0, pesees: 0 }))
-      .toMatch(/rien de reconnaissable/)
+      .toMatch(/aucune donnée exploitable/)
   })
 })

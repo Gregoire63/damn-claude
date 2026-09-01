@@ -55,7 +55,7 @@ const total = computed(() => groups.value.reduce((n, g) => n + g.items.length, 0
       <button class="pk-opt fm-new" @click="emit('libre')">
         <span class="fm-plus">＋</span>
         <span class="pk-name">
-          <b>{{ hasFree ? 'Modifier mon repas du dehors' : 'Autre chose (restaurant, kebab…)' }}</b>
+          <b>{{ hasFree ? 'Modifier le repas hors plan' : 'Autre chose (restaurant, extérieur…)' }}</b>
           <small class="muted">Saisir les calories d’un repas que tu n’as pas cuisiné</small>
         </span>
       </button>

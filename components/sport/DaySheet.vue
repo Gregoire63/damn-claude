@@ -187,7 +187,7 @@ function openLibre() {
           </div>
         </div>
         <div v-else class="muted ds-nokcal">
-          Renseigne taille, sexe et année de naissance dans Profil pour voir la cible calorique.
+          Renseigne ton profil pour afficher la cible calorique.
         </div>
 
         <!-- Séances réellement enregistrées. Rien de « prévu » ici : la feuille
@@ -253,7 +253,7 @@ function openLibre() {
           <span v-if="planTotal" class="mono ds-section-n">{{ doneCount }}/{{ plan!.meals.length }} pris · {{ planTotal.kcal }} kcal prévus</span>
         </div>
         <p v-if="plan?.off" class="muted ds-empty">
-          Jour marqué comme une absence dans ta semaine type : aucun repas prévu.
+          Jour d'absence dans ta semaine type : aucun repas prévu.
         </p>
         <!-- Même carte que les séances au-dessus : la journée se lit d'un seul geste,
              au lieu d'alterner entre une liste et des cartes. Les macros sont là parce
@@ -313,8 +313,8 @@ function openLibre() {
           🍽 {{ isToday ? 'Compléter les repas' : 'Corriger les repas de ce jour' }}
         </button>
         <p v-else-if="isFuture" class="muted ds-empty">
-          Journée à venir : les repas se cochent une fois mangés. Tu peux déjà choisir
-          ce que tu mangeras — les quantités et les courses suivront.
+          Journée à venir : les repas se cochent une fois pris. Les choix faits maintenant
+                  sont répercutés sur les quantités et les courses.
         </p>
 
         <!-- Corps -->

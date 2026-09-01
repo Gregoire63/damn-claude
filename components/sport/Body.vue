@@ -179,13 +179,12 @@ const fmt = (n: number, d = 1) => (n > 0 ? '+' : '') + n.toFixed(d)
          Ici on ne montre que l'état et le bouton de synchronisation : cet écran sert
          à lire ses mesures, pas à administrer un compte OAuth. -->
     <section v-if="!connected" class="card nu-wi-connect">
-      <h3 class="nu-mode">Aucun connecteur branché</h3>
+      <h3 class="nu-mode">Aucun connecteur</h3>
       <p class="nu-note">
-        Les pesées se saisissent à la main, et tout fonctionne comme ça. Brancher une
-        balance ou une montre une fois, et l'application récupère seule le poids, la
-        composition et les pas — sans rien avoir à noter.
+        Les pesées se saisissent à la main. Une balance ou une montre connectée récupère
+                automatiquement le poids, la composition et les pas.
       </p>
-      <button class="btn primary" @click="emit('navigate', 'profil')">⚙️ Voir les connecteurs</button>
+      <button class="btn primary" @click="emit('navigate', 'profil')">⚙️ Connecteurs</button>
     </section>
 
     <section v-else class="card nu-wi-bar">
@@ -208,12 +207,10 @@ const fmt = (n: number, d = 1) => (n > 0 ? '+' : '') + n.toFixed(d)
          appelle UNE action. Affiché comme les autres textes rouges, il se serait
          perdu — et rien n'aurait dit que la réponse tient en un bouton. -->
     <section v-if="needsReconnect" class="card nu-wi-reco">
-      <h3 class="nu-mode">🔌 Autorisation à renouveler</h3>
+      <h3 class="nu-mode">🔌 Autorisation expirée</h3>
       <p class="nu-note">
-        {{ nomsARebrancher }} a révoqué l'accès de l'application. Ça arrive quand une
-        autorisation expire ou qu'une synchro s'est interrompue au mauvais moment.
-        <b>Tes mesures déjà récupérées ne bougent pas</b> — elles sont sur ce téléphone,
-        pas chez la marque.
+        {{ nomsARebrancher }} a révoqué l'accès. Les mesures déjà récupérées sont
+                conservées.
       </p>
       <button class="btn primary" @click="reconnecter()">Reconnecter {{ nomsARebrancher }}</button>
     </section>
@@ -224,11 +221,10 @@ const fmt = (n: number, d = 1) => (n > 0 ? '+' : '') + n.toFixed(d)
          entre deux personnes proches. On ne supprime rien, on met de côté et on
          demande — écarter en silence une vraie pesée serait pire que le problème. -->
     <section v-if="suspects.length" class="card nu-wi-quar">
-      <h3 class="nu-mode">{{ suspects.length }} pesée(s) mise(s) de côté</h3>
+      <h3 class="nu-mode">{{ suspects.length }} pesée(s) à vérifier</h3>
       <p class="nu-note">
-        Trop loin de ta tendance pour être toi. Sur une balance partagée, c'est
-        généralement quelqu'un d'autre que l'appareil t'a attribué. Ces mesures ne
-        comptent ni dans la courbe ni dans la cible calorique tant que tu n'as pas tranché.
+        Trop éloignées de ta tendance. Elles ne comptent ni dans la courbe ni dans la
+                cible calorique tant qu'elles ne sont pas confirmées.
       </p>
       <div class="nu-wi-list">
         <div v-for="e in suspects" :key="e.at" class="nu-wi-item">
@@ -253,7 +249,7 @@ const fmt = (n: number, d = 1) => (n > 0 ? '+' : '') + n.toFixed(d)
         <div v-if="slope !== null" class="nu-wi-slope" :class="paceVerdict?.tone">
           {{ fmt(slope, 2) }} kg / semaine
         </div>
-        <div v-else class="nu-wi-sub">Encore quelques pesées avant de pouvoir donner une tendance.</div>
+        <div v-else class="nu-wi-sub">Quelques pesées de plus pour afficher une tendance.</div>
       </div>
     </section>
 
@@ -334,7 +330,7 @@ const fmt = (n: number, d = 1) => (n > 0 ? '+' : '') + n.toFixed(d)
     <!-- Saisie manuelle -->
     <section class="card nu-wi-manual">
       <h3 class="nu-mode">Ajouter une pesée à la main</h3>
-      <p class="nu-note">Pour les jours sans balance, ou en attendant de la recevoir.</p>
+      <p class="nu-note">Pour les jours sans balance connectée.</p>
       <div class="nu-wi-form">
         <label class="field nu-datefield">
           <span>Date</span>
@@ -351,10 +347,9 @@ const fmt = (n: number, d = 1) => (n > 0 ? '+' : '') + n.toFixed(d)
         <button class="btn-primary nu-wi-go" :disabled="!manualKg" @click="submitManual">Ajouter</button>
       </div>
       <p class="nu-note mt-6">
-        La masse grasse est facultative, mais c'est elle qui permet de calculer les
-        protéines sur la <b>masse maigre</b> plutôt que sur le poids total — plus juste
-        tant qu'il reste du gras à perdre. La masse grasse en kg et la masse maigre en
-        sont déduites.
+        La masse grasse est facultative. Renseignée, elle permet de calculer les protéines
+                sur la <b>masse maigre</b> plutôt que sur le poids total. Masse grasse en kg et
+                masse maigre en sont déduites.
       </p>
       <!-- Raccourcis : neuf pesées sur dix sont celle du jour ou celle d'hier soir
            qu'on avait oublié de noter. -->

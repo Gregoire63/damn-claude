@@ -253,9 +253,8 @@ const foodName = (id: string) => library.value.foods[id]?.name ?? id
       </div>
     </div>
     <div v-else class="card empty">
-      Renseigne taille, sexe et année de naissance dans <b>Profil</b>, puis pèse-toi
-      depuis <b>Rapport</b> : sans ces trois-là, aucune cible ne peut être calculée sur
-      tes vraies données.
+      Renseigne ton profil, puis pèse-toi depuis <b>Rapport</b> pour obtenir une cible
+            calculée sur tes données.
     </div>
 
 
@@ -291,22 +290,22 @@ const foodName = (id: string) => library.value.foods[id]?.name ?? id
         </template>
         <template v-else>
           <button type="button" class="btn-primary" @click="confirmAdjust">
-            {{ adjustment.covered > 0 ? 'C\'est noté, je mange plus' : 'C\'est fait, j\'ai réduit' }}
+            {{ adjustment.covered > 0 ? 'Ajustement pris en compte' : 'Réduction appliquée' }}
           </button>
           <span class="nu-adjust-hint">
-            Tant que tu ne confirmes pas, le compteur reste sur les quantités prévues.
+            Sans confirmation, le compteur reste sur les quantités prévues.
           </span>
         </template>
       </div>
     </div>
 
     <!-- Les repas à valider -->
-    <div class="section-label">Les repas — coche au fur et à mesure</div>
+    <div class="section-label">Repas de la journée</div>
     <!-- Journée marquée absente dans la semaine type : rien n'a été acheté ni
          cuisiné pour elle. Le dire explicitement évite de croire à un bug. -->
     <p v-if="day.off" class="nu-note">
-      Tu as marqué ce jour comme une absence dans ta semaine type : aucun repas n'est
-      prévu, et rien n'a été acheté pour lui. Note ce que tu manges en repas hors plan.
+      Jour marqué comme absence dans ta semaine type : aucun repas prévu. Note ce que tu
+              manges en repas hors plan.
     </p>
     <div class="nu-meals">
       <div v-for="m in day.meals" :key="m.slot" class="card nu-meal" :class="{ done: isEaten(props.todayIso, m.slot) }">
@@ -396,7 +395,7 @@ const foodName = (id: string) => library.value.foods[id]?.name ?? id
         <button class="nu-del" aria-label="Retirer" @click="removeExtra(props.todayIso, e.id)">×</button>
       </div>
     </div>
-    <button v-if="!adding" class="btn" @click="adding = true">＋ Ajouter ce que j'ai mangé</button>
+    <button v-if="!adding" class="btn" @click="adding = true">＋ Ajouter un repas</button>
 
     <div v-else class="card nu-addbox">
       <div class="section-label">Saisie rapide</div>
@@ -416,7 +415,7 @@ const foodName = (id: string) => library.value.foods[id]?.name ?? id
 
     <!-- Bilan macros de ce qui a réellement été mangé -->
     <div v-if="split && intake" class="card nu-macros">
-      <div class="section-label">Ce que tu as mangé aujourd'hui</div>
+      <div class="section-label">Repas hors plan</div>
       <div class="nu-bar mt-6">
         <div class="nu-seg p" :style="{ flex: Math.max(1, split.p) }">{{ intake.eaten.p }} g</div>
         <div class="nu-seg g" :style="{ flex: Math.max(1, split.g) }">{{ intake.eaten.g }} g</div>

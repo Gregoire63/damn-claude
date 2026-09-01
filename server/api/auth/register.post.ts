@@ -30,17 +30,17 @@ export default defineEventHandler(async (event) => {
   // La porte « secours » d'abord : une session valide se suffit à elle-même, et il
   // serait absurde d'exiger en plus un code déjà consommé.
   if (!connecte) {
-    if (creds.length) throw createError({ statusCode: 409, statusMessage: 'Un passkey est déjà enregistré — connecte-toi pour en ajouter un second' })
+    if (creds.length) throw createError({ statusCode: 409, statusMessage: 'Une clé d\'accès existe déjà. Déverrouille pour en ajouter une seconde.' })
     const verdict = await verifierBootstrap(String(body?.bootstrap ?? ''))
     if (verdict === 'absent') throw createError({ statusCode: 503, statusMessage: 'NUXT_VAULT_BOOTSTRAP non configuré' })
-    if (verdict === 'verrouille') throw createError({ statusCode: 429, statusMessage: 'Trop de tentatives — réessaie dans un quart d\'heure' })
-    if (verdict === 'consomme') throw createError({ statusCode: 403, statusMessage: 'Ce code de démarrage a déjà servi. Change NUXT_VAULT_BOOTSTRAP chez ton hébergeur pour en réarmer un.' })
+    if (verdict === 'verrouille') throw createError({ statusCode: 429, statusMessage: 'Trop de tentatives. Réessaie dans quinze minutes.' })
+    if (verdict === 'consomme') throw createError({ statusCode: 403, statusMessage: 'Ce code de démarrage a déjà servi. Relance un déploiement pour en obtenir un nouveau.' })
     if (verdict !== 'ok') throw createError({ statusCode: 403, statusMessage: 'Code de démarrage invalide' })
   }
 
   const challenge = verifyToken(getCookie(event, 'gr-challenge'), Date.now())
   if (!challenge || challenge.scope !== 'challenge') {
-    throw createError({ statusCode: 400, statusMessage: 'Défi expiré — recommence' })
+    throw createError({ statusCode: 400, statusMessage: 'Demande expirée. Recommence.' })
   }
 
   const verification = await verifyRegistrationResponse({

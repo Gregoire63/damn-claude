@@ -1,7 +1,6 @@
 import { mount } from '@vue/test-utils'
-import { describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { registerEndpoint } from '@nuxt/test-utils/runtime'
-import Vault from '../../components/sport/Vault.vue'
 import type { RawProposal } from '../../lib/proposals'
 
 // Ces tests tournent sur le PACK D'EXEMPLE : l'application ne livre plus de données.
@@ -42,14 +41,35 @@ registerEndpoint('/api/vault/resolve', () => ({ ok: true }))
 
 const attendre = () => new Promise(r => setTimeout(r, 60))
 
+/**
+ * Un composant NEUF à chaque test.
+ *
+ * L'état du coffre vit au niveau du module : sans réinitialisation, la proposition
+ * appliquée par un test reste appliquée pour le suivant, qui monte alors un écran
+ * vide et voit toutes ses assertions passer sans rien vérifier. C'est exactement ce
+ * qui s'est produit — le test « valeur périmée » ne testait plus rien depuis
+ * longtemps, et personne ne pouvait le voir.
+ */
+async function monter() {
+  vi.resetModules()
+  const Vault = (await import('../../components/sport/Vault.vue')).default
+  const w = mount(Vault, { props: { snapshot: () => ({}) }, attachTo: document.body, global: { stubs: { transition: false } } })
+  await attendre(); await attendre()
+  await w.get('.vt-inbox').trigger('click')
+  await attendre(); await attendre()
+  return w
+}
+
+beforeEach(() => {
+  localStorage.clear()
+  document.body.querySelectorAll('.sport-portal').forEach(n => n.remove())
+})
+
 describe('une modification de programme, dans la boîte de réception', () => {
   it('montre l’avant ET l’après, pas seulement le patch', async () => {
-    const w = mount(Vault, { props: { snapshot: () => ({}) }, attachTo: document.body, global: { stubs: { transition: false } } })
-    await attendre(); await attendre()
     // La boîte s'ouvre au clic, dans une fenêtre TÉLÉPORTÉE : on lit donc <body>,
     // pas le composant. Chercher dans `w.text()` renverrait un vide trompeur.
-    await w.get('.vt-inbox').trigger('click')
-    await attendre(); await attendre()
+    const w = await monter()
 
     const txt = document.body.textContent ?? ''
     expect(txt).toContain('Développé couché haltères') // le nom réel, pas l'identifiant
@@ -71,11 +91,7 @@ describe('une modification de programme, dans la boîte de réception', () => {
    * et le programme n'a pas bougé. On ne s'en aperçoit qu'à la séance suivante.
    */
   it('applique vraiment le geste au programme', async () => {
-    localStorage.clear()
-    const w = mount(Vault, { props: { snapshot: () => ({}) }, attachTo: document.body, global: { stubs: { transition: false } } })
-    await attendre(); await attendre()
-    await w.get('.vt-inbox').trigger('click')
-    await attendre(); await attendre()
+    const w = await monter()
 
     const appliquer = [...document.body.querySelectorAll('button')].find(b => b.textContent === 'Appliquer')
     expect(appliquer, 'le bouton « Appliquer » doit être proposé').toBeTruthy()
@@ -101,14 +117,11 @@ describe('une modification de programme, dans la boîte de réception', () => {
     // Le téléphone est déjà passé à 3 séries : le « de_series: 4 » de la proposition
     // ne décrit plus rien.
     localStorage.setItem('gr-prog-patch-v1', JSON.stringify({ 'dev-halteres': { sets: 3 } }))
-    const w = mount(Vault, { props: { snapshot: () => ({}) }, attachTo: document.body, global: { stubs: { transition: false } } })
-    await attendre(); await attendre()
-    await w.get('.vt-inbox').trigger('click')
-    await attendre(); await attendre()
+    const w = await monter()
 
     const boutons = [...document.body.querySelectorAll('button')].map(b => b.textContent)
     expect(boutons).not.toContain('Appliquer')
-    expect(document.body.textContent).toContain('à la main')
+    expect(document.body.textContent).toContain('plus applicable')
     w.unmount()
     document.body.querySelectorAll('.sport-portal').forEach(n => n.remove())
   })

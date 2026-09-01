@@ -21,7 +21,7 @@ export default defineEventHandler(async (event) => {
   const { bootstrap } = await readBody<{ bootstrap?: string }>(event) ?? {}
   const verdict = await verifierBootstrap(String(bootstrap ?? ''))
   if (verdict === 'absent') throw createError({ statusCode: 503, statusMessage: 'NUXT_VAULT_BOOTSTRAP non configuré' })
-  if (verdict === 'verrouille') throw createError({ statusCode: 429, statusMessage: 'Trop de tentatives — réessaie dans un quart d\'heure' })
+  if (verdict === 'verrouille') throw createError({ statusCode: 429, statusMessage: 'Trop de tentatives. Réessaie dans quinze minutes.' })
   if (verdict === 'consomme') throw createError({ statusCode: 403, statusMessage: 'Ce code de démarrage a déjà servi. Pose une nouvelle valeur dans NUXT_VAULT_BOOTSTRAP chez ton hébergeur.' })
   if (verdict !== 'ok') throw createError({ statusCode: 403, statusMessage: 'Code de démarrage invalide' })
 

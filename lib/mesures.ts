@@ -266,7 +266,7 @@ export function composition(entries: BodyEntry[], days = 28): Composition {
       lean: null,
       fatShare: null,
       quality: 'unknown',
-      advice: 'Il faut quelques pesées avec mesure de composition pour dire si tu perds du gras ou du muscle. La balance s\'en charge dès qu\'elle est en place.',
+      advice: 'Quelques pesées avec mesure de composition sont nécessaires pour distinguer la perte de gras de la perte de muscle.',
     }
   }
 
@@ -280,7 +280,7 @@ export function composition(entries: BodyEntry[], days = 28): Composition {
   const lean = delta(leanSeries)
 
   if (fat === null || lean === null || Math.abs(fat) + Math.abs(lean) < 0.2) {
-    return { days, kg: kgDelta, fat, lean, fatShare: null, quality: 'unknown', advice: 'Variations encore trop faibles pour conclure. Laisse passer deux semaines de plus.' }
+    return { days, kg: kgDelta, fat, lean, fatShare: null, quality: 'unknown', advice: 'Variations trop faibles pour conclure. Attends deux semaines de plus.' }
   }
 
   // Part de la perte imputable au gras. Négatif = on a pris du gras.
@@ -291,19 +291,19 @@ export function composition(entries: BodyEntry[], days = 28): Composition {
   let advice = ''
   if (fatShare === null) {
     quality = 'unknown'
-    advice = 'Le poids ne baisse pas sur la période : rien à décomposer pour l\'instant.'
+    advice = 'Le poids ne baisse pas sur la période : rien à décomposer.'
   }
   else if (fatShare >= 1 - LEAN_LOSS_ALERT + 0.1) {
     quality = 'good'
-    advice = `${Math.round(fatShare * 100)} % de ce que tu perds est du gras. C'est exactement ce qu'on cherche : ne change rien.`
+    advice = `${Math.round(fatShare * 100)} % de la perte vient du gras. Rien à changer.`
   }
   else if (fatShare >= 1 - LEAN_LOSS_ALERT) {
     quality = 'mixed'
-    advice = `${Math.round(fatShare * 100)} % de gras dans la perte : correct, mais la masse maigre commence à payer. Vérifie que les protéines sont bien à 2 g par kilo et que les charges montent encore.`
+    advice = `${Math.round(fatShare * 100)} % de la perte vient du gras. Correct, mais la masse maigre baisse : vérifie l'apport en protéines et la progression des charges.`
   }
   else {
     quality = 'poor'
-    advice = `Seulement ${Math.round(fatShare * 100)} % de la perte vient du gras : tu perds trop de muscle. Remonte de 150 à 200 kcal par jour et garde le même volume de séances — descendre plus bas ne ferait qu'aggraver ça.`
+    advice = `Seulement ${Math.round(fatShare * 100)} % de la perte vient du gras : la perte de muscle est importante. Remonte de 150 à 200 kcal par jour en gardant le même volume de séances.`
   }
 
   return { days, kg: kgDelta, fat, lean, fatShare, quality, advice }

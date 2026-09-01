@@ -225,7 +225,7 @@ function addNow() {
         </div>
       </div>
       <NuxtLink v-if="!target" to="/" class="muted nu-hero-warn">
-        Renseigne taille et année de naissance dans Profil, et pèse-toi : la cible en dépend.
+        Renseigne ton profil et pèse-toi pour calculer la cible.
       </NuxtLink>
     </div>
 
@@ -251,7 +251,7 @@ function addNow() {
     </p>
 
     <div class="nu-hero-actions">
-      <button class="btn-primary flex-1" @click="eatSheet = true">🍽 Remplir mes repas</button>
+      <button class="btn-primary flex-1" @click="eatSheet = true">🍽 Remplir les repas</button>
       <button v-if="!open" class="btn" @click="open = true; time = hhmm(new Date())">＋ Extra</button>
     </div>
     <div v-if="open" class="nu-quick">

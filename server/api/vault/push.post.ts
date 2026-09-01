@@ -18,10 +18,10 @@ export default defineEventHandler(async (event) => {
   requireSession(event)
   const body = await readBody<{ version?: number, data?: Record<string, unknown> }>(event)
   if (!body?.data || typeof body.data !== 'object') {
-    throw createError({ statusCode: 400, statusMessage: 'Instantané absent' })
+    throw createError({ statusCode: 400, statusMessage: 'Données absentes' })
   }
   const size = Buffer.byteLength(JSON.stringify(body.data))
-  if (size > MAX_BYTES) throw createError({ statusCode: 413, statusMessage: 'Instantané trop volumineux' })
+  if (size > MAX_BYTES) throw createError({ statusCode: 413, statusMessage: 'Données trop volumineuses' })
 
   const at = new Date().toISOString()
   await writeMirror({ at, version: body.version ?? 0, data: body.data })

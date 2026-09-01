@@ -129,7 +129,7 @@ function clear() {
     <template #default>
       <!-- Mes repas gardés d'abord : s'il y en a, c'est presque toujours l'un d'eux. -->
       <template v-if="freePresets.length">
-        <div class="section-label">Mes repas du dehors</div>
+        <div class="section-label">Repas hors plan</div>
         <div class="pk-list">
           <div v-for="m in freePresets" :key="m.label" class="pk-opt fm-opt">
             <button class="fm-pick" @click="prefill(m)">

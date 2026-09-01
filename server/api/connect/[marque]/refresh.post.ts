@@ -39,7 +39,7 @@ export default defineEventHandler(async (event) => {
     // marque. On le DIT au client au lieu de lui rendre une erreur brute qu'il
     // afficherait telle quelle sans savoir qu'un bouton « Reconnecter » existe.
     if (e instanceof ErreurConnecteur && e.auth) {
-      return { jetons: null, reconnecter: true, erreur: 'L\'autorisation a été révoquée. Reconnecte le compte, une fois : les mesures déjà récupérées ne bougent pas.' }
+      return { jetons: null, reconnecter: true, erreur: 'Autorisation révoquée. Reconnecte le compte ; les mesures déjà récupérées sont conservées.' }
     }
     throw e
   }

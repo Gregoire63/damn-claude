@@ -201,15 +201,15 @@ function useMakeAhead() {
     <div class="card nu-how">
       <h4 class="nu-how-title">Comment ça marche</h4>
       <ol class="nu-how-list">
-        <li><b>Tu règles UNE semaine</b> : ce que tu manges lundi, mardi… Elle se répète ensuite toute seule, tant que tu n'y touches pas.</li>
-        <li><b>La liste de courses en sort</b> toute faite : les plats, mais aussi le petit-déjeuner et les collations, sans les jours où tu n'es pas là.</li>
-        <li><b>Le dimanche, tu cuisines</b> tout ce qui tiendra jusqu'au jour où tu le mangeras. Ce qui ne tiendrait pas est repoussé au mercredi soir — l'appli te dit quoi, et dans quel ordre.</li>
+        <li><b>Règle une semaine</b> de repas. Elle se répète ensuite automatiquement.</li>
+                <li><b>La liste de courses en découle</b> : plats, petits-déjeuners et collations, hors jours d'absence.</li>
+                <li><b>Le plan de cuisine</b> indique quoi préparer, quel jour et dans quel ordre, selon la durée de conservation de chaque plat.</li>
       </ol>
     </div>
 
     <nav class="nu-wizard">
       <button class="nu-step" :class="{ on: step === 'semaine' }" @click="step = 'semaine'">
-        <span class="nu-step-n">1</span><span>Ma semaine</span>
+        <span class="nu-step-n">1</span><span>Semaine</span>
       </button>
       <button class="nu-step" :class="{ on: step === 'courses' }" :disabled="!selectionSummary.portions" @click="step = 'courses'">
         <span class="nu-step-n">2</span><span>Courses</span>
@@ -231,8 +231,7 @@ function useMakeAhead() {
           <span class="nu-selsum-l">jour{{ daysCovered > 1 ? 's' : '' }} · {{ selectionSummary.portions }} portions à cuisiner</span>
         </div>
         <div class="muted">
-          Une semaine type se répète tant que tu n'en changes pas. Modifie un jour, retire
-          un week-end où tu n'es pas là : les courses et la cuisine suivent.
+          Modifie un jour ou retire une absence : les courses et le plan de cuisine suivent.
         </div>
         <button
           class="btn-primary" :class="{ done: launched }"
@@ -241,8 +240,7 @@ function useMakeAhead() {
           {{ launched ? `✓ Lancée depuis lundi ${fmtDay(nextMonday)}` : `▶ Lancer à partir du lundi ${fmtDay(nextMonday)}` }}
         </button>
         <p class="muted center nu-launch-note">
-          On cuisine le dimanche, mais la semaine démarre le <b>lundi</b> : c'est le premier
-          jour où tu manges, pas le jour où tu prépares.
+          La semaine démarre le <b>lundi</b>, premier jour de repas ; la préparation a lieu la veille.
         </p>
       </div>
 
@@ -266,8 +264,8 @@ function useMakeAhead() {
           <button class="btn" :disabled="activeWeek?.builtin" @click="onRemove()">× Supprimer</button>
         </div>
         <p v-if="activeWeek?.builtin" class="nu-note mt-6">
-          Semaine livrée avec le plan : elle reste intacte. Dès que tu changes un plat,
-          une copie modifiable est créée — l'originale reste là pour y revenir.
+          Semaine d'origine, non modifiable. Au premier changement, une copie modifiable est
+                  créée ; l'originale reste disponible.
         </p>
       </div>
 
@@ -278,12 +276,12 @@ function useMakeAhead() {
             <span class="nu-day-tag mono" :class="{ gym: d.gym }">{{ d.gym ? 'salle' : 'repos' }}</span>
             <span v-if="!d.off && d.kcal" class="mono muted nu-day-kcal">{{ Math.round(d.kcal) }} kcal aux repas</span>
             <button class="nu-day-off" :class="{ on: d.off }" @click="toggleMenuDayOff(d.dow)">
-              {{ d.off ? '↩ Je suis là' : '✈ Pas là' }}
+              {{ d.off ? '↩ Présent' : '✈ Absent' }}
             </button>
           </header>
 
           <p v-if="d.off" class="muted nu-day-empty">
-            Rien de prévu : ni courses, ni portions à cuisiner pour ce jour.
+            Rien de prévu ce jour : ni courses, ni portions à cuisiner.
           </p>
           <template v-else>
             <label v-for="s in d.main" :key="s.id" class="nu-mslot">
@@ -338,13 +336,12 @@ function useMakeAhead() {
       </div>
 
       <p class="nu-note">
-        Tout ce que la semaine mange est là : les plats, mais aussi le petit-déjeuner,
-        les collations, le shaker et la créatine. Les jours où tu n'es pas là ne sont
-        pas comptés, et un jour sans séance pèse moins de féculents.
+        La liste couvre tous les repas de la semaine, compléments inclus. Les jours
+                d'absence sont exclus, et un jour sans séance compte moins de féculents.
       </p>
       <p v-if="money.missing.length" class="muted">
-        Saisis le prix au kilo à côté de chaque aliment — une seule fois, il est mémorisé.
-        Tant qu'il en manque, le total affiché est un minimum, pas le vrai prix du caddie.
+        Saisis le prix au kilo de chaque aliment, une seule fois : il est mémorisé. Tant
+                qu'il en manque, le total affiché est un minimum.
       </p>
 
       <div class="row-between">
@@ -378,7 +375,7 @@ function useMakeAhead() {
       <button class="btn-primary" :disabled="money.total <= 0" @click="saveBasket()">
         💶 Enregistrer ce panier{{ money.total > 0 ? ` — ${fmtEuro(money.total)}` : '' }}
       </button>
-      <p class="muted center">Enregistrer archive le total et décoche la liste pour la prochaine fois.</p>
+      <p class="muted center">Enregistrer archive le total et décoche la liste.</p>
 
       <template v-if="baskets.length">
         <div class="section-label">Historique des courses</div>
@@ -396,10 +393,8 @@ function useMakeAhead() {
     <!-- ─── 3. Cuisine ────────────────────────────────────────────────── -->
     <template v-else>
       <p class="nu-note">
-        Une seule recette, du début à la fin. Les étapes sont dans l'ordre où on les
-        fait et les quantités sont déjà additionnées : tu ne cuis pas le riz de
-        quatre plats en quatre fois. Suis-les de haut en bas, tu finis avec tes
-        boîtes prêtes.
+        Les étapes sont dans l'ordre d'exécution et les quantités sont additionnées entre
+                les recettes : chaque aliment n'est cuit qu'une fois.
       </p>
 
       <!-- La place au congélateur ne se devine pas, et elle change tout le
@@ -409,25 +404,22 @@ function useMakeAhead() {
         <div class="section-label mb-8">Place au congélateur</div>
         <div class="nu-freezer-opts">
           <button class="nu-freezer-opt" :class="{ on: !freezer }" @click="setFreezer(false)">
-            <b>Je n'ai pas la place</b>
-            <span class="muted">Tout se garde au frigo. Deux sessions : dimanche, puis mercredi soir.</span>
+            <b>Pas de place</b>
+            <span class="muted">Tout se garde au frigo. Deux sessions : dimanche et mercredi soir.</span>
           </button>
           <button class="nu-freezer-opt" :class="{ on: freezer }" @click="setFreezer(true)">
-            <b>J'ai de la place</b>
-            <span class="muted">Une seule session le dimanche. Les boîtes de fin de semaine sont congelées dès la fermeture.</span>
+            <b>De la place</b>
+            <span class="muted">Une seule session le dimanche : les portions de fin de semaine sont congelées.</span>
           </button>
         </div>
       </div>
 
       <!-- Pourquoi le petit-déjeuner n'est pas dans la liste, et comment l'y mettre. -->
       <div v-if="!hasMakeAhead" class="card nu-freeze">
-        <b>Ton petit-déjeuner et tes collations ne sont pas là ?</b>
-        C'est normal : ceux que tu as choisis se font sur le moment, donc il n'y a rien à
-        préparer le dimanche. Si tu préfères ne rien avoir à faire à 10 h, bascule sur les
-        versions qui se préparent d'avance — <b>yaourt, fruits et avoine croquante</b>
-        (trois pots, prêts la veille) et <b>œufs durs</b> (six d'un coup, ils tiennent
-        cinq jours). Elles apparaîtront alors ici avec leurs étapes.
-        <button class="btn nu-freeze-btn" @click="useMakeAhead()">Préparer aussi mes matins →</button>
+        <b>Petits-déjeuners et collations absents de cette liste.</b>
+                Ceux qui sont choisis se préparent sur le moment. Bascule sur des versions
+                préparables d'avance pour les voir apparaître ici, avec leurs étapes.
+        <button class="btn nu-freeze-btn" @click="useMakeAhead()">Préparer les petits-déjeuners →</button>
       </div>
 
       <div v-if="leftInFridge.length" class="card nu-fridge">
@@ -483,8 +475,7 @@ function useMakeAhead() {
               <p v-if="l.note && !l.mesure" class="muted nu-cuit-note">{{ l.note }}</p>
               <div v-if="peser === l.foodId" class="nu-cuit-form">
                 <p class="muted">
-                  Pèse la casserole une fois, l’app retiendra <b>ton</b> ratio pour cet aliment —
-                  ta cuisson n’est pas celle d’un tableau.
+                  Pèse une fois avant et après cuisson : le ratio est mémorisé pour cet aliment.
                 </p>
                 <div class="nu-quick">
                   <input v-model="pCru" type="number" inputmode="numeric" min="0" placeholder="g crus">
@@ -506,12 +497,12 @@ function useMakeAhead() {
         <!-- Rappel discret, et seulement si ça change vraiment quelque chose : le
              jour où de la place se libère, cette session peut disparaître. -->
         <div v-if="s.freezable?.length" class="nu-freeze">
-          <b>Si tu libères de la place au congélateur</b>,
-          {{ s.freezable.reduce((n, d) => n + d.n, 0) }} de ces portions peuvent se cuisiner
-          dimanche et se congeler dans la foulée —
+          <b>Avec de la place au congélateur</b>,
+                    {{ s.freezable.reduce((n, d) => n + d.n, 0) }} de ces portions peuvent être
+                    cuisinées dimanche et congelées —
           <template v-if="s.freezable.length === s.dishes.length">cette session disparaît alors complètement.</template>
           <template v-else>il ne resterait ici que {{ s.dishes.length - s.freezable.length }} plat(s).</template>
-          <button class="btn nu-freeze-btn" @click="setFreezer(true)">J'ai de la place →</button>
+          <button class="btn nu-freeze-btn" @click="setFreezer(true)">De la place au congélateur →</button>
         </div>
 
         <!-- Les ingrédients d'abord, la préparation ensuite : une recette se lit

@@ -20,15 +20,15 @@ import { SESSION_TTL, readCredentials, setCredentialCounter, signToken, verifyTo
 export default defineEventHandler(async (event) => {
   const body = await readBody<{ response?: Record<string, unknown> }>(event)
   const creds = await readCredentials()
-  if (!creds.length) throw createError({ statusCode: 404, statusMessage: 'Aucun passkey enregistré' })
+  if (!creds.length) throw createError({ statusCode: 404, statusMessage: 'Aucune clé d\'accès enregistrée' })
 
   const presente = String(body?.response?.id ?? '')
   const cred = creds.find(c => c.id === presente)
-  if (!cred) throw createError({ statusCode: 401, statusMessage: 'Passkey inconnu' })
+  if (!cred) throw createError({ statusCode: 401, statusMessage: 'Clé d\'accès inconnue' })
 
   const challenge = verifyToken(getCookie(event, 'gr-challenge'), Date.now())
   if (!challenge || challenge.scope !== 'challenge') {
-    throw createError({ statusCode: 400, statusMessage: 'Défi expiré — recommence' })
+    throw createError({ statusCode: 400, statusMessage: 'Demande expirée. Recommence.' })
   }
 
   const verification = await verifyAuthenticationResponse({

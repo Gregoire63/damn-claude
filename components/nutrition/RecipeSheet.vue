@@ -149,8 +149,7 @@ const openFat = ref<string | null>(null)
           </li>
         </ul>
         <p class="muted italic rs-raw">
-          Viandes, poissons et féculents : toujours pesés crus — c'est la seule référence
-          qui ne dépende pas de la cuisson, et c'est elle qui donne les macros justes.
+          Viandes, poissons et féculents sont pesés crus : c'est la référence des macros.
         </p>
 
         <!-- La sauce a sa propre liste ET sa préparation : c'est un pot à part, on ne

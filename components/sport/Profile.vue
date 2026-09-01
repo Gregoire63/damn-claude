@@ -31,8 +31,8 @@ const exportStale = computed(() => exportAge.value === null || exportAge.value >
 const backupOn = ref<string | null>(null)
 onMounted(() => { backupOn.value = backupDate() })
 function onRestore() {
-  if (!confirm('Remplacer les données actuelles par l’instantané de secours ? Fais un export avant si tu as un doute.')) return
-  emit('flash', restoreBackup() ? 'Instantané restauré ✓' : 'Aucun instantané disponible')
+  if (!confirm('Remplacer les données actuelles par la sauvegarde automatique ?')) return
+  emit('flash', restoreBackup() ? 'Sauvegarde restaurée ✓' : 'Aucune sauvegarde disponible')
 }
 
 // Âge et métabolisme : le socle partagé, jamais recalculés ici.
@@ -208,7 +208,7 @@ async function onImport(ev: Event) {
 const demarrage = useDemarrage()
 function revoirInstallation() {
   demarrage.rejouer()
-  emit('flash', 'Installation rouverte — l’application revient à la fin du parcours')
+  emit('flash', 'Configuration rouverte')
 }
 
 /** Un message d'enfant garde son ton : « Poids invalide » n'est pas un succès. */
@@ -221,7 +221,7 @@ function onYear(ev: Event) { setBirthYear(parseInt((ev.target as HTMLInputElemen
 <template>
   <div class="stack">
     <div class="card">
-      <div class="section-label mb-8">Mon profil</div>
+      <div class="section-label mb-8">Profil</div>
       <div class="form-grid">
         <label class="field"><span>Taille (cm)</span><input type="number" inputmode="numeric" :value="profile.heightCm ?? ''" placeholder="180" @change="onHeight"></label>
         <label class="field"><span>Année de naissance</span><input type="number" inputmode="numeric" :value="profile.birthYear ?? ''" placeholder="1998" @change="onYear"></label>
@@ -243,19 +243,17 @@ function onYear(ev: Event) { setBirthYear(parseInt((ev.target as HTMLInputElemen
            pas de maintien unique. Un chiffre moyen affiché seul se compare à une
            journée précise, et se trompe des deux côtés selon le jour. -->
       <div v-if="maintienSalle && maintienRepos" class="muted mt-6">
-        Détail : <b>{{ maintienSalle }} kcal</b> un jour de salle, <b>{{ maintienRepos }} kcal</b> un jour sans.
-        Ces chiffres sont ceux de l'écran du jour — métabolisme, pas et séance additionnés —
-        et non un facteur d'activité forfaitaire. La cible à manger est <b>en dessous</b> :
-        c'est le maintien moins le déficit, et c'est elle qui s'affiche dans Nutrition.
+        <b>{{ maintienSalle }} kcal</b> un jour de salle, <b>{{ maintienRepos }} kcal</b> un jour
+                sans. La cible à manger, affichée dans Nutrition, est ce maintien moins le déficit.
       </div>
-      <div v-else class="muted">Renseigne taille, sexe et année de naissance : tout le reste en découle. La pesée, elle, se fait dans <b>Rapport</b>.</div>
+      <div v-else class="muted">Renseigne taille, sexe et année de naissance. La pesée se fait dans <b>Rapport</b>.</div>
     </div>
 
     <!-- Ma semaine type : c'est un réglage, pas un suivi. Il pilote le calendrier du
          Journal (jours de salle, jours de télétravail) sans qu'on ait à le retoucher. -->
     <div class="card">
       <div class="row-between mb-8">
-        <div class="section-label">Ma semaine type</div>
+        <div class="section-label">Semaine type</div>
         <button class="btn" @click="resetWeek()">↺ Défaut</button>
       </div>
       <div class="nu-weekgrid">
@@ -266,9 +264,8 @@ function onYear(ev: Event) { setBirthYear(parseInt((ev.target as HTMLInputElemen
         </div>
       </div>
       <div class="muted mt-6">
-        🏋️ salle, 🏠 télétravail — les deux sont indépendants, un mardi peut être les deux.
-        Pour corriger un jour en particulier, touche-le dans le calendrier du Journal :
-        ça ne change que ce jour-là.
+        🏋️ salle, 🏠 télétravail. Un jour peut être les deux. Pour modifier une date
+                précise, touche-la dans le calendrier du Journal.
       </div>
     </div>
 
@@ -276,14 +273,14 @@ function onYear(ev: Event) { setBirthYear(parseInt((ev.target as HTMLInputElemen
          c'est le chemin du retour — les modifications, elles, arrivent d'une
          conversation, et il faut pouvoir en défaire une sans redemander. -->
     <div v-if="progChanges.length" class="card">
-      <div class="section-label mb-8">Mon programme, modifié</div>
+      <div class="section-label mb-8">Programme modifié</div>
       <div v-for="c in progChanges" :key="c.cle" class="row-between pg-line">
         <span>{{ c.texte }}</span>
         <button class="btn" @click="c.defaire()">↺</button>
       </div>
       <div class="muted mt-6">
-        ↺ rend la fiche d'origine. Un exercice retiré n'a jamais été supprimé :
-        les séances déjà enregistrées le gardent, avec ses records.
+        ↺ rétablit la version d'origine. Un exercice retiré reste dans les séances déjà
+                enregistrées, avec ses records.
       </div>
     </div>
 
@@ -358,24 +355,24 @@ function onYear(ev: Event) { setBirthYear(parseInt((ev.target as HTMLInputElemen
       </div>
       <div class="muted mt-6" :class="{ 'export-warn': exportStale }">
         <template v-if="lastExportAt">{{ exportStale ? '⚠️' : '✓' }} Dernière sauvegarde : <b>{{ lastExportAt }}</b><template v-if="exportAge !== null"> (il y a {{ exportAge }} j)</template>.</template>
-        <template v-else>⚠️ <b>Jamais sauvegardé.</b> Tout est stocké dans ce navigateur — vider les données du site effacerait tout ton historique.</template>
+        <template v-else>⚠️ <b>Aucune sauvegarde.</b> Les données sont stockées dans ce navigateur : vider les données du site effacerait tout l'historique.</template>
       </div>
       <div v-if="backupOn" class="muted mt-6">
-        Filet de sécurité automatique du <b>{{ backupOn }}</b> conservé dans le navigateur.
+        Sauvegarde automatique du <b>{{ backupOn }}</b>, conservée dans ce navigateur.
         <button class="btn restore-btn" @click="onRestore">↩ Restaurer cet instantané</button>
       </div>
-      <div class="muted mt-6">Le planning de la semaine est fixe (Lundi Pecs/Ép · Mardi Dos/Bic · Jeudi Jambes · Vendredi Pecs/Bras). Tu peux démarrer n'importe quelle séance n'importe quand — ça ne change pas le planning. « Réinit. » le remet par défaut.</div>
+      <div class="muted mt-6">Le planning indique quelle séance est prévue quel jour. N'importe quelle séance peut être démarrée à tout moment sans le modifier. « Réinit. » rétablit le planning du programme.</div>
     </div>
 
     <!-- Le parcours d'installation, à la demande. En bas : on y revient une fois
          tous les six mois, et jamais dans l'urgence. -->
     <div class="card">
-      <div class="section-label mb-8">Installation</div>
+      <div class="section-label mb-8">Configuration</div>
       <div class="muted">
-        Profil, connexion à Claude, connecteurs, contenu : le parcours du premier
-        lancement. Le rouvrir ne défait rien — ce qui est déjà réglé reste coché.
+        Profil, accès Claude, connecteurs, contenu : les étapes du premier lancement.
+                Les rouvrir ne défait rien.
       </div>
-      <button class="btn btn-bloc" @click="revoirInstallation">↺ Revoir l'installation</button>
+      <button class="btn btn-bloc" @click="revoirInstallation">↺ Revoir la configuration</button>
     </div>
   </div>
 </template>

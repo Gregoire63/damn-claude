@@ -95,7 +95,7 @@ async function connecter(id: string) {
 async function deconnecter(c: Fiche) {
   useConnecteur(c.id).deconnecter()
   conn.rafraichir()
-  emit('flash', `${c.label} débranché — les mesures déjà récupérées restent`)
+  emit('flash', `${c.label} déconnecté. Les mesures déjà récupérées sont conservées.`)
 }
 async function synchroniser(c: Fiche) {
   const k = useConnecteur(c.id)
@@ -141,7 +141,7 @@ async function chargerConfig() {
     // 401 : il faut un passkey. Ce n'est pas une panne, c'est la réponse — et le dire
     // évite de chercher une erreur de configuration là où il manque une connexion.
     configErr.value = (e as { status?: number }).status === 401
-      ? 'Pose ton passkey d’abord : la configuration des connecteurs est derrière l’authentification.'
+      ? 'Déverrouille l’application pour configurer les connecteurs.'
       : 'Configuration illisible pour l’instant.'
   }
 }
@@ -157,13 +157,13 @@ async function copier(texte: string, marqueur: string) {
     copie.value = marqueur
     setTimeout(() => { copie.value = '' }, 2500)
   }
-  catch { emit('flash', 'Copie impossible — sélectionne l’adresse à la main', 'echec') }
+  catch { emit('flash', 'Copie impossible. Sélectionne l’adresse manuellement.', 'echec') }
 }
 
 async function poser(c: Fiche) {
   const v = champs(c.id)
   if (!v.clientId.trim() || !v.secret.trim()) {
-    emit('flash', 'Il faut l’identifiant ET le secret', 'echec')
+    emit('flash', 'Identifiant et secret sont requis', 'echec')
     return
   }
   enregistre.value = c.id
@@ -173,7 +173,7 @@ async function poser(c: Fiche) {
       body: { marque: c.id, clientId: v.clientId.trim(), clientSecret: v.secret.trim() },
     })
     saisie.value[c.id] = { clientId: '', secret: '' }
-    emit('flash', `${c.label} configuré ✓ — tu peux le connecter`)
+    emit('flash', `${c.label} configuré ✓`)
     await Promise.all([chargerSources(), chargerConfig()])
     ouvert.value = c.id
   }
@@ -205,7 +205,7 @@ function enregistrerPoids() {
   // `.replace` dessus jetait une TypeError et le bouton ne faisait rien, sans le dire.
   const kg = Number(String(poids.value).replace(',', '.'))
   if (!Number.isFinite(kg) || kg < 20 || kg > 400) {
-    emit('flash', 'Poids invalide — entre 20 et 400 kg', 'echec')
+    emit('flash', 'Poids invalide : entre 20 et 400 kg', 'echec')
     return
   }
   if (!props.todayIso) return
@@ -255,11 +255,15 @@ function enregistrerPas() {
           <span class="conn-i" aria-hidden="true">{{ c.icone }}</span>
           <span class="conn-t">
             <b>{{ c.label }}</b>
-            <small>{{ c.raison || apporte(c.capabilities) }}</small>
+            <small>{{ apporte(c.capabilities) }}</small>
           </span>
           <span v-if="branche(c.id)" class="conn-e mono">connecté ✓</span>
-          <button v-else-if="aBrancher(c)" class="btn conn-b" @click="connecter(c.id)">Connecter</button>
-          <span v-else-if="!c.raison" class="conn-e mono">par défaut</span>
+                    <button v-else-if="aBrancher(c)" class="btn conn-b" @click="connecter(c.id)">Connecter</button>
+                    <span v-else-if="!c.raison" class="conn-e mono">par défaut</span>
+                    <!-- Le détail de ce qu'il reste à faire vit dans les réglages, où il y a la
+                         place et le formulaire. Ici, il se répétait sur chaque marque et noyait
+                         la seule information utile : qu'est-ce qui est déjà branché. -->
+                    <span v-else class="conn-e mono">{{ c.configurable ? 'à configurer' : 'indisponible' }}</span>
         </div>
 
         <div v-if="!props.compact && ouvert === c.id" class="conn-det">
@@ -287,8 +291,7 @@ function enregistrerPas() {
                 </div>
                 <span class="muted src-cur">
                   <template v-if="pasDuJour">Déjà noté aujourd'hui : {{ pasDuJour }} pas. </template>
-                  Noter à vide repart de l'estimation selon ta semaine type. Les pas comptent
-                  dans la dépense, donc dans la cible à manger.
+                                    Laisser vide revient à l'estimation. Les pas entrent dans ta dépense du jour.
                 </span>
               </div>
             </div>
@@ -308,28 +311,28 @@ function enregistrerPas() {
               <ol class="conn-pas">
                 <li>
                   Crée une application chez la marque
-                  <a v-if="config[c.id]?.console" :href="config[c.id].console" target="_blank" rel="noopener">— sa console</a>.
+                                    <a v-if="config[c.id]?.console" :href="config[c.id].console" target="_blank" rel="noopener">— sa console</a>.
                 </li>
                 <li>
-                  Déclare cette URL de retour, <b>au caractère près</b> :
+                  Déclare cette URL de retour, à l'identique :
                   <code class="conn-url mono">{{ urlRetour(c.id) }}</code>
                   <button class="btn conn-mini" @click="copier(urlRetour(c.id), c.id)">
                     {{ copie === c.id ? 'Copié ✓' : '⧉ Copier' }}
                   </button>
                 </li>
-                <li>Colle ici l'identifiant et le secret qu'elle te donne.</li>
+                <li>Reporte ici l'identifiant et le secret obtenus.</li>
               </ol>
               <label class="field"><span>Identifiant (client ID)</span>
-                <input v-model="champs(c.id).clientId" type="text" autocomplete="off" spellcheck="false" placeholder="ex. 3a1f…"></label>
+                <input v-model="champs(c.id).clientId" type="text" autocomplete="off" spellcheck="false" placeholder="Identifiant"></label>
               <label class="field"><span>Secret (client secret)</span>
-                <input v-model="champs(c.id).secret" type="password" autocomplete="off" placeholder="collé une fois, jamais relu"></label>
+                <input v-model="champs(c.id).secret" type="password" autocomplete="off" placeholder="Secret"></label>
               <button class="btn-primary btn-bloc" :disabled="enregistre === c.id" @click="poser(c)">
                 {{ enregistre === c.id ? 'Enregistrement…' : '🔐 Enregistrer' }}
               </button>
               <p class="muted">
-                Le secret est chiffré avant d'être rangé, et ne ressort jamais de ce
-                serveur. Tu peux aussi le poser chez ton hébergeur — <b>{{ config[c.id]?.env.id }}</b>
-                et <b>{{ config[c.id]?.env.secret }}</b> — auquel cas ces variables gagnent.
+                Le secret est chiffré et n'est jamais renvoyé au navigateur. Il peut aussi être
+                                posé chez l'hébergeur — <b>{{ config[c.id]?.env.id }}</b> et
+                                <b>{{ config[c.id]?.env.secret }}</b> —, qui restent prioritaires.
               </p>
             </template>
           </template>
@@ -337,17 +340,15 @@ function enregistrerPas() {
           <!-- 4. Une marque disponible : l'état, les gestes, et de quoi la débrancher. -->
           <template v-else>
             <p v-if="useConnecteur(c.id).reconnecter.value" class="muted export-warn">
-              ⚠️ L'autorisation a expiré ou a été révoquée. Reconnecte le compte : réessayer
-              ne servirait à rien.
+              ⚠️ Autorisation expirée ou révoquée. Reconnecte le compte.
             </p>
             <p v-else-if="useConnecteur(c.id).erreur.value" class="muted export-warn">
               ⚠️ {{ useConnecteur(c.id).erreur.value }}
             </p>
             <p class="muted">{{ c.note }}</p>
             <p v-if="!branche(c.id)" class="muted">
-              Une seule autorisation, puis les mesures arrivent à l'ouverture de
-              l'application. Les jetons restent sur ce téléphone — le serveur n'en garde
-              aucun.
+              Une autorisation suffit : les mesures arrivent ensuite à chaque ouverture. Les
+                            jetons restent sur cet appareil.
             </p>
             <div class="nav-row mt-6">
               <button v-if="!branche(c.id)" class="btn-primary flex-1" @click="connecter(c.id)">
@@ -359,16 +360,16 @@ function enregistrerPas() {
               </template>
             </div>
             <p v-if="branche(c.id)" class="muted">
-              Se déconnecter ne supprime rien : les mesures déjà récupérées sont à toi, elles restent.
+              La déconnexion ne supprime aucune mesure déjà récupérée.
             </p>
             <!-- Les identifiants posés depuis l'application se retirent depuis
                  l'application. Ceux de l'hébergeur, non : ils ne sont pas ici. -->
             <p v-if="config[c.id]?.origine === 'coffre'" class="muted">
-              Identifiants posés le {{ (config[c.id].at || '').slice(0, 10) }}
+              Identifiants enregistrés le {{ (config[c.id].at || '').slice(0, 10) }}
               <button class="btn conn-mini" @click="retirer(c)">Retirer</button>
             </p>
             <p v-else-if="config[c.id]?.origine === 'env'" class="muted">
-              Configuré par ton hébergeur (<b>{{ config[c.id].env.id }}</b>) — rien à faire ici.
+              Configuré par l'hébergeur (<b>{{ config[c.id].env.id }}</b>).
             </p>
             <p v-else-if="configErr && vault.state.value.registered" class="muted">{{ configErr }}</p>
           </template>
@@ -377,8 +378,8 @@ function enregistrerPas() {
     </ul>
 
     <p v-if="!chargement && !dispos.length" class="muted mt-6">
-      Serveur injoignable : impossible de savoir ce que cette instance sait brancher.
-      La saisie à la main, elle, marche toujours — dans <b>Rapport</b>.
+      Serveur injoignable : la liste des connecteurs n'a pas pu être chargée. La saisie
+            manuelle reste disponible dans <b>Rapport</b>.
     </p>
   </div>
 </template>

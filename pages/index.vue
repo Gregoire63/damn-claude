@@ -123,7 +123,7 @@ const todayRecord = computed(() => {
     <!-- Décharge conseillée : l'info n'est utile qu'ici, avant de démarrer -->
     <div v-if="deloadAdvised" class="deload-banner">
       <span>🔴</span>
-      <span><b>Semaine de décharge conseillée.</b> Garde les mêmes charges, coupe ~40 % des séries et stoppe 3 reps avant l'échec. <button class="link-btn" @click="navigateTo('/progres')">Voir pourquoi →</button></span>
+      <span><b>Semaine de décharge conseillée.</b> Mêmes charges, environ 40 % de séries en moins, arrêt 3 reps avant l'échec. <button class="link-btn" @click="navigateTo('/progres')">En savoir plus →</button></span>
     </div>
 
     <div class="section-label">{{ todaySession ? 'Ou commence une autre séance' : 'Toutes les séances' }}</div>
@@ -140,7 +140,7 @@ const todayRecord = computed(() => {
     </div>
 
     <div class="card week-card">
-      <div class="section-label mb-8">Ta semaine <span class="muted week-hint">· déplaçable depuis le calendrier</span></div>
+      <div class="section-label mb-8">Semaine type <span class="muted week-hint">· déplaçable depuis le calendrier</span></div>
       <div class="week">
         <div v-for="(d, i) in weekDays" :key="i" class="week-day" :class="{ rest: !d.session, today: i === todayIndex, moved: d.moved }" :style="d.session ? { '--c': d.session.color } : {}">
           <span class="week-dow">{{ d.dow }}<span v-if="d.moved" class="week-moved" title="Planning modifié pour cette date">⇄</span></span>

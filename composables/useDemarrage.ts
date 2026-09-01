@@ -86,8 +86,8 @@ export function useDemarrage() {
   const etapes = computed(() => ([
     {
       id: 'toi' as EtapeId,
-      titre: 'Toi',
-      sous: 'Prénom, sexe, taille, année de naissance, premier poids',
+      titre: 'Profil',
+      sous: 'Prénom, sexe, taille, année de naissance, poids',
       faite: profilComplet.value,
       // La seule bloquante : tout le reste de l'application en dépend.
       bloquante: true,
@@ -95,21 +95,21 @@ export function useDemarrage() {
     {
       id: 'claude' as EtapeId,
       titre: 'Claude',
-      sous: 'Le passkey, puis le connecteur à brancher dans Claude',
+      sous: 'Sécuriser l’accès, puis brancher le connecteur',
       faite: vault.state.value.registered,
       bloquante: false,
     },
     {
       id: 'capteurs' as EtapeId,
       titre: 'Connecteurs',
-      sous: 'Balance, montre — ou rien, la saisie à la main marche aussi',
+      sous: 'Balance ou montre. Facultatif.',
       faite: false,
       bloquante: false,
     },
     {
       id: 'remplir' as EtapeId,
-      titre: 'Remplir',
-      sous: 'Ton programme et ta nutrition, par Claude ou depuis l’exemple',
+      titre: 'Contenu',
+      sous: 'Programme et nutrition, par Claude ou depuis l’exemple',
       faite: program.value.length > 0,
       bloquante: false,
     },

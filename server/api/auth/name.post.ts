@@ -17,7 +17,7 @@ export default defineEventHandler(async (event) => {
   requireSession(event)
   const { nom } = await readBody<{ nom?: string }>(event) ?? {}
   const cred = await readCredential()
-  if (!cred) throw createError({ statusCode: 409, statusMessage: 'Aucun passkey enregistré' })
+  if (!cred) throw createError({ statusCode: 409, statusMessage: 'Aucune clé d\'accès enregistrée' })
 
   const propre = String(nom ?? '').trim().slice(0, 40)
   const { ownerName: _, ...reste } = cred

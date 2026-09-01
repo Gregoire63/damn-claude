@@ -15,7 +15,7 @@ const emit = defineEmits<{ close: [] }>()
 <template>
   <Sheet
     sheet-class="eat-sheet"
-    title="Mes repas"
+    title="Repas"
     :subtitle="past ? 'Rattrapage — coche ce que tu avais mangé' : 'Coche au fur et à mesure'"
     @close="emit('close')"
   >

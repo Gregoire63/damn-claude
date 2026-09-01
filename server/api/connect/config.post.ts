@@ -27,12 +27,12 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 404, statusMessage: `Marque inconnue : ${marque.slice(0, 24)}` })
   }
   if (!clientId || !clientSecret) {
-    throw createError({ statusCode: 400, statusMessage: 'Il faut l\'identifiant ET le secret : la marque refuse l\'un sans l\'autre.' })
+    throw createError({ statusCode: 400, statusMessage: 'L\'identifiant et le secret sont tous les deux requis.' })
   }
   if (await origineDe(marque) === 'env') {
     throw createError({
       statusCode: 409,
-      statusMessage: 'Cette marque est déjà configurée par les variables de l\'hébergeur, qui restent prioritaires. Retire-les d\'abord si tu veux la gérer depuis ici.',
+      statusMessage: 'Cette marque est configurée par les variables de l\'hébergeur, prioritaires. Retire-les pour la gérer depuis l\'application.',
     })
   }
 

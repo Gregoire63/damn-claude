@@ -50,12 +50,12 @@ describe('ce que l’instance propose', () => {
     expect(g.bloque).toBeTruthy()
     const dehors = unavailableProviders(TOUT)
     expect(dehors.map(d => d.provider.id)).toContain('garmin')
-    expect(dehors.find(d => d.provider.id === 'garmin')!.raison).toMatch(/pause/i)
+    expect(dehors.find(d => d.provider.id === 'garmin')!.raison).toMatch(/suspendu/i)
   })
 
   it('les indisponibles disent ce qu’il reste à faire', () => {
     const d = unavailableProviders([]).find(x => x.provider.id === 'withings')!
-    expect(d.raison).toMatch(/déclarer une application/i)
+    expect(d.raison).toMatch(/déclare une application/i)
     // Et surtout : ce n'est pas la marque qui bloque, un formulaire y suffit. C'est
     // ce booléen qui décide entre « à configurer » et « indisponible » à l'écran.
     expect(d.provider.bloque).toBeUndefined()

@@ -117,8 +117,7 @@ const subtitle = computed(() => (leaving.value.before === null
         </button>
       </div>
       <p class="muted mvs-hint">
-        Les calories des deux journées suivent le déplacement : celle qui perd la séance
-        redescend, celle qui la reçoit remonte, et les heures de repas s'ajustent avec.
+        Les calories des deux journées et les heures de repas sont ajustées automatiquement.
       </p>
     </template>
   </Sheet>
