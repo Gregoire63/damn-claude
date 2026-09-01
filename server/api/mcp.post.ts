@@ -161,7 +161,7 @@ const TOOLS = [
   },
   {
     name: 'profil',
-    description: 'Profil (taille, sexe, année de naissance), semaine type d\'entraînement, exceptions de planning par date, jours de salle et de télétravail.',
+    description: 'Profil (taille, sexe, année de naissance), semaine type d\'entraînement, exceptions de planning par date, jours de salle et de télétravail, et le FOYER : qui mange à la maison et l\'appétit de chacun, exprimé par rapport à celui du propriétaire (1 = autant que lui).',
     inputSchema: { type: 'object', properties: {} },
   },
   {
@@ -962,13 +962,32 @@ async function callTool(name: string, args: Record<string, unknown>): Promise<un
         exercices_suivis: Object.keys((d.logs ?? {}) as object).length,
       }
     }
-    case 'profil':
+    case 'profil': {
+      /*
+       * Le foyer sort d'ici, avec son facteur déjà calculé.
+       *
+       * Sans lui, proposer une quantité pour deux revient à multiplier par deux — et
+       * deux personnes ne mangent presque jamais pareil. Le facteur est la somme des
+       * appétits de ceux qui sont au repas ; les grammages d'une recette, eux, sont
+       * TOUJOURS donnés pour UNE part, celle du propriétaire. C'est la même règle que
+       * dans l'application : les quantités se multiplient, les macros non.
+       */
+      const convives = asArray(d.foyer) as Record<string, unknown>[]
+      const actifs = convives.filter(c => c.actif !== false)
+      const facteur = actifs.reduce((n, c) => n + (Number(c.appetit) || 0), 0)
       return {
         profil: d.profile ?? null,
         semaine_type_seances: d.weekPlan ?? null,
         exceptions_planning: d.planDays ?? {},
         semaine_salle_teletravail: (d.nutrition as Record<string, unknown> | undefined)?.week ?? null,
+        foyer: {
+          convives,
+          au_repas: actifs.map(c => c.nom),
+          facteur_quantites: facteur > 0 ? Math.round(facteur * 100) / 100 : 1,
+          note: 'Multiplie les grammages d\'une recette par « facteur_quantites » pour cuisiner pour tout le monde. Les macros et les portions restent celles du propriétaire : une portion est son unité de compte. Pour ajouter ou corriger quelqu\'un, propose une écriture sur /foyer avec l\'outil « champ ».',
+        },
       }
+    }
     case 'seances': {
       const limite = clampInt(args.limite, 8, 1, 40)
       const depuis = typeof args.depuis === 'string' ? args.depuis : null

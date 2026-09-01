@@ -1,4 +1,5 @@
 import { messageErreur } from '~/lib/erreurs'
+import { useFoyer } from '~/composables/useFoyer'
 import { computed, ref } from 'vue'
 import { startAuthentication, startRegistration } from '@simplewebauthn/browser'
 import type { RawProposal } from '~/lib/proposals'
@@ -76,6 +77,7 @@ export function useVault() {
   const profileStore = useProfile()
   const program = useProgram()
   const restTimer = useRestTimer()
+  const foyer = useFoyer()
   const mesures = useMesures()
   const { buildSnapshot } = useSnapshot()
 
@@ -261,6 +263,10 @@ export function useVault() {
     mesures.restore(snap as never)
     program.restore(snap)
     restTimer.restore(snap)
+    // C'est CE chemin qui rend le foyer modifiable par une proposition : une écriture
+    // générique sur /foyer passe par instantané → modification → restauration
+    // complète, et le composable revalide ce qu'on lui rend.
+    foyer.restore(snap.foyer)
   }
 
   /**

@@ -1,3 +1,4 @@
+import { useFoyer } from '~/composables/useFoyer'
 import { useNutrition } from '~/composables/useNutrition'
 import { useProfile } from '~/composables/useProfile'
 import { useProgram } from '~/composables/useProgram'
@@ -46,6 +47,7 @@ interface Pack {
 
 export function useRestauration() {
   const workout = useWorkout()
+  const foyer = useFoyer()
   const profile = useProfile()
   const nutrition = useNutrition()
   const program = useProgram()
@@ -141,6 +143,10 @@ export function useRestauration() {
     mesures.restore(data)
     timer.restore(data)
     program.restore(data)
+    // `normaliserConvives` réinjecte « Moi » quoi qu'il arrive : une sauvegarde
+    // d'avant le foyer, ou trafiquée, ne doit pas aboutir à une application qui
+    // cuisine pour personne.
+    foyer.restore(data.foyer)
   }
 
   /** Tout ce qu'une sauvegarde peut contenir, remis en place. */

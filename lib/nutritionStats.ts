@@ -2071,9 +2071,43 @@ export function weekGrams(week: MenuWeek, gym: boolean[], lib: Library = BUILTIN
   return grams
 }
 
-/** La liste de courses d'une semaine type, rangée par rayon. */
-export const shoppingFromWeek = (week: MenuWeek, gym: boolean[], lib: Library = BUILTIN): ShoppingList =>
-  shoppingFrom(weekGrams(week, gym, lib), lib.foods)
+/**
+ * La liste de courses d'une semaine type, rangée par rayon.
+ *
+ * `facteur` est celui du foyer : 1 quand on cuisine pour soi, 1,6 quand quelqu'un
+ * qui mange 60 % du même mange aussi (voir lib/foyer.ts). Il s'applique aux GRAMMES,
+ * pas aux portions : une portion reste l'unité dans laquelle tout le reste de
+ * l'application est compté — cibles, macros, ce qui reste au frigo.
+ *
+ * Cuisiner à deux toute une semaine change une liste de courses de fond en comble.
+ * La refaire de tête est exactement ce qu'une liste de courses doit éviter.
+ */
+export const shoppingFromWeek = (week: MenuWeek, gym: boolean[], lib: Library = BUILTIN, facteur = 1): ShoppingList =>
+  shoppingFrom(echelleObjet(weekGrams(week, gym, lib), facteur), lib.foods)
+
+/*
+ * Deux tables de grammages, deux conteneurs — et c'est une chausse-trappe.
+ *
+ * `weekGrams` rend un objet simple, `totalGrams` rend une `Map`. Une seule fonction
+ * d'échelle écrite pour l'un des deux parcourt l'autre en silence… ou pas : itérer
+ * un objet comme une `Map` lève, et la liste de courses disparaît dès qu'un second
+ * convive est coché. D'où deux fonctions, nommées d'après ce qu'elles prennent.
+ *
+ * `1` rend la table telle quelle : cuisiner seul ne doit pas coûter une copie.
+ */
+function echelleObjet(grams: Record<string, number>, facteur: number): Record<string, number> {
+  if (facteur === 1) return grams
+  const out: Record<string, number> = {}
+  for (const [id, g] of Object.entries(grams)) out[id] = g * facteur
+  return out
+}
+
+function echelleMap(grams: Map<string, number>, facteur: number): Map<string, number> {
+  if (facteur === 1) return grams
+  const out = new Map<string, number>()
+  for (const [id, g] of grams) out.set(id, g * facteur)
+  return out
+}
 
 /**
  * Portions à cuisiner : uniquement les repas principaux, comptés par plat.
@@ -2203,6 +2237,12 @@ export interface CookOptions {
    * produirait un programme irréalisable, ce qui est pire que d'en faire deux fois.
    */
   freezer?: boolean
+  /**
+   * Le facteur du foyer. Il multiplie les INGRÉDIENTS, jamais le nombre de portions
+   * : une portion reste la tienne, et une session qui annoncerait « 3,2 portions »
+   * ne voudrait rien dire. Les boîtes sont plus grosses, il n'y en a pas plus.
+   */
+  facteur?: number
 }
 export interface CookStep {
   n: number
@@ -2350,7 +2390,7 @@ const isVeg = (f: Food) => f.cat === 'legumes'
  * Trié du plus lourd au plus léger : on sort les kilos d'abord et les pincées
  * ensuite, ce qui est aussi l'ordre dans lequel on encombre un plan de travail.
  */
-export function cookIngredients(dishes: CookDish[], lib: Library = BUILTIN): CookIngredient[] {
+export function cookIngredients(dishes: CookDish[], lib: Library = BUILTIN, facteur = 1): CookIngredient[] {
   const grams = totalGrams(dishes, lib, () => true)
   // Les sauces se préparent à part mais s'achètent et se pèsent avec le reste.
   for (const d of dishes) {
@@ -2359,7 +2399,7 @@ export function cookIngredients(dishes: CookDish[], lib: Library = BUILTIN): Coo
     if (!sauce) continue
     for (const it of sauce.items) grams.set(it.food, (grams.get(it.food) ?? 0) + it.g * d.n)
   }
-  return [...grams.entries()]
+  return [...echelleMap(grams, facteur).entries()]
     .sort((a, b) => b[1] - a[1])
     .flatMap(([id, g]) => {
       const f = lib.foods[id]
@@ -2571,7 +2611,7 @@ export function cookPlan(
       // plat cuisiné en une fois n'aurait aucun sens.
       minutes: id === 'minute' ? 0 : cookMinutes(dishes),
       dishes,
-      ingredients: id === 'minute' ? [] : cookIngredients(dishes, lib),
+      ingredients: id === 'minute' ? [] : cookIngredients(dishes, lib, opts.facteur ?? 1),
       steps: id === 'minute' ? [] : cookSteps(dishes, lib),
       // Ce que le congélateur permettrait d'avancer au dimanche. Proposé seulement
       // quand on n'a pas déclaré en avoir : sinon c'est déjà fait.

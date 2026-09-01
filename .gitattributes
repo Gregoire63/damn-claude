@@ -1,0 +1,24 @@
+# ============================================================
+# Fins de ligne : LF dans le dépôt, quoi qu'il arrive.
+# ============================================================
+#
+# Sans ce fichier, un outil Windows qui réécrit un fichier le rend en CRLF, et
+# `git status` annonce alors soixante-dix fichiers modifiés dont pas un n'a changé
+# d'un caractère. Le bruit ne coûte pas que de la lisibilité : il rend `git add -A`
+# dangereux, il noie une vraie modification au milieu, et il transforme chaque revue
+# en fouille.
+#
+# `text=auto` laisse git décider ce qui est du texte, `eol=lf` fixe ce qui est
+# ENREGISTRÉ. La copie de travail garde les fins de ligne de la plateforme : rien ne
+# change pour les éditeurs, tout est normalisé dans l'historique.
+* text=auto eol=lf
+
+# Ce qui n'est pas du texte ne doit surtout pas être touché.
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.webp binary
+*.ico binary
+*.woff binary
+*.woff2 binary
+*.tgz binary

@@ -96,3 +96,59 @@ describe('les identifiants', () => {
     expect(idConvive('Camille', [MOI, un])).toBe('camille-2')
   })
 })
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Les courses et la cuisine suivent le foyer.
+// ─────────────────────────────────────────────────────────────────────────────
+describe('quantités à acheter et à cuisiner', () => {
+  const lib = {
+    foods: {
+      poulet: { id: 'poulet', name: 'Poulet', cat: 'viandes', kcal: 110, p: 23, g: 0, l: 2 },
+      riz: { id: 'riz', name: 'Riz', cat: 'feculents', kcal: 350, p: 7, g: 78, l: 1 },
+    },
+    recipes: {
+      boite: { id: 'boite', name: 'Boîte', kind: 'boite', batch: true, steps: '', items: [{ food: 'poulet', g: 150 }, { food: 'riz', g: 80 }] },
+    },
+  } as never
+
+  const gramme = (l: { items: { id: string, qty: string }[] }[] | never, id: string) =>
+    (l as { items: { id: string, qty: string }[] }[]).flatMap(r => r.items).find(i => i.id === id)?.qty
+
+  it('cuisiner seul ne change rien à la liste', async () => {
+    const { cookIngredients } = await import('../../lib/nutritionStats')
+    const seul = cookIngredients([{ recipeId: 'boite', n: 4 }] as never, lib)
+    expect(seul.find(i => i.foodId === 'poulet')?.qty).toBe('600 g')
+  })
+
+  /* 4 portions × 150 g × 1,6 = 960 g. Pas 1200 : ×2 aurait fait acheter 240 g de trop. */
+  it('multiplie les grammages par le facteur du foyer', async () => {
+    const { cookIngredients } = await import('../../lib/nutritionStats')
+    const deux = cookIngredients([{ recipeId: 'boite', n: 4 }] as never, lib, facteurConvives([MOI, camille]))
+    expect(deux.find(i => i.foodId === 'poulet')?.qty).toBe('960 g')
+    expect(deux.find(i => i.foodId === 'riz')?.qty).toBe('512 g')
+  })
+})
+
+describe('la liste de courses suit le foyer', () => {
+  it('multiplie les grammages, sans toucher aux rayons', async () => {
+    const { shoppingFrom } = await import('../../lib/nutritionStats')
+    const foods = {
+      poulet: { id: 'poulet', name: 'Poulet', cat: 'viandes', kcal: 110, p: 23, g: 0, l: 2 },
+    } as never
+    const seul = shoppingFrom({ poulet: 600 }, foods)
+    const deux = shoppingFrom({ poulet: 600 * 1.6 }, foods)
+    expect(seul[0]!.lines[0]!.qty).toBe('600 g')
+    expect(deux[0]!.lines[0]!.qty).toBe('960 g')
+    expect(deux[0]!.cat).toBe(seul[0]!.cat)
+  })
+
+  /* Le branchement est d'une ligne, et c'est exactement le genre de ligne qu'un
+     refactor emporte sans que rien ne casse : la liste redeviendrait celle d'une
+     personne, silencieusement. */
+  it('le composable passe bien le facteur aux deux calculs', async () => {
+    const { readFileSync } = await import('node:fs')
+    const src = readFileSync(new URL('../../composables/useNutrition.ts', import.meta.url), 'utf8')
+    expect(src).toMatch(/shoppingFromWeek\([^)]*foyer\.facteur\.value/)
+    expect(src).toMatch(/cookPlan\([^)]*facteur: foyer\.facteur\.value/)
+  })
+})
