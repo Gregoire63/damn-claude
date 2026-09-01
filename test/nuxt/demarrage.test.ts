@@ -24,6 +24,16 @@ const charger = async () => {
   return d
 }
 
+/**
+ * Brancher une marque, comme le ferait un retour d'autorisation : un jeton dans le
+ * stockage, et c'est tout — c'est exactement ce que `marquesLocales()` va y lire.
+ */
+async function brancher(marque: string) {
+  localStorage.setItem(`gr-conn-${marque}-tok-v1`, JSON.stringify({ acces: 'jeton', rafraichissement: '', expireA: Date.now() + 3600e3 }))
+  const { useConnecteurs } = await import('../../composables/useConnecteur')
+  useConnecteurs().rafraichir()
+}
+
 /** Un profil complet : c'est la seule étape qui barre la route. */
 async function poserProfil() {
   const { useProfile } = await import('../../composables/useProfile')
@@ -60,6 +70,27 @@ describe('le parcours d’installation', () => {
     vi.resetModules()
     const encore = await charger()
     expect(etape(encore, 'capteurs').passee).toBe(true)
+  })
+
+  /*
+   * L'étape des connecteurs se cochait JAMAIS : `faite` valait `false`, écrit en
+   * dur. On branchait sa balance, on revenait sur le parcours, et le rond restait
+   * vide — ou bien la connexion avait échoué, ou bien l'écran mentait, et rien ne
+   * permettait de trancher.
+   */
+  it('coche les connecteurs dès qu’une marque est branchée, et dit combien', async () => {
+    const d = await charger()
+    expect(etape(d, 'capteurs').faite).toBe(false)
+    expect(etape(d, 'capteurs').sous).toContain('Facultatif')
+
+    await brancher('withings')
+    const encore = await charger()
+    expect(etape(encore, 'capteurs').faite).toBe(true)
+    expect(etape(encore, 'capteurs').sous).toBe('1 appareil branché')
+
+    await brancher('fitbit')
+    const troisieme = await charger()
+    expect(etape(troisieme, 'capteurs').sous).toBe('2 appareils branchés')
   })
 
   /**

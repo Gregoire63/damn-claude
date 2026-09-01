@@ -1,6 +1,7 @@
 import { computed, ref } from 'vue'
 import { useProfile } from '~/composables/useProfile'
 import { useProgram } from '~/composables/useProgram'
+import { useConnecteurs } from '~/composables/useConnecteur'
 import { useVault } from '~/composables/useVault'
 import { useWorkout } from '~/composables/useWorkout'
 
@@ -29,6 +30,7 @@ export function useDemarrage() {
   const { bodyWeight } = useWorkout()
   const { program } = useProgram()
   const vault = useVault()
+  const conn = useConnecteurs()
 
   function hydrate() {
     if (hydrated || !import.meta.client) return
@@ -80,6 +82,9 @@ export function useDemarrage() {
    * réponse légitime, pas un manque. Cette étape ne se termine donc que par un choix
    * explicite — brancher une marque, ou dire qu'on n'en a pas.
    */
+  /** Combien de marques réellement branchées. Zéro tant qu'on n'a rien connecté. */
+  const branchees = computed(() => conn.branchees.value.length)
+
   const profilComplet = computed(() =>
     !!profile.value.heightCm && !!profile.value.sex && !!profile.value.birthYear && bodyWeight.value.length > 0)
 
@@ -102,8 +107,22 @@ export function useDemarrage() {
     {
       id: 'capteurs' as EtapeId,
       titre: 'Connecteurs',
-      sous: 'Balance ou montre. Facultatif.',
-      faite: false,
+      /*
+       * L'étape se coche quand une marque est branchée — et elle DIT combien.
+       *
+       * `faite` valait `false`, écrit en dur : l'étape ne pouvait donc jamais se
+       * cocher. On branchait sa balance, on revenait, et le rond restait vide. Il
+       * n'y a pas de doute plus décourageant sur un parcours d'installation : ou
+       * bien la connexion a échoué, ou bien l'écran ment, et rien ne permet de
+       * trancher.
+       *
+       * L'intention était pourtant déjà écrite juste au-dessus — « brancher une
+       * marque, ou dire qu'on n'en a pas ». Seule la première moitié manquait.
+       */
+      sous: branchees.value
+        ? `${branchees.value} ${branchees.value > 1 ? 'appareils branchés' : 'appareil branché'}`
+        : 'Balance ou montre. Facultatif.',
+      faite: branchees.value > 0,
       bloquante: false,
     },
     {

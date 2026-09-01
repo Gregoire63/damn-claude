@@ -208,14 +208,21 @@ function onViewport() {
  * de balance. Et valable pour TOUTES les marques — la coque n'en connaît aucune, elle
  * demande simplement à celles que ce navigateur a déjà branchées.
  */
+// La reprise et ses relances vivent dans `useConnecteurs()` — ici on ne fait que
+// ce qui regarde la COQUE : aller sur le profil, et le dire.
+let repriseEnCours = false
 async function reprendreConnexions() {
-  if (!import.meta.client) return
-  const repris = await useConnecteurs().reprendreTout()
-  if (!repris) return
-  const fiche = providerById(repris)
-  void router.push('/profil')
-  showFlash(`${fiche?.icone ?? '🔌'} ${fiche?.label ?? repris} connecté`)
-  await useConnecteurs().autoSyncTout(isoOf(new Date()))
+  if (!import.meta.client || repriseEnCours) return
+  repriseEnCours = true
+  try {
+    const repris = await useConnecteurs().reprendreAvecRelances()
+    if (!repris) return
+    const fiche = providerById(repris)
+    void router.push('/profil')
+    showFlash(`${fiche?.icone ?? '🔌'} ${fiche?.label ?? repris} connecté`)
+    await useConnecteurs().autoSyncTout(isoOf(new Date()))
+  }
+  finally { repriseEnCours = false }
 }
 
 /**
@@ -329,7 +336,7 @@ onUnmounted(() => {
     -->
     <div
       class="sport-app"
-      :class="{ 'has-bottomnav': demarrage.fini.value, 'has-minibar': demarrage.fini.value && activeSession && !sheetOpen && !sheetClosing }"
+      :class="{ 'has-bottomnav': demarrage.fini.value, 'has-minibar': demarrage.fini.value && activeSession && !sheetOpen && !sheetClosing, 'has-flash': !!flash }"
       @touchstart.passive="glisse.debut"
       @touchmove.passive="glisse.bouge"
       @touchend.passive="glisse.fin"
@@ -371,7 +378,9 @@ onUnmounted(() => {
       </div>
     </transition>
 
-    <div v-if="flash" class="flash" :class="flashTon">{{ flash }}</div>
+    <transition name="flash">
+      <div v-if="flash" class="flash" :class="flashTon" role="status">{{ flash }}</div>
+    </transition>
 
 
     <!--

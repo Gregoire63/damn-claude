@@ -92,3 +92,23 @@ export function redirectionValide(uri: string): boolean {
   }
   catch { return false }
 }
+
+/**
+ * Ce qu'on ACCORDE à un client qui s'inscrit, face à ce qu'il demande.
+ *
+ * On n'a jamais accordé qu'`authorization_code`. La première version REFUSAIT
+ * pourtant l'inscription dès que la demande contenait autre chose — or presque tous
+ * les clients demandent aussi `refresh_token`, c'est la valeur par défaut de
+ * beaucoup de bibliothèques. L'inscription échouait donc avec un 400 avant même le
+ * premier écran d'autorisation, pour une préférence que le client n'exigeait pas.
+ *
+ * La RFC 7591 dit l'inverse de ce qu'on faisait : le serveur répond avec les
+ * autorisations qu'il accorde, et le client s'y tient. On ne refuse que si rien de
+ * ce qui est demandé n'est réalisable.
+ */
+const GRANTS_SUPPORTES = ['authorization_code']
+
+export function grantsAccordes(demandes: string[]): string[] {
+  const voulus = demandes.length ? demandes : GRANTS_SUPPORTES
+  return voulus.filter(g => GRANTS_SUPPORTES.includes(g))
+}

@@ -1,4 +1,4 @@
-import { inscrireClient, redirectionValide } from '../../utils/clients'
+import { grantsAccordes, inscrireClient, redirectionValide } from '../../utils/clients'
 
 /**
  * L'inscription d'un client — RFC 7591.
@@ -38,11 +38,14 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 400, statusMessage: `invalid_redirect_uri : ${mauvaise} — il faut une adresse https sans fragment` })
   }
 
-  // Ce qu'on refuse de faire semblant de supporter. Un client qui demande le flux
-  // implicite doit l'apprendre ici, pas au milieu d'une redirection.
-  const grants = Array.isArray(body.grant_types) ? body.grant_types.map(String) : ['authorization_code']
-  if (grants.some(g => g !== 'authorization_code')) {
-    throw createError({ statusCode: 400, statusMessage: 'invalid_client_metadata : seul authorization_code est supporté' })
+  // Ce qu'on accorde face à ce qui est demandé : voir server/utils/clients.ts.
+  const demandes = Array.isArray(body.grant_types) ? body.grant_types.map(String) : []
+  const accordes = grantsAccordes(demandes)
+  if (!accordes.length) {
+    throw createError({
+      statusCode: 400,
+      statusMessage: `invalid_client_metadata : seul authorization_code est supporté (demandé : ${demandes.join(', ')})`,
+    })
   }
 
   const nom = String(body.client_name ?? '').trim().slice(0, 60)
@@ -56,7 +59,7 @@ export default defineEventHandler(async (event) => {
     // déconnecterait un connecteur qui marche, sans rien protéger de plus.
     client_secret_expires_at: 0,
     redirect_uris: brutes,
-    grant_types: ['authorization_code'],
+    grant_types: accordes,
     response_types: ['code'],
     token_endpoint_auth_method: 'none',
     scope: 'suivi',
