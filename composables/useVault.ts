@@ -1,3 +1,4 @@
+import { messageErreur } from '~/lib/erreurs'
 import { computed, ref } from 'vue'
 import { startAuthentication, startRegistration } from '@simplewebauthn/browser'
 import type { RawProposal } from '~/lib/proposals'
@@ -65,10 +66,8 @@ const LAST_PUSH_KEY = 'gr-vault-push-v1'
 /** En dessous, on ne repousse pas : le miroir n'a pas à suivre chaque frappe. */
 const PUSH_MIN_INTERVAL_MS = 5 * 60 * 1000
 
-const message = (e: unknown) => {
-  const m = e instanceof Error ? e.message : String(e)
-  return m.replace(/^Error:\s*/, '')
-}
+// Le message d'erreur montré à l'écran : voir lib/erreurs.ts.
+const message = messageErreur
 
 export function useVault() {
   const nutrition = useNutrition()

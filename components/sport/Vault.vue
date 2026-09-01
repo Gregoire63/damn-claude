@@ -438,7 +438,7 @@ async function doRefuse(p: RawProposal) {
              le moment où l'on déclare que cette instance est la sienne, et la fenêtre
              du système va l'afficher dans la seconde qui suit. -->
         <input v-model="nom" class="note-input mt-6" type="text" placeholder="Prénom (facultatif)" autocomplete="given-name" maxlength="40">
-        <input v-model="bootstrap" class="note-input mt-6" type="password" placeholder="Code de démarrage" autocomplete="off">
+        <input v-model="bootstrap" class="note-input mono mt-6" type="text" inputmode="text" autocomplete="off" autocapitalize="none" autocorrect="off" spellcheck="false" placeholder="Code de démarrage">
         <p v-if="indice" class="muted vt-hint mono">{{ indice }}</p>
         <button class="btn-primary vt-go mt-6" :disabled="v.busy.value || !bootstrap.trim()" @click="doRegister">
           🔐 Créer une clé d'accès
@@ -516,7 +516,7 @@ async function doRefuse(p: RawProposal) {
           Efface toutes les clés d'accès pour pouvoir en recréer une. Il faut le code du
                     dernier déploiement, lisible dans son journal.
         </p>
-        <input v-model="bootstrap" class="note-input mt-6" type="password" placeholder="Code du dernier déploiement" autocomplete="off">
+        <input v-model="bootstrap" class="note-input mono mt-6" type="text" inputmode="text" autocomplete="off" autocapitalize="none" autocorrect="off" spellcheck="false" placeholder="Code du dernier déploiement">
         <button class="btn mt-6 vt-go" :disabled="!bootstrap.trim()" @click="doReset">🗝 Effacer les clés d'accès</button>
       </template>
 

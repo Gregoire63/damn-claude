@@ -31,7 +31,7 @@ export default defineEventHandler(async (event) => {
   // serait absurde d'exiger en plus un code déjà consommé.
   if (!connecte) {
     if (creds.length) throw createError({ statusCode: 409, statusMessage: 'Une clé d\'accès existe déjà. Déverrouille pour en ajouter une seconde.' })
-    const verdict = await verifierBootstrap(String(body?.bootstrap ?? ''))
+    const verdict = await verifierBootstrap(String(body?.bootstrap ?? '').trim())
     if (verdict === 'absent') throw createError({ statusCode: 503, statusMessage: 'NUXT_VAULT_BOOTSTRAP non configuré' })
     if (verdict === 'verrouille') throw createError({ statusCode: 429, statusMessage: 'Trop de tentatives. Réessaie dans quinze minutes.' })
     if (verdict === 'consomme') throw createError({ statusCode: 403, statusMessage: 'Ce code de démarrage a déjà servi. Relance un déploiement pour en obtenir un nouveau.' })
