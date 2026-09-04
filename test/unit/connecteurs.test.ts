@@ -323,3 +323,26 @@ describe('les montres qu’on ne peut pas brancher', () => {
     expect(dispo).toEqual(['withings', 'fitbit', 'polar', 'oura'])
   })
 })
+
+describe('withings : la fenêtre demandée', () => {
+  /*
+   * `depuis` a trois valeurs et deux se ressemblaient trop : 0 est le DÉFAUT
+   * (quatre-vingt-dix jours), 1 veut dire « tout », le reste est un curseur. Le mode
+   * complet envoyait 0 — donc le défaut — en promettant l'historique. Rien
+   * n'échouait ; les mesures anciennes n'arrivaient jamais, et aucun test ne pouvait
+   * le voir puisque celui du client vérifiait lui aussi « 0 ».
+   *
+   * Le comportement est vérifié côté client (test/nuxt/connecteur.test.ts : la
+   * requête part avec 1). Ici on garde la DISTINCTION elle-même : le jour où
+   * quelqu'un simplifie `depuis > 0 ? depuis : défaut`, les deux sens fusionnent et
+   * « Tout récupérer » redevient silencieusement « les trois derniers mois ».
+   */
+  it('distingue « rien à reprendre » de « tout reprendre »', async () => {
+    const { readFileSync } = await import('node:fs')
+    const src = readFileSync(new URL('../../server/connecteurs/withings.ts', import.meta.url), 'utf8')
+    expect(src).toMatch(/depuis > 0 \? depuis :/)
+    // Les pas restent bornés même en mode complet : cinquante ans de getactivity
+    // n'est une requête que personne ne veut voir passer.
+    expect(src).toMatch(/startdateymd: jour\(Math\.max\(debut,/)
+  })
+})

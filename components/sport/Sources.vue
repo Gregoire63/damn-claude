@@ -97,10 +97,28 @@ async function deconnecter(c: Fiche) {
   conn.rafraichir()
   emit('flash', `${c.label} déconnecté. Les mesures déjà récupérées sont conservées.`)
 }
-async function synchroniser(c: Fiche) {
+/**
+ * Deux synchronisations, et la différence compte.
+ *
+ * L'ordinaire repart du CURSEUR : elle ne redemande que ce qui a bougé depuis la
+ * dernière fois. C'est ce qu'on veut à l'ouverture de l'application, et c'est aussi
+ * pourquoi elle ne ramène jamais l'historique — quoi qu'on clique, et sans que rien
+ * ne le dise.
+ *
+ * `complet` remonte à l'origine du compte. Il sert une fois : en arrivant d'une autre
+ * application, ou après avoir vidé le navigateur.
+ *
+ * Le message dit COMBIEN de mesures sont revenues. « Synchronisé ✓ » ne distingue pas
+ * une récupération de rien du tout, et c'est justement ce qu'on veut savoir.
+ */
+async function synchroniser(c: Fiche, complet = false) {
   const k = useConnecteur(c.id)
-  const ok = await k.synchroniser(props.todayIso ?? new Date().toISOString().slice(0, 10))
-  emit('flash', ok ? `${c.label} synchronisé ✓` : (k.erreur.value ?? 'Échec'), ok ? 'ok' : 'echec')
+  const ok = await k.synchroniser(props.todayIso ?? new Date().toISOString().slice(0, 10), { complet })
+  if (!ok) { emit('flash', k.erreur.value ?? 'Échec', 'echec'); return }
+  const n = k.recuperees.value
+  emit('flash', n
+    ? `${c.label} : ${n} mesure${n > 1 ? 's' : ''} récupérée${n > 1 ? 's' : ''} ✓`
+    : `${c.label} : déjà à jour ✓`)
 }
 
 // ─── Configuration d'une marque ──────────────────────────────────────────────
@@ -180,11 +198,18 @@ const aConfigurer = ref<Fiche | null>(null)
               </button>
               <template v-else>
                 <button class="btn flex-1" :disabled="useConnecteur(c.id).occupe.value" @click="synchroniser(c)">↻ Synchroniser</button>
+                <!-- Le geste des grands jours : arriver d'une autre application, ou
+                     repartir d'un navigateur vidé. Il remonte à l'origine du compte
+                     là où « Synchroniser » ne fait que reprendre au curseur. -->
+                <button class="btn flex-1" :disabled="useConnecteur(c.id).occupe.value" @click="synchroniser(c, true)">⇩ Tout récupérer</button>
                 <button class="btn flex-1" @click="deconnecter(c)">Déconnecter</button>
               </template>
             </div>
             <p v-if="branche(c.id)" class="muted">
-              La déconnexion ne supprime aucune mesure déjà récupérée.
+              « Synchroniser » ne rapporte que ce qui a bougé depuis la dernière fois.
+              « Tout récupérer » remonte à l'origine du compte — utile une fois, en
+              arrivant d'une autre application. La déconnexion ne supprime aucune
+              mesure déjà récupérée.
             </p>
             <!-- D'où viennent ses identifiants, et comment les retirer. -->
                         <SportConnecteurConfig :marque="c" @flash="relais" @change="chargerSources()" />

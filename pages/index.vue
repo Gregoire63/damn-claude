@@ -139,8 +139,23 @@ const todayRecord = computed(() => {
       </button>
     </div>
 
-    <div class="card week-card">
-      <div class="section-label mb-8">Semaine type <span class="muted week-hint">· déplaçable depuis le calendrier</span></div>
+    <!--
+      La bande hebdomadaire EST un raccourci vers le calendrier.
+
+      Elle montrait la semaine et ne menait nulle part : on la lisait, on voulait
+      déplacer une séance, et il fallait aller la chercher dans l'onglet Journal en
+      sachant qu'elle s'y trouve. Un aperçu qui n'ouvre pas ce qu'il aperçoit est une
+      impasse — d'autant que le sous-titre disait déjà « déplaçable depuis le
+      calendrier », c'est-à-dire « va ailleurs » sans donner le chemin.
+
+      Un <button> et non un lien : c'est une navigation interne, et le routeur s'en
+      charge sans recharger la coque.
+    -->
+    <button class="card week-card" @click="navigateTo('/journal')">
+      <div class="week-head">
+        <span class="section-label">Semaine type</span>
+        <span class="week-go">Calendrier →</span>
+      </div>
       <div class="week">
         <div v-for="(d, i) in weekDays" :key="i" class="week-day" :class="{ rest: !d.session, today: i === todayIndex, moved: d.moved }" :style="d.session ? { '--c': d.session.color } : {}">
           <span class="week-dow">{{ d.dow }}<span v-if="d.moved" class="week-moved" title="Planning modifié pour cette date">⇄</span></span>
@@ -152,6 +167,7 @@ const todayRecord = computed(() => {
           <span v-else class="week-rest">repos</span>
         </div>
       </div>
-    </div>
+      <span class="muted week-hint">Toucher pour déplacer une séance, voir les jours passés et ceux à venir.</span>
+    </button>
   </div>
 </template>

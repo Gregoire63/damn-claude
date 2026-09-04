@@ -107,6 +107,19 @@ const withings: Adaptateur = {
 
   async lire(_ids, acces, depuis): Promise<Releve> {
     const maintenant = Math.floor(Date.now() / 1000)
+    /*
+     * `depuis` a TROIS valeurs, et la confusion entre deux d'entre elles a coûté un
+     * historique.
+     *
+     * 0 — première synchronisation : on remonte quatre-vingt-dix jours. C'est le bon
+     *     défaut, personne ne veut six ans de pesées en découvrant l'application.
+     * 1 — « tout récupérer », demandé explicitement : depuis l'origine des temps.
+     * n — le curseur de la dernière synchronisation.
+     *
+     * Le mode complet envoyait 0, c'est-à-dire exactement le défaut : il redemandait
+     * les quatre-vingt-dix derniers jours en promettant l'historique. Rien n'échouait,
+     * rien ne le signalait — les mesures plus anciennes n'arrivaient simplement jamais.
+     */
     const debut = depuis > 0 ? depuis : maintenant - FENETRE_S
     const auth = { Authorization: `Bearer ${acces}` }
     const jour = (t: number) => new Date(t * 1000).toISOString().slice(0, 10)
@@ -123,7 +136,15 @@ const withings: Adaptateur = {
     // doit continuer à rapporter des pesées, pas rendre une erreur globale.
     const activite = await appel<Activite>(`${API_URL}/v2/measure`, {
       action: 'getactivity',
-      startdateymd: jour(debut),
+      /*
+       * Les PAS, eux, restent bornés à un an — même en mode complet.
+       *
+       * Withings répond aux pesées sur toute la durée du compte, mais `getactivity`
+       * sur cinquante ans de plage est une requête qu'aucune API n'aime, et des pas
+       * d'il y a trois ans ne servent à rien ici : ils n'entrent que dans la dépense
+       * du jour. Les pesées sont le sujet, les pas sont un bonus.
+       */
+      startdateymd: jour(Math.max(debut, maintenant - 400 * 86400)),
       enddateymd: jour(maintenant),
       data_fields: 'steps,distance,calories,totalcalories',
     }, auth).catch(() => ({ activities: [] } as Activite))
