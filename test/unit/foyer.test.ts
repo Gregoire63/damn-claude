@@ -152,3 +152,71 @@ describe('la liste de courses suit le foyer', () => {
     expect(src).toMatch(/cookPlan\([^)]*facteur: foyer\.facteur\.value/)
   })
 })
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Qui mange CE repas, et ce que j'en mets dans mon assiette.
+// ─────────────────────────────────────────────────────────────────────────────
+describe('les convives d\'un repas', () => {
+  const foyer = [MOI, camille]
+
+  it('reprend le foyer quand rien n’est précisé', async () => {
+    const { facteurRepas } = await import('../../lib/foyer')
+    expect(facteurRepas(null, foyer)).toBe(1.6)
+  })
+
+  it('compte les membres cochés pour CE repas', async () => {
+    const { facteurRepas } = await import('../../lib/foyer')
+    expect(facteurRepas({ membres: ['moi'], invites: [] }, foyer)).toBe(1)
+    expect(facteurRepas({ membres: ['moi', 'camille'], invites: [] }, foyer)).toBe(1.6)
+  })
+
+  /* Un invité ne rentre pas dans le foyer pour un dîner : on l'ajoute, il repart. */
+  it('ajoute les invités ponctuels', async () => {
+    const { facteurRepas } = await import('../../lib/foyer')
+    const repas = { membres: ['moi', 'camille'], invites: [{ nom: 'Léa', appetit: 0.8 }, { nom: 'Invité', appetit: 1 }] }
+    expect(facteurRepas(repas, foyer)).toBe(3.4)
+  })
+
+  it('remet Moi à table même si le stockage l’a perdu', async () => {
+    const { normaliserRepas } = await import('../../lib/foyer')
+    expect(normaliserRepas({ membres: ['camille'], invites: [] })?.membres).toEqual(['moi', 'camille'])
+    expect(normaliserRepas({ membres: [], invites: [] })).toBe(null)
+    expect(normaliserRepas('nawak')).toBe(null)
+  })
+})
+
+describe('ce que je mets dans MON assiette', () => {
+  const foyer = [MOI, camille]
+
+  /*
+   * LA question à laquelle la fiche ne répondait pas. Elle affichait les quantités
+   * pour tout le monde et annonçait des macros « pour ta part », sans jamais dire
+   * quelle fraction de la casserole c'était : on servait à vue, donc on mangeait
+   * autre chose que ce que l'application comptait.
+   */
+  it('vaut tout le plat quand je mange seul', async () => {
+    const { partDeMoi } = await import('../../lib/foyer')
+    expect(partDeMoi({ membres: ['moi'], invites: [] }, foyer)).toBe(1)
+  })
+
+  it('vaut 1 / facteur sinon', async () => {
+    const { partDeMoi } = await import('../../lib/foyer')
+    // 1 / 1,6 = 0,625 : je mange 62,5 % du plat, pas la moitié.
+    expect(partDeMoi({ membres: ['moi', 'camille'], invites: [] }, foyer)).toBeCloseTo(0.625, 3)
+  })
+
+  it('ne dépasse jamais le plat entier', async () => {
+    const { partDeMoi } = await import('../../lib/foyer')
+    expect(partDeMoi({ membres: [], invites: [] }, foyer)).toBeLessThanOrEqual(1)
+  })
+})
+
+describe('le libellé d\'un repas', () => {
+  it('énumère, invités compris', async () => {
+    const { libelleRepas } = await import('../../lib/foyer')
+    const foyer = [MOI, camille]
+    expect(libelleRepas({ membres: ['moi'], invites: [] }, foyer)).toBe('Moi seul')
+    expect(libelleRepas({ membres: ['moi', 'camille'], invites: [{ nom: 'Léa', appetit: 1 }] }, foyer))
+      .toBe('Moi + Camille + 1 invité')
+  })
+})

@@ -5,6 +5,7 @@ import { useMesures } from '~/composables/useMesures'
 import { useRestTimer } from '~/composables/useRestTimer'
 import { useFoyer } from '~/composables/useFoyer'
 import { useProgram } from '~/composables/useProgram'
+import { useRepasConvives } from '~/composables/useRepasConvives'
 
 /**
  * L'instantané complet des données, en un seul endroit.
@@ -28,6 +29,7 @@ export function useSnapshot() {
   const { snapshot: timerData } = useRestTimer()
   const { snapshot: programData } = useProgram()
   const foyer = useFoyer()
+  const repasConvives = useRepasConvives()
 
   function buildSnapshot(): Record<string, unknown> {
     return {
@@ -51,6 +53,9 @@ export function useSnapshot() {
        * relisent, se valident et se défont comme toutes les autres.
        */
       foyer: foyer.convives.value,
+      // Qui est à table, repas par repas. Seules les EXCEPTIONS y figurent : un
+      // repas absent d'ici se lit avec le foyer courant.
+      ...repasConvives.snapshot(),
     }
   }
 

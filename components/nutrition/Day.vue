@@ -5,6 +5,7 @@ import { useMesures } from '~/composables/useMesures'
 import { useWorkout } from '~/composables/useWorkout'
 import type { DayMeal, DayStatus } from '~/lib/nutritionStats'
 import type { FreeMeal } from '~/lib/freeMeal'
+import { EXPLICATION_NATURE, LIBELLE_NATURE, natureRepas } from '~/lib/freeMeal'
 import {
   DAY_NAMES, STATUS_LABELS, adjustRemaining, adjustSignature, applySteps, buildDay, choicesForSlot, dayIntake, dayStatus, dowIndex, extraFromRecipe, fiberIntake, fiberVerdict,
   isDayPlayed, macroSplit, quickExtra, roundMacros, sessionsOn, sumMacros,
@@ -50,6 +51,9 @@ const freeSheet = ref<{ meal: FreeMeal, slotLabel: string, time: string } | null
 const sheetId = ref<string | null>(null)
 const fermerFiches = () => { sheet.value = null; sheetId.value = null }
 /** La composition d'un créneau, s'il en a une. Sans elle, rien à ouvrir. */
+/** L'étiquette d'un repas hors catalogue : dehors, composé ou modifié. */
+const natureDe = (slot: string) => natureRepas(freeMealFor(props.todayIso, slot))
+
 const freeOf = (slot: string) => {
   const f = freeMealFor(props.todayIso, slot)
   return f?.items?.length ? f : null
@@ -318,10 +322,19 @@ const foodName = (id: string) => library.value.foods[id]?.name ?? id
             <span class="nu-time mono">{{ m.time }}</span>
             <span class="nu-slot">{{ m.label }}</span>
             <span v-if="m.adjusted" class="nu-tag">ajusté</span>
-            <!-- Dit d'où viennent les chiffres. Un repas du dehors est saisi de
-                 mémoire ; le lire comme une portion pesée fausserait la confiance
-                 qu'on accorde au total du jour. -->
-            <span v-if="m.free" class="nu-tag nu-tag-free">du dehors</span>
+            <!--
+              Dit d'où viennent les chiffres — et il y a TROIS cas, pas un.
+
+              « du dehors » ne valait que pour le repas saisi de mémoire, qu'il ne
+              faut pas lire comme une portion pesée. Un plat adapté ou composé porte
+              au contraire des grammages aussi sûrs que ceux du catalogue : les
+              étiqueter « du dehors » abîmait la confiance qu'on accorde au total du
+              jour, et décourageait d'ouvrir une fiche qu'on croyait vide.
+            -->
+            <span
+              v-if="m.free" class="nu-tag" :class="natureDe(m.slot) === 'dehors' ? 'nu-tag-free' : 'nu-tag-vari'"
+              :title="EXPLICATION_NATURE[natureDe(m.slot)]"
+            >{{ LIBELLE_NATURE[natureDe(m.slot)] }}</span>
             <span class="nu-kcal mono">{{ Math.round(m.macros.kcal) }} kcal</span>
           </div>
           <div class="nu-meal-name">{{ m.name }}</div>
@@ -330,7 +343,11 @@ const foodName = (id: string) => library.value.foods[id]?.name ?? id
                de toute façon dans la fiche, à un clic. Reste ce qui identifie le
                plat — son nom et sa photo. -->
           <div class="muted nu-meal-more">
-            {{ m.free ? (freeOf(m.slot) ? 'Voir la composition →' : 'Saisi à la main') : 'Voir la recette →' }}
+            {{ m.free
+              ? (natureDe(m.slot) === 'modifie' ? 'Voir la recette adaptée →'
+                : natureDe(m.slot) === 'compose' ? 'Voir la composition →'
+                : 'Saisi à la main')
+              : 'Voir la recette →' }}
           </div>
         </button>
         <div class="nu-meal-side">
@@ -458,7 +475,13 @@ const foodName = (id: string) => library.value.foods[id]?.name ?? id
     <Teleport to="body">
       <div class="sport-app sport-portal">
         <transition name="sheet">
-          <NutritionRecipeSheet v-if="sheet || sheetId" :id="sheetId ?? sheet!.recipeId" @close="fermerFiches()" />
+          <!-- `date` et `slot` ancrent la fiche à CE repas : les convives s'y enregistrent,
+               et un invité ajouté ce soir ne suit pas la recette pour toujours. -->
+          <NutritionRecipeSheet
+            v-if="sheet || sheetId" :id="sheetId ?? sheet!.recipeId"
+            :date="props.todayIso" :slot="sheet?.slot"
+            @close="fermerFiches()"
+          />
         </transition>
         <!-- La composition d'un repas hors plan. « voir la recette standard »
              enchaîne sur la fiche du catalogue : les deux se lisent en regard, ce

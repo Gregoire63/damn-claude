@@ -125,3 +125,31 @@ describe('withFreeMeals', () => {
     expect(out.meals.filter(x => x.free)).toHaveLength(2)
   })
 })
+
+// ─────────────────────────────────────────────────────────────────────────────
+// « du dehors » ne veut pas dire « pas dans le catalogue ».
+// ─────────────────────────────────────────────────────────────────────────────
+//
+// Trois situations très différentes portaient la même étiquette, et elle n'était
+// juste que pour une seule. Un plat adapté — 211 g de saumon au lieu de 150 — se
+// lisait comme un repas de restaurant estimé de mémoire : ça abîme la confiance
+// qu'on accorde au total du jour, et ça décourage d'ouvrir une fiche qu'on croit
+// vide.
+describe('la nature d\'un repas hors catalogue', () => {
+  it('« du dehors » quand on ne sait pas ce qu\'il y avait dedans', async () => {
+    const { natureRepas } = await import('../../lib/freeMeal')
+    expect(natureRepas({ label: 'Resto' } as never)).toBe('dehors')
+    expect(natureRepas({ items: [] } as never)).toBe('dehors')
+    expect(natureRepas(null)).toBe('dehors')
+  })
+
+  it('« modifié » quand c\'est la variante d\'un plat connu', async () => {
+    const { natureRepas } = await import('../../lib/freeMeal')
+    expect(natureRepas({ base: 'din-saumon', items: [{ food: 'saumon', g: 211 }] } as never)).toBe('modifie')
+  })
+
+  it('« composé » quand on connaît le contenu sans plat d\'origine', async () => {
+    const { natureRepas } = await import('../../lib/freeMeal')
+    expect(natureRepas({ items: [{ food: 'oeuf', g: 120 }] } as never)).toBe('compose')
+  })
+})

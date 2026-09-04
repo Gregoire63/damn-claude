@@ -105,6 +105,27 @@
    ne se propose plus, et ça doit se voir sans lire le bouton. */
 .vt-prop.faite { opacity: 0.55; }
 
+/* Une variante ou un plat composé : ce n'est pas un avertissement, c'est une
+   précision. La teinte d'accent le distingue de l'orangé de « du dehors », qui lui
+   dit « ces chiffres sont estimés ». */
+.nu-tag-vari { background: color-mix(in srgb, var(--accent-primary) 14%, var(--bg-secondary)); color: var(--accent-strong); }
+
+/* L'invité d'un soir, et le bouton qui l'ajoute. */
+.rs-invite { padding-right: 9px; }
+.rs-plus { border-style: dashed; }
+.rs-ajout { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; flex-wrap: wrap; }
+.rs-ajout .note-input { margin: 0; min-width: 120px; }
+
+/* Ce qu'on met dans son assiette : un bandeau qu'on déplie quand on sert.
+   Replié, il répond à « combien pour moi ? » en une ligne ; déplié, il donne le
+   détail — utile pour le féculent, le seul qu'on ne peut pas répartir en comptant. */
+.rs-assiette { margin: 12px 0 14px; border: 1px solid var(--accent-secondary); border-radius: 12px; background: color-mix(in srgb, var(--accent-primary) 5%, var(--bg-primary)); overflow: hidden; }
+.rs-assiette-h { display: flex; align-items: center; gap: 10px; width: 100%; padding: 11px 13px; background: none; border: none; font: inherit; color: inherit; text-align: left; cursor: pointer; }
+.rs-assiette-h > span:first-child { flex: 1 1 auto; min-width: 0; font-size: 14px; }
+.rs-assiette-t { font-size: 14px; font-weight: 700; color: var(--accent-strong); white-space: nowrap; }
+.rs-assiette-c { font-size: 10px; color: var(--text-muted); }
+.rs-assiette-l { padding: 0 13px 12px; }
+
 /* Le foyer, dans les réglages : une ligne par convive, l'appétit au milieu.
    `grid` et non `flex` — les noms n'ont pas la même longueur, et une colonne qui
    danse d'une ligne à l'autre se lit mal quand on compare des pourcentages. */
@@ -233,7 +254,7 @@ input.fo-nom { margin: 0; }
    base : sans ce décalage il flotte deux pixels trop bas et le titre boite. */
 .section-label { display: flex; align-items: center; gap: 7px; font-family: var(--font-mono); font-size: 12px; text-transform: uppercase; letter-spacing: 0.12em; color: var(--accent-primary); }
 .section-label .glyphe { margin-top: -1px; }
-.week-hint { text-transform: none; letter-spacing: 0; }
+.week-hint { display: block; margin-top: 10px; text-transform: none; letter-spacing: 0; font-size: 12px; }
 /*
  * Le message de confirmation est un TOAST, pas un bandeau dans le flux.
  *
@@ -323,14 +344,31 @@ input.fo-nom { margin: 0; }
 .sc-go { font-family: var(--font-mono); font-size: 13px; font-weight: 700; color: var(--c); }
 
 /* Semaine */
-.week-card { padding: 14px 16px 16px; }
-.week { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; }
-.week-day { position: relative; display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 8px 2px; border-radius: 12px; min-height: 72px; background: color-mix(in srgb, var(--c) 12%, var(--bg-secondary)); border: 1px solid color-mix(in srgb, var(--c) 30%, var(--bg-accent)); }
-.week-day.rest { background: var(--bg-secondary); border-color: var(--bg-accent); }
+/* La bande hebdomadaire, devenue un bouton : elle ouvre le calendrier.
+   Le `text-align` et la remise à zéro des bordures sont ce qu'il faut pour qu'un
+   <button> cesse de ressembler à un bouton et redevienne la carte qu'il était. */
+.week-card { display: block; width: 100%; text-align: left; border: none; font: inherit; color: inherit; cursor: pointer; padding: 14px 16px 14px; }
+.week-card:hover { background: color-mix(in srgb, var(--accent-primary) 4%, var(--bg-primary)); }
+.week-head { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; margin-bottom: 10px; }
+.week-go { font-family: var(--font-mono); font-size: 11px; color: var(--accent-primary); white-space: nowrap; }
+.week { display: grid; grid-template-columns: repeat(7, 1fr); gap: 5px; }
+/*
+ * Sept cases encadrées sur une largeur de téléphone, c'était sept boîtes de 50 px
+ * qui se disputaient l'attention : deux traits, un fond teinté et un texte de dix
+ * pixels chacune. On ne lisait plus la SEMAINE, on lisait une grille.
+ *
+ * Le cadre disparaît. Reste une barre de couleur en haut de chaque jour — la même
+ * couleur que la séance, donc la semaine se lit d'un coup d'œil comme une portée —
+ * et le repos devient un simple creux gris. Ce qui doit ressortir ressort : où sont
+ * les séances, et lesquelles se suivent.
+ */
+.week-day { position: relative; display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 9px 1px 7px; border-radius: 10px; min-height: 64px; background: var(--bg-secondary); border: none; border-top: 3px solid var(--c, var(--bg-accent)); }
+.week-day.rest { background: color-mix(in srgb, var(--bg-secondary) 55%, transparent); border-top-color: var(--bg-accent); }
 .week-day.today { outline: 2px solid var(--accent-strong); outline-offset: 1px; }
 .week-day.today::after { content: 'Auj.'; position: absolute; top: -8px; left: 50%; transform: translateX(-50%); font-family: var(--font-mono); font-size: 8px; font-weight: 700; background: var(--accent-strong); color: var(--bg-primary); padding: 1px 6px; border-radius: 20px; }
 .week-dow { font-family: var(--font-mono); font-size: 10px; text-transform: uppercase; color: var(--text-muted); }
-.week-day.moved { border-style: dashed; }
+/* Déplacée depuis le calendrier : la barre se coupe en pointillés. */
+.week-day.moved { border-top-style: dashed; }
 .week-moved { margin-left: 3px; color: #4a6fa5; }
 .week-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--c); }
 .week-label { font-size: 10px; font-weight: 700; color: var(--text-primary); text-align: center; line-height: 1.1; }
