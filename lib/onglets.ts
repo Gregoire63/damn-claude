@@ -38,7 +38,19 @@ export interface Onglet {
  * `/journal`. Sans accent : un accent dans une URL survit mal au copier-coller.
  */
 export const ONGLETS: Onglet[] = [
-  { chemin: '/', vue: 'home', glyphe: 'maison', label: 'Accueil', titre: 'Mes séances' },
+  /*
+   * « Aujourd'hui » et non « Mes séances ».
+   *
+   * L'écran s'ouvre sur la nutrition du jour, et les séances viennent après : le
+   * titre annonçait donc autre chose que ce qu'on lit juste en dessous. Un titre qui
+   * contredit sa première carte n'est pas un détail de vocabulaire — c'est la
+   * première chose qu'on lit, et elle apprend à ne pas faire confiance au reste.
+   *
+   * Il ne s'agissait pas de remettre les séances en haut : les repas se règlent
+   * plusieurs fois par jour, une séance une fois. L'ordre est bon, c'est le titre qui
+   * était faux. Et « Aujourd'hui » couvre les deux, comme la page elle-même.
+   */
+  { chemin: '/', vue: 'home', glyphe: 'maison', label: 'Accueil', titre: 'Aujourd\'hui' },
   { chemin: '/journal', vue: 'history', glyphe: 'calendrier', label: 'Journal', titre: 'Historique' },
   { chemin: '/nutrition', vue: 'nutrition', glyphe: 'couverts', label: 'Nutrition', titre: 'Nutrition' },
   { chemin: '/progres', vue: 'rapport', glyphe: 'courbe', label: 'Progrès', titre: 'Ma progression' },

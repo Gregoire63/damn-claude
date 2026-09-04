@@ -759,18 +759,30 @@ export function useWorkout() {
     return v.length > 0 && v.every(x => Array.isArray(x))
   }
 
+  /**
+   * Chaque section se restaure SÉPARÉMENT, et c'est une correction.
+   *
+   * Les pesées et les séances enregistrées étaient conditionnées à la présence de
+   * `logs` : un export qui contenait des pesées mais pas d'historique de charges les
+   * perdait toutes, en silence, et l'écran annonçait « Import réussi ✓ ». On croit
+   * avoir récupéré ses données, on efface l'ancienne application, et on découvre le
+   * trou des semaines plus tard — quand il n'y a plus de source pour le combler.
+   *
+   * Rien ne justifiait ce lien : trois listes indépendantes, écrites côte à côte
+   * dans le même fichier. La prudence d'origine visait autre chose, et elle est
+   * conservée telle quelle — ne PAS écraser une section avec quelque chose qui n'en
+   * a pas la forme. C'est ce que fait chaque `Array.isArray` ci-dessous : on relit ce
+   * qu'on reconnaît, on laisse le reste intact.
+   */
   function restoreData(data: Record<string, unknown>) {
-    if (data.logs) {
-      logs.value = data.logs as Logs
-      bodyWeight.value = (data.bodyWeight as BodyWeightEntry[]) || []
-      sessionHistory.value = (data.sessions as SessionRecord[]) || []
-    }
-    else if (ressembleAuVieuxJournal(data)) {
-      logs.value = data as unknown as Logs
-    }
+    if (data.logs) logs.value = data.logs as Logs
+    else if (ressembleAuVieuxJournal(data)) logs.value = data as unknown as Logs
     // Sinon : sauvegarde PARTIELLE — le pack d'exemple, ou l'export d'un seul module.
     // On ne touche pas au journal. L'écraser avec un objet qui n'en est pas un
     // effacerait des mois de charges pour importer des recettes.
+
+    if (Array.isArray(data.bodyWeight)) bodyWeight.value = data.bodyWeight as BodyWeightEntry[]
+    if (Array.isArray(data.sessions)) sessionHistory.value = data.sessions as SessionRecord[]
     persistLogs(); persistBW(); persistSessions()
   }
 

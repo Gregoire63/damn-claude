@@ -98,8 +98,19 @@ describe('synchronisation', () => {
     await c.synchroniser(TODAY)
     expect(lastBody!.depuis).toBe(999)
     await c.synchroniser(TODAY, { complet: true })
-    // `complet` repart de zéro : c'est ce qui permet de rattraper une pesée corrigée.
-    expect(lastBody!.depuis).toBe(0)
+    /*
+     * `complet` envoie 1, pas 0 — et ce test disait 0, en vert, pendant que la
+     * fonction ne marchait pas.
+     *
+     * Côté serveur, `depuis` a trois valeurs : 0 est le DÉFAUT (quatre-vingt-dix
+     * jours, ce qu'on veut à la première connexion), 1 veut dire « depuis l'origine
+     * du compte », et tout le reste est un curseur. Le mode complet envoyait donc
+     * exactement le défaut : il redemandait les quatre-vingt-dix derniers jours en
+     * promettant l'historique. Rien n'échouait — les mesures anciennes n'arrivaient
+     * simplement jamais, et personne ne pouvait le voir depuis l'application.
+     */
+    expect(lastBody!.depuis).toBe(1)
+    expect(lastBody!.depuis, 'zéro veut dire « défaut », pas « tout »').not.toBe(0)
   })
 })
 

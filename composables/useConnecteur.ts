@@ -36,6 +36,8 @@ interface Etat {
   erreur: string | null
   /** L'autorisation a été révoquée : seul un nouveau tour peut réparer. */
   reconnecter: boolean
+  /** Mesures NEUVES rapportées par la dernière synchronisation. */
+  recuperees: number
 }
 
 const etats = new Map<string, Ref<Etat>>()
@@ -95,7 +97,7 @@ function reprendreAnciennesCles(id: string): { jetons: Jetons | null, curseur: n
 function etatDe(id: string): Ref<Etat> {
   let e = etats.get(id)
   if (!e) {
-    e = ref<Etat>({ jetons: null, curseur: 0, occupe: false, erreur: null, reconnecter: false })
+    e = ref<Etat>({ jetons: null, curseur: 0, occupe: false, erreur: null, reconnecter: false, recuperees: 0 })
     etats.set(id, e)
   }
   return e
@@ -263,7 +265,9 @@ export function useConnecteur(id: string) {
         body: {
           acces: etat.value.jetons.acces,
           rafraichissement: etat.value.jetons.rafraichissement,
-          depuis: opts.complet ? 0 : etat.value.curseur || 0,
+          // 1 et non 0 : zéro est le DÉFAUT (quatre-vingt-dix jours), pas « tout ».
+          // Voir le commentaire de `lire` dans server/connecteurs/withings.ts.
+          depuis: opts.complet ? 1 : etat.value.curseur || 0,
         },
       })
 
@@ -279,7 +283,9 @@ export function useConnecteur(id: string) {
       etat.value.reconnecter = false
       if (res.erreur) { etat.value.erreur = res.erreur; return false }
 
-      useMesures().absorber({ pesees: res.pesees ?? [], pas: res.pas ?? [] }, todayIso)
+      // Combien de mesures NEUVES : c'est la seule réponse à « est-ce que ça a
+      // marché ? ». « Synchronisé ✓ » ne distingue pas une récupération de rien.
+      etat.value.recuperees = useMesures().absorber({ pesees: res.pesees ?? [], pas: res.pas ?? [] }, todayIso)
       etat.value.curseur = res.curseur || Math.floor(Date.now() / 1000)
       write(cleCurseur(id), etat.value.curseur)
       return true
@@ -320,6 +326,8 @@ export function useConnecteur(id: string) {
     deconnecter,
     synchroniser,
     autoSync,
+    /** Mesures neuves rapportées par la dernière synchronisation. */
+    recuperees: computed(() => etat.value.recuperees),
   }
 }
 
