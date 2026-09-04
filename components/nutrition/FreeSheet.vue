@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useNutrition } from '~/composables/useNutrition'
-import { checkFreeMeal } from '~/lib/freeMeal'
+import { LIBELLE_NATURE, checkFreeMeal, natureRepas } from '~/lib/freeMeal'
 import { cookedWeight } from '~/lib/cooked'
 import type { FreeMeal } from '~/lib/freeMeal'
 
@@ -28,6 +28,7 @@ const { library, cookedRatios } = useNutrition()
 
 const base = computed(() => (props.meal.base ? library.value.recipes[props.meal.base] ?? null : null))
 const items = computed(() => props.meal.items ?? [])
+const nature = computed(() => natureRepas(props.meal))
 const foodName = (id: string) => library.value.foods[id]?.name ?? id
 
 /** Le poids une fois cuit, quand il est connu — féculents seulement. `null` ailleurs. */
@@ -59,7 +60,10 @@ const M = [
     @close="emit('close')"
   >
     <template #title-extra>
-      <span class="nu-tag nu-tag-free">hors plan</span>
+      <!-- La même étiquette que dans la journée : « du dehors » quand les chiffres
+           sont estimés, « modifié » ou « composé » quand la composition est connue —
+           ce qui est le cas dès qu'on ouvre cette fiche. -->
+      <span class="nu-tag" :class="nature === 'dehors' ? 'nu-tag-free' : 'nu-tag-vari'">{{ LIBELLE_NATURE[nature] }}</span>
     </template>
 
     <!-- Le plat d'origine, discret : c'est un repère, pas le sujet de la fiche. -->

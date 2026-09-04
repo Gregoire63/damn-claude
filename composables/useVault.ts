@@ -1,5 +1,6 @@
 import { messageErreur } from '~/lib/erreurs'
 import { useFoyer } from '~/composables/useFoyer'
+import { useRepasConvives } from '~/composables/useRepasConvives'
 import { computed, ref } from 'vue'
 import { startAuthentication, startRegistration } from '@simplewebauthn/browser'
 import type { RawProposal } from '~/lib/proposals'
@@ -78,6 +79,7 @@ export function useVault() {
   const program = useProgram()
   const restTimer = useRestTimer()
   const foyer = useFoyer()
+  const repasConvives = useRepasConvives()
   const mesures = useMesures()
   const { buildSnapshot } = useSnapshot()
 
@@ -267,6 +269,7 @@ export function useVault() {
     // générique sur /foyer passe par instantané → modification → restauration
     // complète, et le composable revalide ce qu'on lui rend.
     foyer.restore(snap.foyer)
+    repasConvives.restore(snap)
   }
 
   /**

@@ -269,3 +269,44 @@ export function withFreeMeals(
   // Une journée marquée absente qui reçoit un repas ne l'est plus : on a mangé.
   return { ...day, meals, total, off: day.off && !ids.length }
 }
+
+
+/**
+ * De quelle NATURE est ce repas — et pourquoi « du dehors » ne convenait pas.
+ *
+ * Tout ce qui n'est pas un plat du catalogue était étiqueté « du dehors ». Or trois
+ * situations très différentes s'y retrouvaient, et l'étiquette n'était juste que
+ * pour l'une :
+ *
+ *  · « du dehors » — un restaurant, une invitation : des chiffres saisis de mémoire,
+ *    qu'il faut lire comme une estimation et non comme une portion pesée. C'est la
+ *    seule où l'avertissement a un sens ;
+ *  · « modifié » — la variante d'un plat qu'on connaît : 211 g de saumon au lieu de
+ *    150, sans la vinaigrette. Rien ne s'est passé dehors, et les grammages sont
+ *    aussi sûrs que ceux du catalogue puisqu'ils ont été pesés ;
+ *  · « composé » — un plat qui n'est dans aucune recette mais dont on connaît le
+ *    contenu, ligne par ligne.
+ *
+ * Étiqueter les trois « du dehors » abîmait deux choses : la confiance qu'on accorde
+ * au total du jour, et l'envie d'ouvrir la fiche — puisqu'on croyait qu'il n'y avait
+ * rien à y voir.
+ */
+export type NatureRepas = 'dehors' | 'compose' | 'modifie'
+
+export function natureRepas(meal: { base?: string, items?: unknown[] } | null | undefined): NatureRepas {
+  if (!meal?.items?.length) return 'dehors'
+  return meal.base ? 'modifie' : 'compose'
+}
+
+export const LIBELLE_NATURE: Record<NatureRepas, string> = {
+  dehors: 'du dehors',
+  compose: 'composé',
+  modifie: 'modifié',
+}
+
+/** Ce que l'étiquette veut dire, pour qui s'y arrête une seconde. */
+export const EXPLICATION_NATURE: Record<NatureRepas, string> = {
+  dehors: 'Saisi de mémoire : les chiffres sont une estimation, pas une portion pesée.',
+  compose: 'Composition connue, ingrédient par ingrédient. Touche pour la voir.',
+  modifie: 'Variante d\'un plat du catalogue, qui n\'a pas bougé. Touche pour voir la composition.',
+}

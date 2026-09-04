@@ -1,4 +1,5 @@
 import { useFoyer } from '~/composables/useFoyer'
+import { useRepasConvives } from '~/composables/useRepasConvives'
 import { useNutrition } from '~/composables/useNutrition'
 import { useProfile } from '~/composables/useProfile'
 import { useProgram } from '~/composables/useProgram'
@@ -48,6 +49,7 @@ interface Pack {
 export function useRestauration() {
   const workout = useWorkout()
   const foyer = useFoyer()
+  const repasConvives = useRepasConvives()
   const profile = useProfile()
   const nutrition = useNutrition()
   const program = useProgram()
@@ -132,7 +134,15 @@ export function useRestauration() {
     recettes: Object.keys(nutrition.library.value.recipes).length,
     menus: nutrition.menus.value.length,
     journal: workout.sessionLog().length,
-    pesees: workout.bodyWeight.value.length,
+    /*
+     * Les DEUX sources, et c'est ce qui rend le bilan lisible.
+     *
+     * On ne comptait que le journal manuel. Quelqu'un dont toutes les pesées viennent
+     * de sa balance lisait « Import réussi ✓ — 4 séances » sans un mot sur ses
+     * mesures : impossible de dire, en sortant de l'import, si elles étaient là ou
+     * perdues. Or c'est exactement le moment où il faut le savoir.
+     */
+    pesees: workout.bodyWeight.value.length + mesures.entries.value.length,
   })
 
   /** La part qui vient APRÈS `restoreData` — utile quand celui-ci a déjà été appelé
@@ -147,6 +157,7 @@ export function useRestauration() {
     // d'avant le foyer, ou trafiquée, ne doit pas aboutir à une application qui
     // cuisine pour personne.
     foyer.restore(data.foyer)
+    repasConvives.restore(data)
   }
 
   /** Tout ce qu'une sauvegarde peut contenir, remis en place. */

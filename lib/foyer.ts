@@ -103,3 +103,84 @@ export function libelleConvives(convives: Convive[]): string {
   if (actifs.length <= 1) return 'Moi seul'
   return actifs.map(c => c.nom).join(' + ')
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Qui mange CE repas-là.
+// ─────────────────────────────────────────────────────────────────────────────
+//
+// Le foyer dit qui vit là et combien chacun mange. Il ne dit pas qui est à table ce
+// soir : on cuisine pour deux le mardi, pour quatre le samedi, et un dimanche midi
+// on est seul. Un facteur unique pour toute la semaine se trompe donc tous les jours
+// sauf un.
+//
+// Chaque repas porte ses convives : des MEMBRES du foyer (dont on connaît déjà
+// l'appétit) et des INVITÉS ponctuels, qui n'ont pas à entrer dans le foyer pour un
+// dîner. Ajouter sa belle-sœur à la liste des habitants pour un samedi soir, puis
+// penser à l'en retirer, c'est le genre de ménage que personne ne fait.
+
+/** Quelqu'un qui mange une fois. Pas de nom obligatoire : « invité » suffit. */
+export interface Invite { nom: string, appetit: number }
+
+export interface ConvivesRepas {
+  /** Identifiants des membres du foyer à table. */
+  membres: string[]
+  /** Ceux qui ne sont là que ce soir. */
+  invites: Invite[]
+}
+
+/** Par défaut, ceux du foyer qui sont au repas : le réglage courant, sans surprise. */
+export const convivesParDefaut = (foyer: Convive[]): ConvivesRepas => ({
+  membres: foyer.filter(c => c.actif).map(c => c.id),
+  invites: [],
+})
+
+export function normaliserRepas(brut: unknown): ConvivesRepas | null {
+  if (!brut || typeof brut !== 'object') return null
+  const o = brut as Record<string, unknown>
+  const membres = Array.isArray(o.membres) ? o.membres.map(String).slice(0, 12) : []
+  const invites = Array.isArray(o.invites)
+    ? o.invites.slice(0, 12).map((i) => {
+        const x = (i && typeof i === 'object' ? i : {}) as Record<string, unknown>
+        return { nom: String(x.nom ?? '').trim().slice(0, 24) || 'Invité', appetit: borner(Number(x.appetit) || 1) }
+      })
+    : []
+  if (!membres.length && !invites.length) return null
+  // `MOI` est toujours à table : tout le reste de l'application compte dans SA part,
+  // et un repas dont il serait absent n'aurait ni cible, ni macros, ni sens ici.
+  return { membres: membres.includes(MOI.id) ? membres : [MOI.id, ...membres], invites }
+}
+
+/** Ce par quoi multiplier les quantités pour CE repas. */
+export function facteurRepas(repas: ConvivesRepas | null, foyer: Convive[]): number {
+  if (!repas) return facteurConvives(foyer)
+  const parId = new Map(foyer.map(c => [c.id, c]))
+  const membres = repas.membres.reduce((n, id) => n + borner(parId.get(id)?.appetit ?? 1), 0)
+  const invites = repas.invites.reduce((n, i) => n + borner(i.appetit), 0)
+  const somme = membres + invites
+  return somme > 0 ? Math.round(somme * 100) / 100 : 1
+}
+
+/**
+ * La part qui revient à MOI, entre 0 et 1 — ce qu'on met dans son assiette.
+ *
+ * C'est la question que la fiche ne répondait pas. Elle affichait les quantités à
+ * peser pour tout le monde et annonçait des macros « pour ta part », sans jamais
+ * dire quelle fraction de la casserole c'était. On cuisine 1,6 portion et on sert à
+ * vue — c'est-à-dire qu'on mange autre chose que ce que l'application compte.
+ */
+export function partDeMoi(repas: ConvivesRepas | null, foyer: Convive[]): number {
+  const facteur = facteurRepas(repas, foyer)
+  const moi = foyer.find(c => c.id === MOI.id)?.appetit ?? 1
+  return facteur > 0 ? Math.min(1, borner(moi) / facteur) : 1
+}
+
+/** « Moi + Camille + 2 invités ». Ce qu'on écrit en tête de la fiche. */
+export function libelleRepas(repas: ConvivesRepas | null, foyer: Convive[]): string {
+  if (!repas) return libelleConvives(foyer)
+  const noms = repas.membres
+    .map(id => foyer.find(c => c.id === id)?.nom)
+    .filter((n): n is string => !!n)
+  const n = repas.invites.length
+  const bouts = [...noms, ...(n ? [`${n} invité${n > 1 ? 's' : ''}`] : [])]
+  return bouts.length <= 1 ? 'Moi seul' : bouts.join(' + ')
+}

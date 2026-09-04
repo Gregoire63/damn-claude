@@ -2,7 +2,9 @@
 import { computed, ref } from 'vue'
 import { useFoyer } from '~/composables/useFoyer'
 import { useNutrition } from '~/composables/useNutrition'
-import { pourConvives } from '~/lib/foyer'
+import type { ConvivesRepas } from '~/lib/foyer'
+import { convivesParDefaut, facteurRepas, libelleRepas, partDeMoi, pourConvives } from '~/lib/foyer'
+import { useRepasConvives } from '~/composables/useRepasConvives'
 import { FAT_STEPS, expandItems, keepsOf, macrosOf, rebalanceDairy, roundMacros, splitIngredients } from '~/lib/nutritionStats'
 import { cookedWeight } from '~/lib/cooked'
 
@@ -13,7 +15,15 @@ import { cookedWeight } from '~/lib/cooked'
 // bibliothèque ne s'ouvraient pas du tout : on lisait trois lignes d'ingrédients
 // tronquées et il fallait passer par le bouton « modifier » pour voir la recette —
 // c'est-à-dire ouvrir un formulaire d'édition pour lire un mode d'emploi.
-const props = defineProps<{ id: string }>()
+/**
+ * `date` et `slot` sont facultatifs, et c'est ce qui distingue deux lectures.
+ *
+ * Ouverte depuis une JOURNÉE, la fiche sait quel repas on prépare : les convives
+ * s'enregistrent pour ce repas-là, et un invité ajouté ce soir ne suit pas la
+ * recette pour toujours. Ouverte depuis le catalogue, elle n'a aucun repas sous la
+ * main : elle montre alors le foyer courant, sans rien retenir.
+ */
+const props = defineProps<{ id: string, date?: string, slot?: string }>()
 const emit = defineEmits<{ close: [] }>()
 
 const { cookedRatios, library, setFatPct, fatPct, dairyFoods } = useNutrition()
@@ -54,8 +64,97 @@ const keeps = computed(() => (recipe.value ? keepsOf(recipe.value, library.value
  * Le poids cuit suit les grammages : c'est le même aliment, pesé pour tout le monde.
  */
 const foyer = useFoyer()
-const facteur = computed(() => foyer.facteur.value)
+const repasConvives = useRepasConvives()
+
+/** Le repas préparé, quand on vient d'une journée. Sinon : pas de repas, pas d'enregistrement. */
+const ancre = computed(() => (props.date && props.slot ? { date: props.date, slot: props.slot } : null))
+const convives = computed<ConvivesRepas>(() => (ancre.value
+  ? repasConvives.pour(ancre.value.date, ancre.value.slot)
+  : convivesParDefaut(foyer.convives.value)))
+
+const facteur = computed(() => facteurRepas(convives.value, foyer.convives.value))
 const pese = (g: number) => pourConvives(g, facteur.value)
+
+/** Ce qui revient à MOI dans la casserole, entre 0 et 1. */
+const maPart = computed(() => partDeMoi(convives.value, foyer.convives.value))
+const libelle = computed(() => libelleRepas(convives.value, foyer.convives.value))
+
+function majConvives(c: ConvivesRepas) {
+  if (ancre.value) { repasConvives.definir(ancre.value.date, ancre.value.slot, c); return }
+  /*
+   * Hors d'une journée, il n'y a aucun repas à annoter : on règle le foyer lui-même,
+   * ce que faisait déjà la fiche ouverte depuis le catalogue. Un invité, lui, n'a
+   * nulle part où aller — son bouton ne s'affiche donc pas dans ce cas, plutôt que
+   * d'accepter un geste sans effet.
+   */
+  for (const m of foyer.convives.value) {
+    if (m.id === 'moi') continue
+    foyer.modifier(m.id, { actif: c.membres.includes(m.id) })
+  }
+}
+
+function basculerMembre(id: string) {
+  if (id === 'moi') return
+  const c = convives.value
+  majConvives(c.membres.includes(id)
+    ? { ...c, membres: c.membres.filter(m => m !== id) }
+    : { ...c, membres: [...c.membres, id] })
+}
+
+/** Un invité de ce soir : un appétit, un nom facultatif, et rien dans le foyer. */
+const nouvelInvite = ref({ nom: '', appetit: 1 })
+const ajoutInvite = ref(false)
+function ajouterInvite() {
+  const c = convives.value
+  majConvives({ ...c, invites: [...c.invites, { nom: nouvelInvite.value.nom.trim() || 'Invité', appetit: nouvelInvite.value.appetit }] })
+  nouvelInvite.value = { nom: '', appetit: 1 }
+  ajoutInvite.value = false
+}
+function retirerInvite(i: number) {
+  const c = convives.value
+  majConvives({ ...c, invites: c.invites.filter((_, n) => n !== i) })
+}
+
+/**
+ * Ce qu'on met dans SON assiette, en poids CUIT.
+ *
+ * On pèse cru pour cuisiner — c'est la référence des macros — mais on sert cuit :
+ * le riz a doublé, la viande a perdu un quart. Annoncer une part en poids cru
+ * obligerait à faire la conversion de tête, une louche à la main.
+ *
+ * Le total est la somme des ingrédients dont on connaît le poids cuit ; ceux qu'on
+ * ne sait pas convertir sont comptés tels quels plutôt qu'oubliés — mieux vaut une
+ * somme franche qu'un total qui ment par omission.
+ */
+const monAssiette = computed(() => {
+  const lignes = [...split.value.dish, ...split.value.sauce].map((l) => {
+    const total = pese(l.total)
+    const c = cuit(l.food, l.total)
+    const cuitTotal = c === null ? total : pese(c)
+    return {
+      food: l.food,
+      nom: dairy(l.food) ? dairyName(l.food) : foodName(l.food),
+      grammes: Math.round(cuitTotal * maPart.value),
+      estime: c === null,
+    }
+  }).filter(l => l.grammes > 0)
+  /*
+   * « Cuit » n'est vrai que si quelque chose cuit.
+   *
+   * Un bol de fromage blanc n'a aucun ingrédient qui change à la cuisson : annoncer
+   * « g cuit » y serait faux, et répéter « poids cru » sur chacune des cinq lignes
+   * ne fait que du bruit. On le dit une fois, en tête, et les mentions par ligne ne
+   * servent plus que dans le cas MIXTE — un plat où le riz est converti et l'huile
+   * ne l'est pas.
+   */
+  const converti = lignes.some(l => !l.estime)
+  return {
+    lignes: lignes.map(l => ({ ...l, estime: l.estime && converti })),
+    total: lignes.reduce((n, l) => n + l.grammes, 0),
+    cuit: converti,
+  }
+})
+const detailAssiette = ref(false)
 
 /**
  * Les ingrédients, en DEUX listes titrées : le plat, puis le pot.
@@ -142,22 +241,71 @@ const openFat = ref<string | null>(null)
           La barre ne s'affiche que si le foyer compte quelqu'un d'autre : pour qui
           cuisine seul, cette notion n'existe pas et n'a pas à occuper une ligne.
         -->
-        <div v-if="foyer.convives.value.length > 1" class="rs-convives">
+        <div class="rs-convives">
           <button
             v-for="c in foyer.convives.value" :key="c.id"
-            class="rs-conv" :class="{ on: c.actif, fige: c.id === 'moi' }"
+            class="rs-conv" :class="{ on: convives.membres.includes(c.id), fige: c.id === 'moi' }"
             :disabled="c.id === 'moi'"
-            :aria-pressed="c.actif"
-            @click="foyer.modifier(c.id, { actif: !c.actif })"
+            :aria-pressed="convives.membres.includes(c.id)"
+            @click="basculerMembre(c.id)"
           >
             {{ c.nom }}<span v-if="c.id !== 'moi'" class="mono rs-conv-p">{{ Math.round(c.appetit * 100) }}%</span>
           </button>
+          <!-- Un invité ne rentre pas dans le foyer pour un dîner : on l'ajoute ici,
+               il repart avec le repas. Le bouton n'apparaît que si l'on prépare un
+               repas identifié — sinon il n'y aurait nulle part où le ranger. -->
+          <button
+            v-for="(i, n) in convives.invites" :key="`i${n}`"
+            class="rs-conv on rs-invite" @click="retirerInvite(n)"
+          >
+            {{ i.nom }}<span class="mono rs-conv-p">{{ Math.round(i.appetit * 100) }}%</span> ✕
+          </button>
+          <button v-if="ancre && !ajoutInvite" class="rs-conv rs-plus" @click="ajoutInvite = true">+ invité</button>
           <span v-if="facteur !== 1" class="mono rs-facteur">×{{ facteur.toFixed(2).replace(/[.,]?0+$/, '').replace('.', ',') }}</span>
+        </div>
+
+        <div v-if="ajoutInvite" class="rs-ajout">
+          <input v-model="nouvelInvite.nom" class="note-input flex-1" placeholder="Prénom (facultatif)" maxlength="24">
+          <div class="fo-appetit">
+            <button class="btn fo-pm" aria-label="Moins" @click="nouvelInvite.appetit = Math.max(0.1, Math.round((nouvelInvite.appetit - 0.1) * 100) / 100)">−</button>
+            <span class="fo-part mono">{{ Math.round(nouvelInvite.appetit * 100) }} %</span>
+            <button class="btn fo-pm" aria-label="Plus" @click="nouvelInvite.appetit = Math.min(3, Math.round((nouvelInvite.appetit + 0.1) * 100) / 100)">+</button>
+          </div>
+          <button class="btn-primary" @click="ajouterInvite">Ajouter</button>
+        </div>
+
+        <!--
+          Ce qu'on met dans SON assiette, et pourquoi c'est en poids CUIT.
+
+          On pèse cru pour cuisiner — c'est la référence des macros — mais on sert
+          cuit : le riz a doublé, la viande a perdu un quart. Une part annoncée en
+          poids cru obligerait à faire la conversion de tête, une louche à la main.
+
+          Sans ce bloc, la fiche donnait les quantités pour tout le monde et des
+          macros « pour ta part » sans jamais dire quelle fraction de la casserole
+          c'était : on servait à vue, donc on mangeait autre chose que ce que
+          l'application comptait.
+        -->
+        <div v-if="maPart < 1 && monAssiette.total" class="rs-assiette">
+          <button class="rs-assiette-h" @click="detailAssiette = !detailAssiette">
+            <span>
+              <b>Dans ton assiette</b>
+              <span class="muted"> · {{ Math.round(maPart * 100) }} % du plat</span>
+            </span>
+            <span class="mono rs-assiette-t">≈ {{ monAssiette.total }} g{{ monAssiette.cuit ? ' cuit' : '' }}</span>
+            <span class="rs-assiette-c" aria-hidden="true">{{ detailAssiette ? '▲' : '▼' }}</span>
+          </button>
+          <ul v-if="detailAssiette" class="rs-items rs-assiette-l">
+            <li v-for="l in monAssiette.lignes" :key="l.food" class="rs-item">
+              <span class="rs-q mono">{{ l.grammes }} g</span>
+              <span class="rs-n">{{ l.nom }}<span v-if="l.estime" class="muted"> · poids cru, cuisson inconnue</span></span>
+            </li>
+          </ul>
         </div>
 
         <div class="section-label">
           {{ sauce ? 'Pour le plat' : 'Ingrédients' }}
-          <span v-if="facteur !== 1" class="muted">· pour {{ foyer.libelle.value.toLowerCase() }}</span>
+          <span v-if="facteur !== 1" class="muted">· pour {{ libelle.toLowerCase() }}</span>
         </div>
         <ul class="rs-items">
           <li v-for="l in split.dish" :key="l.food" class="rs-item">
