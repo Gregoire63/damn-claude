@@ -443,7 +443,25 @@ function creer() {
     if (draftSwap[exId]) delete draftSwap[exId]
     else draftSwap[exId] = true
   }
-  function addSet(exId: string) { const rows = draft[exId]; const lastW = [...rows].reverse().find(s => !s.warm); rows.push({ w: lastW?.w ?? '', r: '', done: false, warm: false, w2: lastW?.w2 ?? '', r2: '' }) }
+  /**
+   * Une série ajoutée repart de la DERNIÈRE SÉRIE VALIDÉE — charge ET répétitions.
+   *
+   * Elle ne reprenait que la charge, et les reps restaient vides. En double
+   * progression on refait le même nombre de reps série après série jusqu'à toucher
+   * le haut de la fourchette : le champ à re-saisir portait donc, neuf fois sur dix,
+   * le chiffre qu'on venait déjà de taper. À la barre, une main sur le téléphone.
+   *
+   * On vise la dernière série COCHÉE, pas la dernière ligne : la ligne du bas peut
+   * être une série ajoutée puis abandonnée, restée à moitié remplie. Repli sur la
+   * dernière ligne de travail quand rien n'est encore validé — au début de
+   * l'exercice, c'est ce qui reprend la charge de la séance précédente.
+   */
+  function addSet(exId: string) {
+    const rows = draft[exId]
+    const work = [...rows].reverse().filter(s => !s.warm)
+    const src = work.find(s => s.done) ?? work[0]
+    rows.push({ w: src?.w ?? '', r: src?.r ?? '', done: false, warm: false, w2: src?.w2 ?? '', r2: src?.r2 ?? '' })
+  }
   function addWarmup(exId: string) { const wu = warmupFor(exId); draft[exId].unshift({ w: wu !== null ? String(wu) : '', r: '', done: false, warm: true, w2: '', r2: '' }) }
   function removeSet(exId: string, i: number) { if (draft[exId].length > 1) draft[exId].splice(i, 1) }
   // Libellé : « Éch » pour l'échauffement, sinon numéro de série de travail

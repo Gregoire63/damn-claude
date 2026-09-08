@@ -76,6 +76,7 @@ describe('l’aller-retour de sauvegarde', () => {
     const profil = lire('useProfile.ts')
     const mesures = lire('useMesures.ts')
     const timer = lire('useRestTimer.ts')
+    const fractionne = lire('useFractionne.ts')
     const programme = lire('useProgram.ts')
 
     /**
@@ -101,6 +102,7 @@ describe('l’aller-retour de sauvegarde', () => {
     const SOURCES: Record<string, string> = {
       'useNutrition.ts': nutrition, 'useWorkout.ts': workout, 'useProfile.ts': profil,
       'useMesures.ts': mesures, 'useRestTimer.ts': timer, 'useProgram.ts': programme,
+      'useFractionne.ts': fractionne,
     }
 
     /**
