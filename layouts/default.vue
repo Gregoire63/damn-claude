@@ -8,6 +8,7 @@ import { fmtRest, restFor } from '~/lib/rest'
 import { EFFORT_OPTIONS } from '~/utils/sportStats'
 import { exMuscles } from '~/lib/muscles'
 import { isoOf } from '~/utils/sportStats'
+import { fmtDuree } from '~/lib/fractionne'
 import { useSeance } from '~/composables/useSeance'
 import { useFlash } from '~/composables/useFlash'
 import { useJour } from '~/composables/useJour'
@@ -90,6 +91,32 @@ const {
   overloadHint, isDumbbell, seanceWeight, lestOf, setLest, totalOf, derniere,
   ratioFor, restLeft, restFmt, addRest, stopRest,
 } = s
+
+/**
+ * Le fractionné fini, son journal s'écrit tout seul.
+ *
+ * Le chrono est le seul à connaître le compte exact — six sprints de trente
+ * secondes, pas « cinq ou six, je crois ». Attendre qu'on le retape, essoufflé,
+ * c'est la garantie d'un journal approximatif ou vide, et le suivi de vitesse
+ * s'appuie dessus.
+ *
+ * On n'ÉCRASE rien : les lignes déjà remplies à la main restent, seules les lignes
+ * vierges (celles que le formulaire crée par défaut) cèdent la place. Et l'intensité
+ * est laissée vide — le chrono ne sait pas à quelle vitesse on a couru.
+ */
+function remplirSprint(b: { sprints: number, sprintS: number, echauffementS: number }) {
+  // « Vide » se juge sur la durée et l'intensité, PAS sur le compte : la ligne que le
+  // formulaire crée par défaut porte déjà « 1 ». La tester sur les trois champs
+  // laissait donc traîner un échauffement fantôme au-dessus de celui du chrono.
+  const vide = (r: { duration: string, intensity: string }) => !r.duration.trim() && !r.intensity.trim()
+  const gardees = sprintDraft.value.filter(r => !vide(r))
+  const ajout: typeof sprintDraft.value = []
+  if (b.echauffementS > 0) ajout.push({ kind: 'echauffement', count: '1', duration: fmtDuree(b.echauffementS), intensity: '' })
+  ajout.push({ kind: 'sprint', count: String(b.sprints), duration: `${b.sprintS} s`, intensity: '' })
+  sprintDraft.value = [...gardees, ...ajout]
+  sprintOpen.value = true
+  showFlash(`Fractionné terminé — ${b.sprints} × ${b.sprintS} s inscrits`, 'ok')
+}
 
 /**
  * Le glissement latéral change d'onglet.
@@ -706,6 +733,9 @@ onUnmounted(() => {
               </div>
               <div class="sprint-cooldown">🧊 Retour au calme — {{ activeSession.sprint.cooldown }}</div>
             </div>
+
+            <!-- Le chrono qui enchaîne les phases, annoncées à la voix -->
+            <SportFractionne @termine="remplirSprint" />
 
             <!-- Saisie : ce que tu as réellement couru -->
             <div class="sprint-log">

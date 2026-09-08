@@ -51,7 +51,7 @@ export const VIBRATION_OPTIONS = [
 function vibratePattern(): number[] { return VIBRATION_LEVELS[vibrationLevel.value] ?? VIBRATION_LEVELS.strong }
 
 // Motifs sonores générés à la volée (WebAudio) : { fréquence, départ, durée… }
-interface ToneSpec { f: number; t: number; d: number; type?: OscillatorType; peak?: number }
+export interface ToneSpec { f: number; t: number; d: number; type?: OscillatorType; peak?: number }
 const SOUNDS: Record<string, ToneSpec[]> = {
   bip: [{ f: 880, t: 0, d: 0.22 }, { f: 880, t: 0.28, d: 0.22 }],
   triple: [{ f: 1047, t: 0, d: 0.12 }, { f: 1047, t: 0.16, d: 0.12 }, { f: 1047, t: 0.32, d: 0.16 }],
@@ -146,6 +146,36 @@ function playTones(ctx: AudioContext, vol: number, tones: ToneSpec[]) {
   }
 }
 
+/**
+ * La chaîne audio est partagée avec le fractionné, et c'est délibéré.
+ *
+ * Ce qui rend ces bips audibles dans une salle n'est pas la fréquence, c'est la
+ * saturation + le limiteur au-dessus (`getMasterInput`). Un second moteur audio
+ * écrit à côté redonnerait un sinus propre à 20 % du volume perçu — et personne ne
+ * dirait « le moteur audio est différent », on dirait « le bip du sprint est trop
+ * faible », ce qui n'oriente vers rien.
+ *
+ * Le fractionné apporte ses propres MOTIFS ; il n'apporte pas son propre son.
+ */
+export function sonner(tones: ToneSpec[], volume?: number) {
+  if (!import.meta.client || !soundEnabled.value) return
+  const ctx = getCtx()
+  if (!ctx) return
+  try { playTones(ctx, volume ?? soundVolume.value, tones) } catch { /* audio indisponible */ }
+}
+
+/** Débloque l'audio depuis un tap (obligatoire sur iOS) — même geste que le repos. */
+export function debloquerAudio() { unlockAudio() }
+
+/** Réserve (ou rend) la piste inaudible qui empêche Chrome Android de geler l'onglet. */
+export function veilleAudio(actif: boolean) { actif ? startKeepAlive() : stopKeepAlive() }
+
+/** Le motif de vibration choisi dans les réglages, pour qui veut vibrer sans bip. */
+export function motifVibration(): number[] { return vibratePattern() }
+
+/** Le son est-il autorisé ? Le fractionné lit le MÊME interrupteur que le repos. */
+export function sonAutorise(): boolean { return soundEnabled.value }
+
 // ─── Audio « keep-alive » ───────────────────────────────────────────────────
 // Un onglet en arrière-plan voit ses timers gelés par Chrome Android… sauf s'il
 // joue de l'audio. On boucle donc une piste quasi-inaudible pendant le repos :
@@ -159,12 +189,23 @@ function ensureKeepAlive(): HTMLAudioElement | null {
   }
   return keepAlive
 }
+/**
+ * Deux minuteurs peuvent réclamer la veille — le repos entre séries et le
+ * fractionné — et le second à s'arrêter ne doit pas couper la piste du premier.
+ * D'où un COMPTEUR plutôt qu'un booléen : `stopKeepAlive` ne met en pause qu'une
+ * fois le dernier demandeur parti. Sans lui, terminer un fractionné pendant qu'un
+ * repos tourne gelait le repos en arrière-plan, et son bip ne sonnait jamais.
+ */
+let veilleurs = 0
 function startKeepAlive() {
+  veilleurs++
   const a = ensureKeepAlive()
   if (!a) return
   try { a.currentTime = 0; const p = a.play(); if (p && typeof p.catch === 'function') p.catch(() => {}) } catch { /* ignore */ }
 }
 function stopKeepAlive() {
+  veilleurs = Math.max(0, veilleurs - 1)
+  if (veilleurs > 0) return
   if (keepAlive) { try { keepAlive.pause() } catch { /* ignore */ } }
 }
 

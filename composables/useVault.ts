@@ -11,6 +11,7 @@ import { useWorkout } from '~/composables/useWorkout'
 import { useProfile } from '~/composables/useProfile'
 import { useProgram } from '~/composables/useProgram'
 import { useRestTimer } from '~/composables/useRestTimer'
+import { useFractionne } from '~/composables/useFractionne'
 import { useMesures } from '~/composables/useMesures'
 import { useSnapshot } from '~/composables/useSnapshot'
 import { createAt, pushAt, removeAt, setAt as setPointer } from '~/lib/pointer'
@@ -78,6 +79,7 @@ export function useVault() {
   const profileStore = useProfile()
   const program = useProgram()
   const restTimer = useRestTimer()
+  const fractionne = useFractionne()
   const foyer = useFoyer()
   const repasConvives = useRepasConvives()
   const mesures = useMesures()
@@ -265,6 +267,7 @@ export function useVault() {
     mesures.restore(snap as never)
     program.restore(snap)
     restTimer.restore(snap)
+    fractionne.restore(snap)
     // C'est CE chemin qui rend le foyer modifiable par une proposition : une écriture
     // générique sur /foyer passe par instantané → modification → restauration
     // complète, et le composable revalide ce qu'on lui rend.

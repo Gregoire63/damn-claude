@@ -3,6 +3,7 @@ import { useProfile } from '~/composables/useProfile'
 import { useNutrition } from '~/composables/useNutrition'
 import { useMesures } from '~/composables/useMesures'
 import { useRestTimer } from '~/composables/useRestTimer'
+import { useFractionne } from '~/composables/useFractionne'
 import { useFoyer } from '~/composables/useFoyer'
 import { useProgram } from '~/composables/useProgram'
 import { useRepasConvives } from '~/composables/useRepasConvives'
@@ -27,6 +28,7 @@ export function useSnapshot() {
   const { exportData } = useNutrition()
   const { snapshot: mesuresData } = useMesures()
   const { snapshot: timerData } = useRestTimer()
+  const { snapshot: fractionneData } = useFractionne()
   const { snapshot: programData } = useProgram()
   const foyer = useFoyer()
   const repasConvives = useRepasConvives()
@@ -42,6 +44,7 @@ export function useSnapshot() {
       nutrition: exportData(),
       ...mesuresData(),
       ...timerData(),
+      ...fractionneData(),
       ...programData(),
       /*
        * Le foyer part avec le reste, et ça débloque deux choses d'un coup.

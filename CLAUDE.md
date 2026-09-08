@@ -98,8 +98,8 @@ error.vue                404 et erreurs serveur
 lib/onglets.ts           les cinq onglets : chemin, libellé, titre (AUCUN import)
 components/sport/        écrans du suivi d'entraînement
 components/nutrition/    écrans du module nutrition
-composables/             l'état, persisté dans localStorage (24 fichiers, pas de Pinia)
-lib/                     logique pure — aucun DOM, aucun stockage, testée (18 fichiers)
+composables/             l'état, persisté dans localStorage (29 fichiers, pas de Pinia)
+lib/                     logique pure — aucun DOM, aucun stockage, testée (23 fichiers)
 utils/                   auto-importé par Nuxt : uniquement du vocabulaire spécifique
 data/                    types et tables de référence — les contenus sont VIDES
 data/exemple/            le pack d'exemple → public/exemple.json
@@ -177,6 +177,15 @@ cochée survit à un import qui a tout remplacé. Seules les décisions de repor
 sexe et année de naissance il n'y a pas de métabolisme de base, donc pas de cible
 calorique. `rejouer()` efface ces reports et rouvre le parcours — Profil →
 Installation ; rien de fait n'est défait.
+
+**Un minuteur ne décrémente pas, il lit l'heure.** Le repos entre séries
+(`useRestTimer`) et le fractionné (`useFractionne`) retiennent une heure de FIN
+absolue et en déduisent l'affichage à chaque battement. Chrome Android gèle un onglet
+en arrière-plan : un compteur qui soustrait une seconde par battement reprend avec
+tout le retard accumulé, et sur un bloc de six sprints le décalage devient une phase
+entière. Les deux partagent aussi leur chaîne audio — saturation puis limiteur, c'est
+elle qui rend le bip audible en salle. Un second moteur audio écrit à côté ne se
+signalerait pas comme tel : on dirait « le bip du sprint est trop faible ».
 
 **Une seule liste de connecteurs, affichée deux fois.** `components/sport/Sources.vue`
 sert le parcours (`compact`) et les réglages (dépliable), à partir de `/api/sources`,
@@ -270,7 +279,7 @@ Deux invariants tenus par des tests :
 
 ## Les tests
 
-1063 tests, 48 fichiers, deux projets. La plupart tournent sur le **pack d'exemple**,
+1246 tests, 69 fichiers, deux projets. La plupart tournent sur le **pack d'exemple**,
 déclaré fichier par fichier (`vi.mock('../../data/nutritionProgram', …)`, voir
 `test/exemple.ts`) : vérifier que la modulation des féculents ne touche pas aux
 protéines demande des aliments aux vraies macros, pas trois objets fabriqués.
