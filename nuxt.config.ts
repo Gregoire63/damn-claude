@@ -212,8 +212,24 @@ export default defineNuxtConfig({
       ],
       link: [
         { rel: 'manifest', href: '/manifest.webmanifest' },
-        { rel: 'icon', type: 'image/png', href: '/icon-192.png' },
-        { rel: 'apple-touch-icon', href: '/icon-192.png' },
+        /*
+         * `/favicon.ico` À LA RACINE, et ce n'est pas de la nostalgie.
+         *
+         * Le site n'en servait aucun : l'en-tête ne déclarait qu'un PNG, ce qui
+         * suffit aux navigateurs. Mais tout ce qui n'est PAS un navigateur — un
+         * client MCP qui affiche une vignette de connecteur, un agrégateur, un
+         * aperçu de lien — demande `/favicon.ico` sans lire la page, ne trouve rien,
+         * et se rabat sur le domaine parent. D'où l'ancien logo du CV en face du
+         * connecteur : c'était le favicon de gregoire-raturat.fr.
+         *
+         * Les PNG restent déclarés pour les navigateurs, qui les préfèrent.
+         */
+        { rel: 'icon', href: '/favicon.ico', sizes: '48x48' },
+        { rel: 'icon', type: 'image/png', sizes: '96x96', href: '/favicon-96.png' },
+        { rel: 'icon', type: 'image/png', sizes: '192x192', href: '/icon-192.png' },
+        // iOS ne compose pas la transparence sur l'écran d'accueil : elle devient
+        // noire. Cette icône-ci a donc un fond crème, celui de l'application.
+        { rel: 'apple-touch-icon', href: '/apple-touch-icon.png' },
       ],
     },
   },
