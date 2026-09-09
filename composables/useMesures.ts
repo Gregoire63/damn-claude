@@ -51,6 +51,28 @@ export function useMesures() {
   }
 
   /**
+   * Toute écriture relit d'abord le stockage. Ce n'est pas une précaution : c'est
+   * la réparation d'une perte de données silencieuse.
+   *
+   * Ces fonctions fusionnent avec `entries.value` puis réécrivent la clé ENTIÈRE.
+   * Sur un composable jamais hydraté, `entries.value` vaut `[]` — la fusion ne
+   * conserve donc rien, et deux ans de pesées sont remplacés par celle du matin.
+   *
+   * Ce n'était pas théorique : la coque lance `autoSyncTout()` au montage, avant
+   * qu'aucun écran n'ait demandé les mesures. Il suffisait que la balance ait une
+   * pesée neuve à donner — c'est-à-dire n'importe quel matin — pour que l'historique
+   * parte. Le défaut se cachait derrière ses deux échappatoires : `adopt` sort tout
+   * de suite sur une liste vide (un jour sans pesée ne montrait rien), et l'écran
+   * Progrès hydrate avant de synchroniser (y passer une fois réparait l'ouverture
+   * suivante).
+   *
+   * D'où la garde ICI plutôt que chez les appelants : un composable qui écrase son
+   * propre stockage selon qui l'a appelé en premier est un piège, et le prochain
+   * chemin d'écriture retomberait dedans.
+   */
+  const assure = () => hydrate()
+
+  /**
    * Le poids se saisissait autrefois dans l'onglet Profil, dans son propre stockage.
    * Deux historiques du même chiffre, c'était une pesée notée à un endroit et absente
    * de l'autre. On absorbe l'ancien une seule fois, en saisie manuelle, sans écraser
@@ -109,6 +131,7 @@ export function useMesures() {
    */
   function adopt(nouvelles: BodyEntry[]): number {
     if (!nouvelles?.length) return 0
+    assure()
     const avant = entries.value.length
     entries.value = mergeEntries(entries.value, nouvelles)
     write(BODY_KEY, entries.value)
@@ -126,6 +149,7 @@ export function useMesures() {
    */
   function addManual(kg: number, date: string, at?: string, fatRatio?: number | null) {
     if (!(kg > 0)) return
+    assure()
     const stamp = at || `${date}T07:00`
     const entry: BodyEntry = { date, at: stamp, kg: Math.round(kg * 100) / 100, source: 'manual' }
     if (typeof fatRatio === 'number' && fatRatio >= 3 && fatRatio <= 70) {
@@ -139,6 +163,7 @@ export function useMesures() {
   }
 
   function removeEntry(at: string) {
+    assure()
     entries.value = entries.value.filter(e => e.at !== at)
     write(BODY_KEY, entries.value)
     mirror()
@@ -150,6 +175,7 @@ export function useMesures() {
    * rapide deviendrait insupportable à valider tous les jours.
    */
   function confirmEntry(at: string) {
+    assure()
     entries.value = entries.value.map(e => (e.at === at ? { ...e, confirmed: true, suspect: false } : e))
     write(BODY_KEY, entries.value)
     mirror()
@@ -238,6 +264,10 @@ export function useMesures() {
       entries.value = mergeEntries([], data.withingsBody as BodyEntry[])
       write(BODY_KEY, entries.value)
       mirror()
+      // Un import REMPLACE, c'est son contrat — mais il vaut hydratation : sans ce
+      // drapeau, un `hydrate()` plus tard dans la même session relirait le stockage
+      // par-dessus ce qu'on vient de poser.
+      hydrated = true
     }
   }
 

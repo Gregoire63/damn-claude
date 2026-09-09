@@ -198,19 +198,31 @@ const aConfigurer = ref<Fiche | null>(null)
               </button>
               <template v-else>
                 <button class="btn flex-1" :disabled="useConnecteur(c.id).occupe.value" @click="synchroniser(c)">↻ Synchroniser</button>
-                <!-- Le geste des grands jours : arriver d'une autre application, ou
-                     repartir d'un navigateur vidé. Il remonte à l'origine du compte
-                     là où « Synchroniser » ne fait que reprendre au curseur. -->
-                <button class="btn flex-1" :disabled="useConnecteur(c.id).occupe.value" @click="synchroniser(c, true)">⇩ Tout récupérer</button>
                 <button class="btn flex-1" @click="deconnecter(c)">Déconnecter</button>
               </template>
             </div>
-            <p v-if="branche(c.id)" class="muted">
-              « Synchroniser » ne rapporte que ce qui a bougé depuis la dernière fois.
-              « Tout récupérer » remonte à l'origine du compte — utile une fois, en
-              arrivant d'une autre application. La déconnexion ne supprime aucune
-              mesure déjà récupérée.
-            </p>
+            <template v-if="branche(c.id)">
+              <p class="muted">
+                Les nouvelles mesures arrivent toutes seules à chaque ouverture de
+                l'application. « Synchroniser » ne sert qu'à ne pas attendre.
+              </p>
+              <!-- Sorti de la rangée du dessus, et pas par goût de la mise en page.
+                   Les trois boutons alignés se lisaient comme trois variantes du même
+                   geste : on ne voyait pas que celui-ci ne se fait qu'une fois dans la
+                   vie du compte, et on cherchait lequel des deux prendre chaque matin. -->
+              <div class="nav-row mt-6">
+                <button class="btn flex-1" :disabled="useConnecteur(c.id).occupe.value" @click="synchroniser(c, true)">
+                  ⇩ Récupérer tout l'historique
+                </button>
+              </div>
+              <p class="muted">
+                Remonte à ta toute première pesée, au lieu de reprendre là où la
+                dernière synchronisation s'était arrêtée. À faire une fois, en arrivant
+                d'une autre application ou après avoir vidé ce navigateur — ensuite la
+                synchronisation suffit. Déconnecter ne supprime aucune mesure déjà
+                récupérée.
+              </p>
+            </template>
             <!-- D'où viennent ses identifiants, et comment les retirer. -->
                         <SportConnecteurConfig :marque="c" @flash="relais" @change="chargerSources()" />
           </template>

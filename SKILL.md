@@ -100,9 +100,10 @@ cible-en une). `etat` existe encore mais `bilan` le contient.
 **Les mesures de sa balance** — `poids` rend pesées et composition corporelle. Elles
 arrivent d'un connecteur (Withings, Fitbit, Polar, Oura) qui se synchronise tout seul
 à l'ouverture de l'app. S'il lui manque de l'historique, ne lui propose pas de
-réimporter un fichier : l'app a un bouton **« ⇩ Tout récupérer »** dans Réglages →
-connecteurs, qui remonte à l'origine de son compte. « Synchroniser » ne rapporte que
-ce qui a bougé depuis la dernière fois.
+réimporter un fichier : l'app a un bouton **« ⇩ Récupérer tout l'historique »** dans
+Profil → Connecteurs, qui remonte à sa toute première pesée. « Synchroniser » ne
+rapporte que ce qui a bougé depuis la dernière fois — et se fait de toute façon tout
+seul à chaque ouverture.
 
 **Lire les références** — `plats` (le catalogue : identifiants, noms, type de
 créneau, conservation), **`recette`** (le contenu RÉEL d'un plat : ingrédients,

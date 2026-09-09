@@ -19,6 +19,7 @@ import { usePhotos } from '~/composables/usePhotos'
 import { useNutrition } from '~/composables/useNutrition'
 import { useVault } from '~/composables/useVault'
 import { useDemarrage } from '~/composables/useDemarrage'
+import { useMesures } from '~/composables/useMesures'
 import { useSnapshot } from '~/composables/useSnapshot'
 import { useWorkout } from '~/composables/useWorkout'
 import { useBackGuard } from '~/composables/useBackGuard'
@@ -312,6 +313,15 @@ onMounted(() => {
   // et c'est bien l'onglet restauré qu'on doit retrouver en la repliant.
   restoreDraft() // rouvre la séance en cours après un refresh accidentel
   reprendreConnexions()
+  // Les mesures AVANT la synchronisation, et ce n'est pas de l'ordre pour l'ordre.
+  //
+  // Deux raisons, dont une qui a coûté un historique. La synchro écrit dans le
+  // journal des pesées ; le composable protège désormais son propre stockage, mais
+  // l'hydrater ici lui évite de le faire dans l'urgence. Et surtout : `bodyComp` en
+  // sort, or c'est lui qui calcule la cible protéique sur la masse maigre. Non
+  // hydraté, il rend `null`, la cible retombe sur le poids total et se trouve
+  // surestimée — sur le premier écran, avant qu'on ait visité Progrès.
+  useMesures().hydrate()
   // Les pas de la balance à l'OUVERTURE de l'app, plus seulement en visitant le
   // Rapport. Tant que c'était accroché à cet écran, la cible du jour tournait sur une
   // estimation forfaitaire pour qui n'y allait jamais — et c'est justement la cible

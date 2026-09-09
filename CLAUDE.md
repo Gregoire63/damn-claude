@@ -88,6 +88,18 @@ valeur dans les fichiers servis.
 Un dépôt public garde tout dans son historique : effacer le fichier ne répare rien,
 seule la régénération des clés répare.
 
+**Un composable qui fusionne puis réécrit sa clé doit s'hydrater LUI-MÊME.** Le
+motif est partout ici : `entries.value = merge(entries.value, neuf)` puis
+`write(CLE, entries.value)`. Sur un composable jamais hydraté, la partie gauche vaut
+`[]` — la fusion ne conserve rien et l'écriture remplace tout le stockage par ce qui
+vient d'arriver. C'est ce qui effaçait l'historique de pesées : la coque lance
+`autoSyncTout()` au montage, avant qu'aucun écran n'ait demandé les mesures, et il
+suffisait d'une pesée neuve pour que trois mois partent. Sans erreur, sans message, et
+seulement les matins où la balance avait quelque chose à donner. La garde va DANS le
+composable (`assure()` dans `useMesures`), pas chez l'appelant : un stockage dont le
+contenu dépend de qui a appelé en premier est un piège, et le prochain chemin
+d'écriture y retombe. `test/nuxt/mesuresDemarrage.test.ts` fige le scénario.
+
 **Aucune photo d'exercice dans le dépôt.** `public/exercises/*.jpg` est ignoré par
 git. Ce que télécharge `scripts/fetch-exercise-images.mjs` vient de free-exercise-db,
 dont l'Unlicense ne couvre que le JSON : le statut des images n'a jamais été établi
@@ -296,7 +308,7 @@ Deux invariants tenus par des tests :
 
 ## Les tests
 
-1260 tests, 71 fichiers, deux projets. La plupart tournent sur le **pack d'exemple**,
+1265 tests, 72 fichiers, deux projets. La plupart tournent sur le **pack d'exemple**,
 déclaré fichier par fichier (`vi.mock('../../data/nutritionProgram', …)`, voir
 `test/exemple.ts`) : vérifier que la modulation des féculents ne touche pas aux
 protéines demande des aliments aux vraies macros, pas trois objets fabriqués.
