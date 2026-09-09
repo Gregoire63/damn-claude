@@ -12,6 +12,7 @@ import { useProgram } from '~/composables/useProgram'
 import { phraseBilan, useRestauration } from '~/composables/useRestauration'
 import { useDemarrage } from '~/composables/useDemarrage'
 import { fmtRest } from '~/lib/rest'
+import { APPETIT_MAX, APPETIT_MIN } from '~/lib/foyer'
 
 // Vue « Profil » extraite de /sport (chargée à la demande). État partagé via composables.
 const props = defineProps<{ todayIso: string | null }>()
@@ -165,6 +166,19 @@ async function onImport(ev: Event) {
  * fait, et ses étapes se rouvrent déjà cochées.
  */
 const foyer = useFoyer()
+
+/**
+ * Ce qu'on tape, ramené dans les bornes — ou laissé tel quel.
+ *
+ * Un champ vidé, une virgule seule, du texte collé : `Number` rend `NaN`, et
+ * `borner(NaN)` donnerait le minimum. Effacer pour retaper remettrait donc l'appétit
+ * à 10 % sous les doigts. On ne touche à rien tant que ce n'est pas un nombre.
+ */
+function poserAppetit(id: string, brut: string) {
+  const n = Number(String(brut).replace(',', '.'))
+  if (!Number.isFinite(n) || n <= 0) return
+  foyer.modifier(id, { appetit: n / 100 })
+}
 const nouveauConvive = ref('')
 function ajouterConvive() {
   if (foyer.ajouter(nouveauConvive.value)) nouveauConvive.value = ''
@@ -314,10 +328,27 @@ const { version } = useMaj()
             :aria-label="`Nom de ${c.nom}`"
             @change="foyer.modifier(c.id, { nom: ($event.target as HTMLInputElement).value })"
           >
+          <!--
+            Le pourcentage se TAPE.
+
+            Il ne se réglait que par pas de dix, au marteau : passer de 100 à 65 %
+            demandait quatre taps et ne tombait de toute façon pas juste — 65 n'était
+            pas atteignable. Or c'est un nombre qu'on ajuste une fois, en connaissant
+            la réponse, pas une valeur qu'on cherche à tâtons.
+
+            `@change` et non `@input` : borné à la frappe, « 6 » deviendrait 10 avant
+            qu'on ait tapé le 5. On ne borne donc qu'une fois le champ quitté.
+          -->
           <div class="fo-appetit">
-            <button class="btn fo-pm" :aria-label="`Moins pour ${c.nom}`" @click="foyer.modifier(c.id, { appetit: c.appetit - 0.1 })">−</button>
-            <span class="fo-part mono">{{ Math.round(c.appetit * 100) }} %</span>
-            <button class="btn fo-pm" :aria-label="`Plus pour ${c.nom}`" @click="foyer.modifier(c.id, { appetit: c.appetit + 0.1 })">+</button>
+            <input
+              class="note-input fo-pct mono" type="number" inputmode="numeric"
+              :value="Math.round(c.appetit * 100)"
+              :min="APPETIT_MIN * 100" :max="APPETIT_MAX * 100" step="5"
+              :aria-label="`Appétit de ${c.nom}, en pourcentage de ta part`"
+              @change="poserAppetit(c.id, ($event.target as HTMLInputElement).value)"
+              @keyup.enter="($event.target as HTMLInputElement).blur()"
+            >
+            <span class="fo-unite mono">%</span>
           </div>
           <button class="btn fo-x" :aria-label="`Retirer ${c.nom}`" @click="foyer.retirer(c.id)">✕</button>
         </template>

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
+import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
 import { ONGLETS, titreDe } from '~/lib/onglets'
 import { gearFor, variantName, variantsOf } from '~/data/exerciseVariants'
 import { isTimed } from '~/lib/program'
@@ -22,6 +22,7 @@ import { useDemarrage } from '~/composables/useDemarrage'
 import { useSnapshot } from '~/composables/useSnapshot'
 import { useWorkout } from '~/composables/useWorkout'
 import { useBackGuard } from '~/composables/useBackGuard'
+import { useClavier } from '~/composables/useClavier'
 import { decalageGlissement, poserSens, useGlissement } from '~/composables/useGlissement'
 import Popup from '~/components/Popup.vue'
 import '~/assets/css/sport.css'
@@ -174,6 +175,33 @@ function onScroll() { titreReplie.value = window.scrollY > 34 }
 const vault = useVault()
 /** Le nombre écrit sur la cloche. Zéro : pas de badge, le bouton reste. */
 const propositionsEnAttente = computed(() => vault.pendingCount.value)
+
+/**
+ * Signaler l'ARRIVÉE, pas seulement l'état.
+ *
+ * `useVault` relève maintenant la boîte tout seul — au retour au premier plan, et
+ * toutes les minutes tant que l'écran est visible. Mais un badge qui passe de 1 à 2
+ * pendant qu'on regarde le journal ne se remarque pas : le compte est juste, et on
+ * ne le voit pas plus qu'avant. D'où un bandeau au moment où ça tombe, et la cloche
+ * qui bat une seconde.
+ *
+ * Le tout premier relevé ne déclenche rien. Au démarrage, le passage de 0 à N n'est
+ * pas une arrivée — c'est ce qui attendait déjà, et le badge le dit très bien. Un
+ * bandeau à chaque ouverture de l'application deviendrait un bruit de fond qu'on
+ * apprend à ignorer, exactement ce qu'il ne faut pas pour la seule chose de
+ * l'application qui attend quelque chose de toi.
+ */
+const clocheNeuve = ref(false)
+watch(() => vault.arrivees.value, (n, avant) => {
+  if (n <= (avant ?? 0) || n === 0) return
+  const neuves = n - (avant ?? 0)
+  showFlash(neuves > 1 ? `${neuves} nouvelles propositions de Claude` : 'Nouvelle proposition de Claude', 'ok')
+  // On coupe puis on relance : deux arrivées d'affilée doivent refaire sonner la
+  // cloche, or une classe déjà posée ne rejoue pas son animation.
+  clocheNeuve.value = false
+  void nextTick(() => { clocheNeuve.value = true })
+  setTimeout(() => { clocheNeuve.value = false }, 2400)
+})
 const brandMark = computed(() => {
   const mots = (vault.state.value.ownerName || 'Moi').trim().split(/\s+/).filter(Boolean)
   const lettres = mots.slice(0, 2).map(m => [...m][0] ?? '').join('')
@@ -301,6 +329,10 @@ onMounted(() => {
   // Ce sont bien les MÉTADONNÉES seules (identifiant, dimensions, poids), pas les
   // images : quelques centaines d'octets, lus une fois. Chaque vignette lit son blob
   // à la demande, donc ceci ne charge rien d'inutile au démarrage.
+  // Le clavier virtuel se pose PAR-DESSUS la page : un champ de la moitié basse
+  // disparaît derrière lui et on tape à l'aveugle. Posé ici, dans la coque, parce
+  // que ça vaut pour tous les écrans — et une seule fois, le composable s'en assure.
+  useClavier()
   usePhotos().hydrate().catch(() => { /* IndexedDB indisponible : navigation privée */ })
   // Le coffre : on relève l'état (session, propositions) et, si la session est
   // ouverte, on repousse le miroir — au plus une fois toutes les cinq minutes.
@@ -411,11 +443,11 @@ onUnmounted(() => {
         <button
           v-if="demarrage.fini.value"
           class="header-alerte"
-          :class="{ some: propositionsEnAttente > 0 }"
+          :class="{ some: propositionsEnAttente > 0, neuf: clocheNeuve }"
           :aria-label="propositionsEnAttente
             ? `Propositions de Claude : ${propositionsEnAttente} en attente`
             : 'Propositions de Claude'"
-          @click="propositionsOuvertes = true"
+          @click="propositionsOuvertes = true; vault.vuArrivees()"
         >
           <Glyphe nom="cloche" :taille="20" />
           <span v-if="propositionsEnAttente" class="header-badge mono">{{ propositionsEnAttente > 9 ? '9+' : propositionsEnAttente }}</span>

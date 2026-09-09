@@ -203,7 +203,20 @@ const kindLabel = (k: RecipeKind) => KINDS.find(x => x.id === k)?.label ?? k
       <!-- Deux axes de filtre : le moment de la journée, et ce qu'il y a dedans.
            Ce sont les deux seules questions qu'on se pose devant trente-cinq plats. -->
       <div class="card nu-filters">
-        <input v-model="search" class="nu-search" type="search" placeholder="Chercher un plat ou un ingrédient…">
+        <!--
+          Valider FERME le clavier, et c'est le but.
+
+          On tape trois lettres, les plats se filtrent derrière — mais le clavier
+          occupe la moitié basse de l'écran et cache précisément la grille qu'on
+          vient de réduire. Il fallait viser une zone vide pour le refermer, en
+          espérant ne pas ouvrir une carte au passage. La touche du clavier dit
+          maintenant « rechercher » (`enterkeyhint`), et elle rend l'écran.
+        -->
+        <input
+          v-model="search" class="nu-search" type="search" enterkeyhint="search"
+          placeholder="Chercher un plat ou un ingrédient…"
+          @keyup.enter="($event.target as HTMLInputElement).blur()"
+        >
         <div class="nu-filt-row">
           <button class="nu-filt" :class="{ on: !kindFilter }" @click="kindFilter = null">Tout</button>
           <button

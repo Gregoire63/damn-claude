@@ -82,6 +82,12 @@
 /* Quelque chose attend : la cloche prend la couleur d'accent, et le badge dit
    combien. Sans le badge, « il y a du neuf » demande d'ouvrir pour le savoir. */
 .header-alerte.some { color: var(--accent-primary); }
+/* Une proposition VIENT d'arriver : la cloche bat deux fois, puis se tait.
+   Le badge change de chiffre sans bruit — un chiffre qui passe de 1 à 2 pendant
+   qu'on regarde ailleurs ne se remarque jamais. L'animation dure moins de deux
+   secondes : c'est un signal, pas une notification qu'il faut aller éteindre. */
+.header-alerte.neuf { animation: cloche-sonne 1.1s ease-in-out 2; transform-origin: 50% 20%; }
+@media (prefers-reduced-motion: reduce) { .header-alerte.neuf { animation: none; } }
 .header-badge {
   position: absolute; top: 1px; right: 0;
   min-width: 17px; height: 17px; padding: 0 4px;
@@ -134,7 +140,11 @@
 .fo-nom { min-width: 0; font-size: 14px; font-weight: 500; }
 input.fo-nom { margin: 0; }
 .fo-appetit { display: flex; align-items: center; gap: 4px; }
-.fo-pm { padding: 5px 10px; font-size: 15px; line-height: 1; }
+/* Le pourcentage se saisit. Assez large pour trois chiffres, et les flèches natives
+   retirées : sur téléphone elles ne servent à rien et volent de la place au chiffre. */
+input.fo-pct { width: 62px; margin: 0; padding: 7px 6px; font-size: 14px; text-align: center; appearance: textfield; }
+input.fo-pct::-webkit-outer-spin-button, input.fo-pct::-webkit-inner-spin-button { appearance: none; margin: 0; }
+.fo-unite { font-size: 12px; color: var(--text-muted); }
 .fo-part { font-size: 13px; min-width: 46px; text-align: center; color: var(--text-secondary); }
 .fo-note { font-size: 12px; }
 .fo-x { padding: 5px 9px; font-size: 12px; }
@@ -1419,6 +1429,15 @@ button.conn-row { cursor: pointer; }
    à l'intérieur d'une règle (« Unknown at rule: @keyframes »). */
 @keyframes boot-spin { to { transform: rotate(360deg); } }
 @keyframes mini-pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.35; } }
+/* La cloche de l'en-tête quand une proposition vient d'arriver. */
+@keyframes cloche-sonne {
+  0%, 100% { transform: rotate(0); }
+  15% { transform: rotate(-13deg); }
+  30% { transform: rotate(11deg); }
+  45% { transform: rotate(-8deg); }
+  60% { transform: rotate(6deg); }
+  75% { transform: rotate(-3deg); }
+}
 
 /* Objectifs atteignables — la seule section du rapport qui regarde devant */
 .ob-list { display: flex; flex-direction: column; gap: 6px; }

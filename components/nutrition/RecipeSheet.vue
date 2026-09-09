@@ -3,7 +3,7 @@ import { computed, ref } from 'vue'
 import { useFoyer } from '~/composables/useFoyer'
 import { useNutrition } from '~/composables/useNutrition'
 import type { ConvivesRepas } from '~/lib/foyer'
-import { convivesParDefaut, facteurRepas, libelleRepas, partDeMoi, pourConvives } from '~/lib/foyer'
+import { APPETIT_MAX, APPETIT_MIN, borner, convivesParDefaut, facteurRepas, libelleRepas, partDeMoi, pourConvives } from '~/lib/foyer'
 import { useRepasConvives } from '~/composables/useRepasConvives'
 import { FAT_STEPS, expandItems, keepsOf, macrosOf, rebalanceDairy, roundMacros, splitIngredients } from '~/lib/nutritionStats'
 import { cookedWeight } from '~/lib/cooked'
@@ -103,6 +103,13 @@ function basculerMembre(id: string) {
 
 /** Un invité de ce soir : un appétit, un nom facultatif, et rien dans le foyer. */
 const nouvelInvite = ref({ nom: '', appetit: 1 })
+
+/** Même prudence qu'ailleurs : un champ vidé pour être retapé ne vaut pas zéro. */
+function poserAppetitInvite(brut: string) {
+  const n = Number(String(brut).replace(',', '.'))
+  if (!Number.isFinite(n) || n <= 0) return
+  nouvelInvite.value.appetit = borner(n / 100)
+}
 const ajoutInvite = ref(false)
 function ajouterInvite() {
   const c = convives.value
@@ -266,10 +273,17 @@ const openFat = ref<string | null>(null)
 
         <div v-if="ajoutInvite" class="rs-ajout">
           <input v-model="nouvelInvite.nom" class="note-input flex-1" placeholder="Prénom (facultatif)" maxlength="24">
+          <!-- Même champ que dans le foyer : on tape le pourcentage. -->
           <div class="fo-appetit">
-            <button class="btn fo-pm" aria-label="Moins" @click="nouvelInvite.appetit = Math.max(0.1, Math.round((nouvelInvite.appetit - 0.1) * 100) / 100)">−</button>
-            <span class="fo-part mono">{{ Math.round(nouvelInvite.appetit * 100) }} %</span>
-            <button class="btn fo-pm" aria-label="Plus" @click="nouvelInvite.appetit = Math.min(3, Math.round((nouvelInvite.appetit + 0.1) * 100) / 100)">+</button>
+            <input
+              class="note-input fo-pct mono" type="number" inputmode="numeric"
+              :value="Math.round(nouvelInvite.appetit * 100)"
+              :min="APPETIT_MIN * 100" :max="APPETIT_MAX * 100" step="5"
+              aria-label="Appétit de l'invité, en pourcentage de ta part"
+              @change="poserAppetitInvite(($event.target as HTMLInputElement).value)"
+              @keyup.enter="($event.target as HTMLInputElement).blur()"
+            >
+            <span class="fo-unite mono">%</span>
           </div>
           <button class="btn-primary" @click="ajouterInvite">Ajouter</button>
         </div>
