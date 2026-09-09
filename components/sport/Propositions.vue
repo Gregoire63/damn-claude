@@ -31,7 +31,10 @@ const emit = defineEmits<{ close: [], flash: [msg: string] }>()
 
 const v = useVault()
 const { buildSnapshot } = useSnapshot()
-onMounted(() => { void v.hydrate() })
+// La feuille s'ouvre : on relève la boîte tout de suite. La veille de `useVault`
+// tourne en fond, mais on vient précisément ici pour voir ce qui attend — attendre
+// le prochain battement afficherait une liste périmée d'une minute.
+onMounted(() => { void v.hydrate().then(() => v.relever(true)) })
 
 const showDetail = ref<string | null>(null)
 const applicable = (p: RawProposal) => v.applicable(p)
@@ -42,6 +45,56 @@ async function doApply(p: RawProposal) {
 }
 async function doRefuse(p: RawProposal) {
   if (await v.resolve(p, 'refused')) emit('flash', 'Refusé')
+}
+
+/**
+ * Tout accepter — et pourquoi ça mérite une confirmation.
+ *
+ * Sept propositions validées une par une, c'est vingt taps et sept aller-retours
+ * réseau ; quand elles viennent de la même conversation (une semaine de menus, ses
+ * recettes, ses aliments), on les a déjà lues dans le fil. Les valider séparément
+ * n'ajoute aucune information, ça ajoute de la fatigue — et une file qu'on n'a pas
+ * le courage de vider est une file qui reste pleine.
+ *
+ * Trois précautions, chacune pour une raison :
+ *
+ *   · l'ORDRE d'arrivée est conservé. Claude dépose l'aliment avant la recette qui
+ *     s'en sert ; les prendre à l'envers ferait échouer la seconde ;
+ *   · les non-applicables sont SAUTÉES, pas forcées, et le bandeau les compte. Une
+ *     proposition dont la valeur de départ a changé n'est pas un échec technique,
+ *     c'est une donnée plus récente qu'on refuse d'écraser ;
+ *   · un seul envoi du miroir à la fin. Pousser après chaque écriture, c'est sept
+ *     requêtes pour un état qui n'existe qu'une fois tout appliqué.
+ *
+ * Rien d'irréversible : chacune se retrouve dans « Validées », et se défait.
+ */
+const aToutAppliquer = ref(false)
+const enLot = ref(false)
+const applicables = computed(() => v.pending.value.filter(p => v.applicable(p)))
+
+async function toutAppliquer() {
+  aToutAppliquer.value = false
+  if (enLot.value) return
+  enLot.value = true
+  // Copie : `v.pending` rétrécit à chaque application réussie.
+  const file = [...v.pending.value]
+  let faites = 0
+  let echecs = 0
+  let ignorees = 0
+  try {
+    for (const p of file) {
+      if (!v.applicable(p)) { ignorees++; continue }
+      if (await v.apply(p)) faites++
+      else echecs++
+    }
+    if (faites) await v.push(buildSnapshot, true)
+  }
+  finally { enLot.value = false }
+
+  const bouts = [`${faites} appliquée${faites > 1 ? 's' : ''} ✓`]
+  if (ignorees) bouts.push(`${ignorees} plus applicable${ignorees > 1 ? 's' : ''}`)
+  if (echecs) bouts.push(`${echecs} en échec`)
+  emit('flash', bouts.join(' · '))
 }
 
 /**
@@ -456,6 +509,17 @@ const progChanges = computed(() => {
         Rien en attente. Ce que Claude propose depuis une conversation atterrit ici, et
         <b>rien n’est écrit</b> avant que tu valides.
       </p>
+      <!-- Tout accepter : à partir de deux, en dessous le bouton de la carte suffit. -->
+      <div v-if="applicables.length > 1" class="vt-lot">
+        <button class="btn-primary vt-lot-go" :disabled="enLot" @click="aToutAppliquer = true">
+          {{ enLot ? 'Application en cours…' : `Tout accepter · ${applicables.length}` }}
+        </button>
+        <span v-if="v.pending.value.length > applicables.length" class="muted vt-lot-note">
+          {{ v.pending.value.length - applicables.length === 1
+            ? '1 n’est plus applicable et restera ici.'
+            : `${v.pending.value.length - applicables.length} ne sont plus applicables et resteront ici.` }}
+        </span>
+      </div>
       <div v-for="p in v.pending.value" :key="p.id" class="vt-prop">
         <div class="vt-p-sum">{{ p.summary }}</div>
         <div class="vt-p-meta mono muted">
@@ -581,6 +645,24 @@ const progChanges = computed(() => {
     l'application — la même boîte que « annuler la séance en cours », donc.
   -->
   <transition name="pop">
+    <div v-if="aToutAppliquer" class="confirm-overlay au-dessus" @click.self="aToutAppliquer = false">
+      <div class="confirm-box">
+        <div class="confirm-emoji" aria-hidden="true">✓</div>
+        <div class="confirm-title">Appliquer les {{ applicables.length }} propositions ?</div>
+        <div class="confirm-text">
+          Elles s'appliquent dans l'ordre où Claude les a déposées, et chacune écrit
+          dans tes données. Tu les retrouveras dans « Validées », où elles se défont
+          une par une.
+        </div>
+        <div class="confirm-actions">
+          <button class="btn confirm-keep" @click="aToutAppliquer = false">Annuler</button>
+          <button class="confirm-yes" @click="toutAppliquer">Tout appliquer</button>
+        </div>
+      </div>
+    </div>
+  </transition>
+
+  <transition name="pop">
     <div v-if="aDefaire" class="confirm-overlay au-dessus" @click.self="aDefaire = null">
       <div class="confirm-box">
         <div class="confirm-emoji" aria-hidden="true">↺</div>
@@ -596,3 +678,9 @@ const progChanges = computed(() => {
     </div>
   </transition>
 </template>
+
+<style scoped>
+.vt-lot { display: flex; flex-direction: column; gap: 6px; margin-bottom: 12px; }
+.vt-lot-go { width: 100%; }
+.vt-lot-note { font-size: 12px; line-height: 1.5; }
+</style>

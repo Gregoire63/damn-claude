@@ -1,7 +1,7 @@
 import { messageErreur } from '~/lib/erreurs'
 import { useFoyer } from '~/composables/useFoyer'
 import { useRepasConvives } from '~/composables/useRepasConvives'
-import { computed, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { startAuthentication, startRegistration } from '@simplewebauthn/browser'
 import type { RawProposal } from '~/lib/proposals'
 import { planFor } from '~/lib/proposals'
@@ -68,6 +68,89 @@ let hydrated = false
 const LAST_PUSH_KEY = 'gr-vault-push-v1'
 /** En dessous, on ne repousse pas : le miroir n'a pas à suivre chaque frappe. */
 const PUSH_MIN_INTERVAL_MS = 5 * 60 * 1000
+
+/**
+ * Relever la boîte de réception.
+ *
+ * Hissée hors de `useVault()` parce que la VEILLE ci-dessous l'appelle sans passer
+ * par le composable : elle ne touche que des refs de module, il n'y avait rien à
+ * capturer.
+ */
+async function loadPending() {
+  try {
+    const r = await $fetch<{ mirrorAt: string | null, pending: RawProposal[], recent: RawProposal[] }>('/api/vault/pending')
+    mirrorAt.value = r.mirrorAt
+    pending.value = r.pending
+    recent.value = r.recent
+  }
+  catch { /* session expirée : `refresh` le dira */ }
+}
+
+// ─── La veille : voir arriver une proposition sans recharger la page ────────
+//
+// La boîte n'était relevée QU'AU chargement de la page. Or elle se remplit depuis
+// une conversation avec Claude, sur un autre écran : on déposait une proposition,
+// on basculait sur l'application, et la cloche affichait toujours zéro. Le seul
+// geste qui marchait était de recharger — c'est-à-dire de deviner qu'il fallait le
+// faire, ce qui annule l'intérêt d'un badge.
+//
+// Deux déclencheurs, et le second fait l'essentiel du travail : un relevé pendant
+// que l'écran est visible, et un relevé AU RETOUR au premier plan. Le retour au
+// premier plan est exactement le geste qu'on fait après avoir parlé à Claude.
+//
+// Rien ne tourne quand l'onglet est caché : une PWA en arrière-plan qui interroge
+// le serveur toutes les minutes vide la batterie pour un badge que personne ne
+// regarde. Et l'espacement minimal évite qu'une bascule répétée entre deux
+// applications ne déclenche une rafale de requêtes.
+const VEILLE_MS = 60_000
+const VEILLE_MIN_MS = 8_000
+let derniereReleve = 0
+let veille: ReturnType<typeof setInterval> | null = null
+
+/**
+ * Combien de propositions sont ARRIVÉES depuis le dernier coup d'œil.
+ *
+ * Distinct du compte en attente, et c'est tout l'intérêt : un badge qui passe de 1
+ * à 2 pendant qu'on regarde le journal ne se remarque pas. C'est ce compteur-ci qui
+ * déclenche le bandeau et fait sonner la cloche ; ouvrir la feuille le remet à zéro.
+ *
+ * Il n'est alimenté que par `relever` — donc jamais par le tout premier chargement,
+ * qui passe par `hydrate`. Ce qui attendait déjà n'est pas une arrivée, et un
+ * bandeau à chaque ouverture de l'application deviendrait un bruit qu'on ignore.
+ */
+const arrivees = ref(0)
+
+async function relever(force = false) {
+  if (!state.value.connected) return
+  const t = Date.now()
+  if (!force && t - derniereReleve < VEILLE_MIN_MS) return
+  derniereReleve = t
+  const avant = new Set(pending.value.map(p => p.id))
+  await loadPending()
+  arrivees.value += pending.value.filter(p => !avant.has(p.id)).length
+}
+
+/** La feuille s'ouvre : ce qui vient d'arriver a été vu. */
+function vuArrivees() { arrivees.value = 0 }
+
+function reglerVeille() {
+  if (!import.meta.client) return
+  const active = state.value.connected && document.visibilityState === 'visible'
+  if (active && !veille) veille = setInterval(() => { void relever() }, VEILLE_MS)
+  else if (!active && veille) { clearInterval(veille); veille = null }
+}
+
+if (import.meta.client) {
+  document.addEventListener('visibilitychange', () => {
+    reglerVeille()
+    if (document.visibilityState === 'visible') void relever()
+  })
+  // Sur ordinateur, revenir d'une autre fenêtre ne change pas la visibilité.
+  window.addEventListener('focus', () => { void relever() })
+  // La session peut s'ouvrir bien après le démarrage (déverrouillage par passkey) :
+  // la veille se règle sur l'état, pas une fois pour toutes.
+  watch(() => state.value.connected, reglerVeille, { immediate: true })
+}
 
 // Le message d'erreur montré à l'écran : voir lib/erreurs.ts.
 const message = messageErreur
@@ -211,16 +294,6 @@ export function useVault() {
     await $fetch('/api/auth/logout', { method: 'POST' }).catch(() => {})
     state.value = { ...state.value, connected: false }
     pending.value = []
-  }
-
-  async function loadPending() {
-    try {
-      const r = await $fetch<{ mirrorAt: string | null, pending: RawProposal[], recent: RawProposal[] }>('/api/vault/pending')
-      mirrorAt.value = r.mirrorAt
-      pending.value = r.pending
-      recent.value = r.recent
-    }
-    catch { /* session expirée : `refresh` le dira */ }
   }
 
   /**
@@ -418,7 +491,7 @@ export function useVault() {
   const pendingCount = computed(() => pending.value.length)
 
   return {
-    state, pending, recent, mirrorAt, busy, error, pendingCount,
-    hydrate, refresh, register, ajouterSecours, revoquer, rename, login, logout, loadPending, push, apply, resolve, applicable, ctx, restoreAll,
+    state, pending, recent, mirrorAt, busy, error, pendingCount, arrivees, vuArrivees,
+    hydrate, refresh, register, ajouterSecours, revoquer, rename, login, logout, loadPending, relever, push, apply, resolve, applicable, ctx, restoreAll,
   }
 }
