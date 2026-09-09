@@ -62,8 +62,8 @@ sans le régénérer laisserait un exemple périmé en ligne, et rien ne le mont
 ## Ce qu'elle fait
 
 - **Séances** — programme d'entraînement modifiable, saisie des séries pendant la
-  séance, minuteur de repos qui fait vibrer la montre, suggestion de charge à la
-  série suivante, records et détection de stagnation.
+  séance, schéma des muscles travaillés, minuteur de repos qui fait vibrer la montre,
+  suggestion de charge à la série suivante, records et détection de stagnation.
 - **Fractionné** — un chrono de sprints qui annonce chaque phase à la voix et au bip,
   téléphone dans la poche. Le bloc couru remplit le journal tout seul, avec le compte
   exact — après coup, essoufflé, on écrit « cinq ou six ».

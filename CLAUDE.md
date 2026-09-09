@@ -88,6 +88,15 @@ valeur dans les fichiers servis.
 Un dépôt public garde tout dans son historique : effacer le fichier ne répare rien,
 seule la régénération des clés répare.
 
+**Aucune photo d'exercice dans le dépôt.** `public/exercises/*.jpg` est ignoré par
+git. Ce que télécharge `scripts/fetch-exercise-images.mjs` vient de free-exercise-db,
+dont l'Unlicense ne couvre que le JSON : le statut des images n'a jamais été établi
+en amont, et ce sont visiblement des photos de commande. Les garder sur son disque
+pour son instance est une chose, les redistribuer depuis un dépôt public sous AGPL en
+est une autre. Elles y ont été une fois, et les en sortir a coûté une réécriture
+d'historique. Sans elles, `ExerciseMove.vue` retombe sur le schéma des muscles
+travaillés — c'est l'affichage normal d'un clone frais, pas une panne.
+
 ## Comment c'est rangé
 
 ```

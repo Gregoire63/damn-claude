@@ -293,6 +293,20 @@ téléphones sans repasser par l'import — remplace `data/exemple/programme.ts`
 `data/exemple/nutrition.ts` par les tiens et relance `npm run exemple`. Un test
 vérifie que `public/exemple.json` est à jour, donc tu ne peux pas l'oublier.
 
+**Les photos d'exercices ne sont pas dans le dépôt**, et c'est volontaire. Un clone
+frais affiche le schéma des muscles travaillés, qui marche très bien et qui dit
+d'ailleurs quelque chose qu'une photo ne dit pas. Si tu veux des images :
+
+- `node scripts/fetch-exercise-images.mjs` les télécharge depuis free-exercise-db —
+  **lis l'en-tête du script avant** : ces images-là n'ont pas de licence établie, ça
+  vaut pour un usage personnel et pas pour une redistribution ;
+- ou dépose les tiennes dans `public/exercises/`, nommées `<idExercice>-1.jpg`
+  (départ) et `<idExercice>-2.jpg` (fin) — les identifiants sont dans
+  `data/exerciseImages.ts`. L'application les affiche sans rien changer au code.
+
+Dans les deux cas elles restent sur ton disque : `.gitignore` les tient hors des
+commits, donc elles ne partent pas sur ton hébergeur non plus.
+
 Une chose n'est encore réglable que dans le code : l'estimation de pas par défaut
 (3 500 en télétravail, 7 500 sur site) correspond à mon rythme — elle est dans
 `lib/nutritionStats.ts`.

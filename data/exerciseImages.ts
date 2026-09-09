@@ -2,6 +2,12 @@
 // La valeur est le nom de dossier dans la source d'images (voir scripts/fetch-exercise-images.mjs).
 // Les fichiers finaux attendus par l'app : /public/exercises/<idExercice>-1.jpg (départ)
 // et <idExercice>-2.jpg (fin). Tant qu'ils sont absents, l'app retombe sur le schéma musculaire.
+//
+// ⚠️ Les images NE SONT PAS dans le dépôt, et ne doivent pas y entrer : elles sont
+// ignorées par git. Celles que télécharge le script n'ont pas de licence établie —
+// l'en-tête de scripts/fetch-exercise-images.mjs raconte pourquoi et donne les
+// sources réellement libres. Ce fichier-ci ne contient que des NOMS, pas des images :
+// il reste utile même si tu changes complètement de source.
 export const EXERCISE_IMAGE_SLUGS: Record<string, string> = {
   'dc-barre': 'Barbell_Bench_Press_-_Medium_Grip',
   'di-halteres': 'Incline_Dumbbell_Press',

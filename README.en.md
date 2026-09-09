@@ -65,8 +65,9 @@ nothing would show it.
 
 ## What it does
 
-- **Training** — editable programme, set logging during the session, a rest timer that
-  buzzes your watch, next-set load suggestions, personal records and stall detection.
+- **Training** — editable programme, set logging during the session, a diagram of the
+  muscles each movement works, a rest timer that buzzes your watch, next-set load
+  suggestions, personal records and stall detection.
 - **Intervals** — a sprint timer that calls out every phase by voice and by beep, phone
   in your pocket. The block you ran fills the journal by itself, with the exact count —
   out of breath, afterwards, you write "five or six".

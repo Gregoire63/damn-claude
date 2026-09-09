@@ -38,3 +38,13 @@ lerna-debug.log*
 # Sas de suppression : `device_bash` ne sait pas supprimer sur le montage, donc les
 # fichiers à jeter y transitent. Ils n'ont jamais rien à faire dans un commit.
 _to_delete/
+
+# Photos d'exercices : téléchargées par `node scripts/fetch-exercise-images.mjs`,
+# JAMAIS commitées. Elles viennent de free-exercise-db, dont l'Unlicense ne couvre
+# que le JSON — le statut de droits des images n'a jamais été éclairci en amont
+# (trois issues ouvertes, aucune réponse). Les garder sur son disque pour son
+# instance perso est une chose ; les redistribuer depuis un dépôt public en est une
+# autre. Sans elles, l'application affiche le schéma des muscles travaillés.
+# Cette ligne est le garde-fou : un `git add -A` après un run du script rajouterait
+# les cinquante fichiers sans un mot, et l'historique serait à repurger.
+public/exercises/*.jpg

@@ -5,16 +5,40 @@
  *
  *   node scripts/fetch-exercise-images.mjs
  *
- * ── Source & licence ────────────────────────────────────────────────────────
- * Par défaut : free-exercise-db (https://github.com/yuhonas/free-exercise-db).
- * ⚠️  Ces images ressemblent fortement à des photos de bodybuilding.com et leur
- *     statut de droits est ambigu (le dépôt n'a mis en licence libre que le JSON).
- *     Convient pour un usage personnel ; pour un site public 100% clean, remplace
- *     par des images dont tu détiens les droits :
- *       • Gym Visual (https://gymvisual.com) — le style exact "3D + muscles" de la réf (payant)
- *       • Everkinetic (CC BY-SA, https://commons.wikimedia.org/wiki/Category:Exercise_diagrams)
- *     Il suffit de déposer <idExercice>-1.jpg et <idExercice>-2.jpg dans
- *     public/exercises/ ; l'app les affiche automatiquement.
+ * ── Source & licence — À LIRE AVANT DE LANCER ───────────────────────────────
+ *
+ * ⚠️  CE QUE CE SCRIPT TÉLÉCHARGE N'EST PAS LIBRE DE DROITS.
+ *
+ * Source par défaut : free-exercise-db (https://github.com/yuhonas/free-exercise-db).
+ * Ce dépôt est sous Unlicense, mais l'Unlicense y couvre le JEU DE DONNÉES JSON ;
+ * son README ne dit rien des images. Trois issues posent exactement la question —
+ * #2 (« I'm not sure if the images are royalty free »), #12 et #13 — et AUCUNE n'a
+ * de réponse du mainteneur. Le statut n'est donc pas « libre », il est « jamais
+ * établi », ce qui n'est pas la même chose.
+ *
+ * Les fichiers eux-mêmes le disent assez : 850×567, JPEG progressif, éclairage
+ * studio, modèles identifiables dans une salle commerciale, EXIF entièrement
+ * retiré. C'est de la photo de commande, très probablement bodybuilding.com.
+ *
+ * D'où la règle du dépôt : ces images sont IGNORÉES PAR GIT (.gitignore) et ne
+ * sont jamais commitées. Les garder sur son disque pour son instance perso est une
+ * chose ; les redistribuer depuis un dépôt public sous AGPL en est une autre. Elles
+ * ont d'ailleurs été purgées de l'historique une fois, ce qui a coûté un
+ * force-push : la ligne de .gitignore est ce qui évite de recommencer.
+ *
+ * ── Sans images, rien ne casse ──────────────────────────────────────────────
+ * `components/sport/ExerciseMove.vue` retombe sur le schéma des muscles travaillés
+ * (`SportMuscleMap`), qui dit d'ailleurs quelque chose qu'une photo ne dit pas.
+ * C'est l'affichage par défaut d'un clone frais, et il est très bien.
+ *
+ * ── Si tu veux de vraies images, avec de vrais droits ───────────────────────
+ *   • Everkinetic — https://github.com/everkinetic/data, CC BY-SA 4.0. Vraiment
+ *     libres, mais attribution ET partage à l'identique obligatoires : la mention
+ *     doit apparaître quelque part dans l'application, pas seulement dans un README.
+ *   • Gym Visual — https://gymvisual.com, payant, le style « 3D + muscles ».
+ *   • Les tiennes, prises à la salle. C'est le seul cas sans aucune contrainte.
+ * Dépose <idExercice>-1.jpg et <idExercice>-2.jpg dans public/exercises/ ;
+ * l'application les affiche automatiquement, sans rien changer au code.
  * ────────────────────────────────────────────────────────────────────────────
  */
 import { readFileSync, mkdirSync, writeFileSync } from 'node:fs'
