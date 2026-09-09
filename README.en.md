@@ -4,7 +4,7 @@
 
 <p align="center">
   <a href="https://github.com/Gregoire63/damn-claude/actions/workflows/ci.yml"><img src="https://github.com/Gregoire63/damn-claude/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
-  <img src="https://img.shields.io/badge/tests-1045-3f7a4f" alt="1045 tests">
+  <img src="https://img.shields.io/badge/tests-1260-3f7a4f" alt="1260 tests">
   <img src="https://img.shields.io/badge/Nuxt-4-00DC82" alt="Nuxt 4">
   <a href="LICENSE"><img src="https://img.shields.io/badge/licence-AGPL--3.0-8b6f5c" alt="AGPL-3.0"></a>
   <img src="https://img.shields.io/badge/data-on%20your%20phone-6b6560" alt="Local data">
@@ -20,7 +20,7 @@ can read — without ever writing on its own.
 The name, yes: the one muscle icon who was already called Claude.
 
 > **A note on language.** The codebase, its comments and the rest of the documentation
-> are in French — some forty thousand lines of it, and that is deliberate rather than
+> are in French — some fifty thousand lines of it, and that is deliberate rather than
 > accidental. This page is the English entry point; the code you will open is French.
 
 This is a personal application in the strict sense: one instance, one person. No
@@ -31,10 +31,11 @@ connector has something to read and so you can move between devices.
 **→ [HEBERGER.md](HEBERGER.md) (French) to deploy your own in ten minutes.**
 
 <p align="center">
-  <img src="docs/captures/01-premier-lancement.png" alt="First launch: the app is empty" width="205">
-  <img src="docs/captures/02-accueil.png" alt="Home: today and the sessions" width="205">
-  <img src="docs/captures/03-seance.png" alt="Session in progress: logging sets" width="205">
-  <img src="docs/captures/04-nutrition.png" alt="Nutrition: week, groceries, cooking" width="205">
+  <img src="docs/captures/01-premier-lancement.png" alt="First launch: the app is empty" width="160">
+  <img src="docs/captures/02-accueil.png" alt="Home: today and the sessions" width="160">
+  <img src="docs/captures/03-seance.png" alt="Session in progress: logging sets" width="160">
+  <img src="docs/captures/04-nutrition.png" alt="Nutrition: week, groceries, cooking" width="160">
+  <img src="docs/captures/05-propositions.png" alt="Claude's proposals: approve or reject" width="160">
 </p>
 
 ---
@@ -66,13 +67,19 @@ nothing would show it.
 
 - **Training** — editable programme, set logging during the session, a rest timer that
   buzzes your watch, next-set load suggestions, personal records and stall detection.
+- **Intervals** — a sprint timer that calls out every phase by voice and by beep, phone
+  in your pocket. The block you ran fills the journal by itself, with the exact count —
+  out of breath, afterwards, you write "five or six".
 - **Nutrition** — a calorie target recomputed from the session you actually recorded,
-  meal planning, groceries by aisle, batch cooking, micronutrient coverage.
+  meal planning, groceries by aisle, batch cooking, micronutrient coverage. The
+  household follows: each guest carries an appetite, and the amounts to weigh adjust
+  without touching the macros, which stay yours.
 - **Body** — weigh-ins (by hand or from a connected scale), smoothed curve, weekly
   slope, fat/muscle breakdown, steps.
 - **Connector** — an MCP server of your own that Claude reads, and into which it
-  **files proposals**. You see them in the app and approve or reject each one with a
-  tap. It never modifies anything directly.
+  **files proposals**. The bell in the header lights up when new ones land; you approve
+  one with a tap, or all of them at once, or you reject. It never modifies anything
+  directly.
 
 ## The principle that holds it together
 
@@ -111,7 +118,7 @@ waits.
 |---|---|
 | `npm run dev` | Development server |
 | `npm run build` | Production build (**never** `nuxt generate`) |
-| `npm test` | 1045 tests, 46 files, two Vitest projects |
+| `npm test` | 1260 tests, 71 files, two Vitest projects |
 | `npm run check` | Three guards: duplicate CSS selectors, duplicate data keys, invalid Vue markup |
 | `npm run exemple` | Regenerates `public/exemple.json` from `data/exemple/` |
 
@@ -125,14 +132,14 @@ error.vue                404 and server errors
 lib/onglets.ts           the five tabs: path, label, title
 components/sport/        training screens
 components/nutrition/    nutrition screens
-composables/             state, persisted in localStorage (23 files, no Pinia)
-lib/                     pure logic — no DOM, no storage, tested (18 files)
+composables/             state, persisted in localStorage (30 files, no Pinia)
+lib/                     pure logic — no DOM, no storage, tested (23 files)
 data/                    types and reference tables — the contents are empty
 data/exemple/            the example pack, converted into public/exemple.json
-server/api/              the MCP connector, OAuth, passkey, scales (31 routes)
+server/api/              the MCP connector, OAuth, passkey, scales (28 routes)
 ```
 
-Three layout rules explain the rest:
+Four layout rules explain the rest:
 
 **`lib/` is not auto-imported, `utils/` is.** Nuxt pours all of `utils/` and
 `composables/` into the global namespace. A function called `clamp` or `slugify` has
@@ -150,6 +157,10 @@ top of the current tab, not a piece of one: you start a session from the home sc
 collapse it, go check a load in the journal, reopen it. Its state lives in
 `useSeance()` — outside any component, in a detached `effectScope`, so the timer and
 the autosave do not die with the screen that created them.
+
+**The `unit` tests run without the `~` alias.** The `unit` Vitest project is a plain
+Node environment: inside `lib/`, imports are relative (`../data/…`). The `nuxt` project
+(happy-dom) mounts components and knows the alias.
 
 ## Under the hood
 

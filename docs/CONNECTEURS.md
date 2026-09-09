@@ -105,7 +105,7 @@ Oura est justement le cas : la bague ne pèse rien, sa fiche ne promet que les p
 Une ligne dans `server/connecteurs/index.ts` :
 
 ```ts
-export const ADAPTATEURS: Adaptateur[] = [withings, fitbit, oura, taMarque]
+export const ADAPTATEURS: Adaptateur[] = [withings, fitbit, polar, oura, taMarque]
 ```
 
 Volontairement explicite plutôt qu'un balayage du dossier : un import statique se
@@ -157,9 +157,9 @@ qui dépend d'internet ne dit rien le jour où il échoue.
 
 ## 7. Ce qui ne se vérifie qu'en vrai
 
-Deux marques de ce dépôt portent un avertissement daté en tête de fichier : leur trajet
-suit la documentation officielle, mais aucun compte développeur n'était disponible pour
-le dérouler. Si tu branches une vraie application, **corrige le fichier et retire
+Trois marques de ce dépôt — Fitbit, Polar, Oura — portent un avertissement daté en tête
+de fichier : leur trajet suit la documentation officielle, mais aucun compte développeur
+n'était disponible pour le dérouler. Si tu branches une vraie application, **corrige le fichier et retire
 l'avertissement** — et si tu trouves un écart, écris-le : c'est exactement ce que le
 suivant cherchera.
 

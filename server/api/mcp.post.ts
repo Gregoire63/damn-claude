@@ -303,7 +303,7 @@ const TOOLS = [
         detail: {
           type: 'object',
           description: [
-            'Le détail exploitable, dont la forme dépend de « cible ». Les deux formes ci-dessous s\'appliquent d\'un tap ; toute autre s\'affiche mais devra être faite à la main.',
+            'Le détail exploitable, dont la forme dépend de « cible ». Les neuf formes ci-dessous s\'appliquent d\'un tap ; toute autre (« autre ») s\'affiche mais devra être faite à la main.',
             '• plat : { date: "AAAA-MM-JJ", slot: "lunch"|"dinner"|"pdj"|"snack"|"night"|"pre"|"creatine", vers: "<id de plat>" ou null pour revenir au plat prévu }',
             '• planning-seance : { date: "AAAA-MM-JJ", vers: "s1".."s4" ou "repos" }',
             '• repas-libre : { date: "AAAA-MM-JJ", slot: "lunch", vers: { label: "Kebab galette + frites", kcal: 1050, p: 45, g: 95, l: 50 } } — un repas qu\'il n\'a pas cuisiné, qui REMPLACE le plat prévu de ce créneau et porte ses propres macros. « vers: null » le retire et rend le créneau au plat prévu. C\'est la seule forme où tu fournis des chiffres estimés : donne les quatre, les protéines surtout, et dis dans le résumé sur quoi tu t\'es basé. DÈS QUE TU CONNAIS LE CONTENU, ajoute « items: [{ food, g }] » (vérifie-les d\'abord avec « composer ») et, si c\'est la variante d\'un plat du catalogue, « base: "<id du plat>" ». Ce n\'est pas un détail de forme : sans items l\'application ne peut afficher qu\'un nombre et l\'étiquette « du dehors », et il perd les grammages au moment précis où il en a besoin, devant sa balance. Avec eux, elle affiche « modifié », la composition ligne par ligne, et un lien vers la recette d\'origine — sans avoir à te redemander.',

@@ -10,11 +10,14 @@ c'est un autre projet.
 ```bash
 npm ci
 npm run check      # sélecteurs CSS en double, clés de données en double, balisage Vue
-npm test           # les deux projets Vitest
 npm run build      # jamais `nuxt generate`
+npm test           # les deux projets Vitest
 ```
 
-La CI lance exactement ces trois-là. Une PR rouge n'est pas relue.
+La CI lance exactement ces trois-là, dans cet ordre. Le build vient **avant** les
+tests : `test/unit/demarrage.test.ts` cherche le code de démarrage dans le bundle du
+navigateur, donc il lui faut un `.output`. Il le construit lui-même s'il n'en trouve
+pas — une minute payée deux fois. Une PR rouge n'est pas relue.
 
 Lisez **[CLAUDE.md](CLAUDE.md)** d'abord : il liste les règles qui mordent, celles
 qu'on n'enfreint pas par ignorance mais par bon sens apparent — remettre trois
@@ -27,7 +30,7 @@ aliments dans `data/`, mémoïser le client Blobs, ajouter un import dans
 échouait avant et qui passe après. S'il ne peut pas échouer, il ne sert à rien.
 
 **Un commentaire qui dit pourquoi.** Le code dit déjà quoi. La convention du projet
-est d'écrire ce que le commentaire empêche de réintroduire — les 40 000 lignes
+est d'écrire ce que le commentaire empêche de réintroduire — les cinquante mille lignes
 existantes sont dans ce ton, en français.
 
 **Aucune dépendance ajoutée sans raison écrite.** Le projet tient sur Nuxt, Vue et

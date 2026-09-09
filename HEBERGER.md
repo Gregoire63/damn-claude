@@ -297,9 +297,17 @@ Une chose n'est encore réglable que dans le code : l'estimation de pas par déf
 (3 500 en télétravail, 7 500 sur site) correspond à mon rythme — elle est dans
 `lib/nutritionStats.ts`.
 
-Les icônes (`public/icon-192.png`, `public/icon-512.png`) et le nom affiché
-(`public/manifest.webmanifest`, `nuxt.config.ts`) sont les miens aussi. Remplace-les :
-c'est ton application sur ton téléphone.
+Les icônes et le nom affiché sont les miens aussi. Remplace-les : c'est ton
+application sur ton téléphone. Le jeu complet est dans `public/` — `logo.png` (la
+source), `icon-192.png` / `icon-512.png` (fond transparent, déclarées `purpose: "any"`),
+`icon-192-maskable.png` / `icon-512-maskable.png` (fond plein, parce qu'Android rogne
+une icône adaptative jusqu'à 20 % de son bord), `apple-touch-icon.png`, `favicon.ico` et
+`favicon-96.png` — plus le nom dans `public/manifest.webmanifest` et `nuxt.config.ts`.
+
+> **Ne laisse pas l'origine sans favicon.** Les clients qui affichent ton connecteur —
+> Claude compris — vont chercher `/favicon.ico` ; s'il n'y en a pas, ils remontent au
+> domaine enregistrable et montrent l'icône d'un site voisin. Ça ne casse rien, ça
+> affiche simplement le mauvais logo, et rien ne l'explique.
 
 ---
 

@@ -98,12 +98,12 @@ error.vue                404 et erreurs serveur
 lib/onglets.ts           les cinq onglets : chemin, libellé, titre (AUCUN import)
 components/sport/        écrans du suivi d'entraînement
 components/nutrition/    écrans du module nutrition
-composables/             l'état, persisté dans localStorage (29 fichiers, pas de Pinia)
+composables/             l'état, persisté dans localStorage (30 fichiers, pas de Pinia)
 lib/                     logique pure — aucun DOM, aucun stockage, testée (23 fichiers)
 utils/                   auto-importé par Nuxt : uniquement du vocabulaire spécifique
 data/                    types et tables de référence — les contenus sont VIDES
 data/exemple/            le pack d'exemple → public/exemple.json
-server/api/              connecteur MCP, OAuth, passkey, balances (31 routes)
+server/api/              connecteur MCP, OAuth, passkey, balances (28 routes)
 scripts/                 les garde-fous et le générateur d'exemple
 test/unit/               logique pure, environnement Node
 test/nuxt/               câblage localStorage et composants, happy-dom
@@ -186,6 +186,14 @@ tout le retard accumulé, et sur un bloc de six sprints le décalage devient une
 entière. Les deux partagent aussi leur chaîne audio — saturation puis limiteur, c'est
 elle qui rend le bip audible en salle. Un second moteur audio écrit à côté ne se
 signalerait pas comme tel : on dirait « le bip du sprint est trop faible ».
+
+**Ne jamais poser `interactive-widget=resizes-content` dans le `viewport`.** C'est la
+réponse d'un mot au champ que le clavier cache — sur Android seulement, iOS ne
+l'implémente pas — et elle casserait au passage la détection de clavier qui pilote le
+chrono flottant : celle-ci compare `innerHeight` à la hauteur du viewport visible, et
+en `resizes-content` les deux rétrécissent ensemble, l'écart tombe à zéro, le clavier
+devient invisible pour le code. `composables/useClavier.ts` mesure donc le viewport
+VISIBLE et remonte le champ lui-même, sans rien supposer du clavier.
 
 **Une seule liste de connecteurs, affichée deux fois.** `components/sport/Sources.vue`
 sert le parcours (`compact`) et les réglages (dépliable), à partir de `/api/sources`,
@@ -279,7 +287,7 @@ Deux invariants tenus par des tests :
 
 ## Les tests
 
-1246 tests, 69 fichiers, deux projets. La plupart tournent sur le **pack d'exemple**,
+1260 tests, 71 fichiers, deux projets. La plupart tournent sur le **pack d'exemple**,
 déclaré fichier par fichier (`vi.mock('../../data/nutritionProgram', …)`, voir
 `test/exemple.ts`) : vérifier que la modulation des féculents ne touche pas aux
 protéines demande des aliments aux vraies macros, pas trois objets fabriqués.

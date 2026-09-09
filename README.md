@@ -4,7 +4,7 @@
 
 <p align="center">
   <a href="https://github.com/Gregoire63/damn-claude/actions/workflows/ci.yml"><img src="https://github.com/Gregoire63/damn-claude/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
-  <img src="https://img.shields.io/badge/tests-1045-3f7a4f" alt="1045 tests">
+  <img src="https://img.shields.io/badge/tests-1260-3f7a4f" alt="1260 tests">
   <img src="https://img.shields.io/badge/Nuxt-4-00DC82" alt="Nuxt 4">
   <a href="LICENSE"><img src="https://img.shields.io/badge/licence-AGPL--3.0-8b6f5c" alt="AGPL-3.0"></a>
   <img src="https://img.shields.io/badge/données-sur%20ton%20téléphone-6b6560" alt="Données locales">
@@ -28,10 +28,11 @@ pour que tu puisses changer d'appareil.
 **→ [HEBERGER.md](HEBERGER.md) pour déployer la tienne en dix minutes.**
 
 <p align="center">
-  <img src="docs/captures/01-premier-lancement.png" alt="Premier lancement : l'application est vide" width="205">
-  <img src="docs/captures/02-accueil.png" alt="Accueil : la journée et les séances" width="205">
-  <img src="docs/captures/03-seance.png" alt="Séance en cours : saisie des séries" width="205">
-  <img src="docs/captures/04-nutrition.png" alt="Nutrition : semaine, courses, cuisine" width="205">
+  <img src="docs/captures/01-premier-lancement.png" alt="Premier lancement : l'application est vide" width="160">
+  <img src="docs/captures/02-accueil.png" alt="Accueil : la journée et les séances" width="160">
+  <img src="docs/captures/03-seance.png" alt="Séance en cours : saisie des séries" width="160">
+  <img src="docs/captures/04-nutrition.png" alt="Nutrition : semaine, courses, cuisine" width="160">
+  <img src="docs/captures/05-propositions.png" alt="Propositions de Claude : valider ou refuser" width="160">
 </p>
 
 ---
@@ -63,14 +64,19 @@ sans le régénérer laisserait un exemple périmé en ligne, et rien ne le mont
 - **Séances** — programme d'entraînement modifiable, saisie des séries pendant la
   séance, minuteur de repos qui fait vibrer la montre, suggestion de charge à la
   série suivante, records et détection de stagnation.
+- **Fractionné** — un chrono de sprints qui annonce chaque phase à la voix et au bip,
+  téléphone dans la poche. Le bloc couru remplit le journal tout seul, avec le compte
+  exact — après coup, essoufflé, on écrit « cinq ou six ».
 - **Nutrition** — cible calorique recalculée d'après la séance réellement
   enregistrée, plan de repas, courses par rayon, batch cooking, couverture en
-  micronutriments.
+  micronutriments. Le foyer suit : chaque convive porte un appétit, et les grammages
+  à peser s'ajustent sans toucher aux macros, qui restent les tiennes.
 - **Corps** — pesées (à la main ou depuis une balance connectée), courbe lissée,
   pente hebdomadaire, décomposition gras/muscle, pas.
 - **Connecteur** — un serveur MCP à toi, que Claude interroge en lecture, et dans
-  lequel il **dépose des propositions**. Tu les vois dans l'app, tu valides d'un tap
-  ou tu refuses. Il ne modifie jamais rien directement.
+  lequel il **dépose des propositions**. La cloche de l'en-tête s'allume quand il en
+  arrive ; tu valides d'un tap, ou tout d'un coup, ou tu refuses. Il ne modifie jamais
+  rien directement.
 
 ## Le principe qui tient tout
 
@@ -109,7 +115,7 @@ séance), sinon il n'y a rien à simuler et elles attendent.
 |---|---|
 | `npm run dev` | Serveur de développement |
 | `npm run build` | Build de production (**jamais** `nuxt generate`) |
-| `npm test` | 1045 tests, 46 fichiers, deux projets Vitest |
+| `npm test` | 1260 tests, 71 fichiers, deux projets Vitest |
 | `npm run check` | Trois garde-fous : sélecteurs CSS en double, clés de données en double, balisage Vue invalide |
 | `npm run exemple` | Régénère `public/exemple.json` depuis `data/exemple/` |
 
@@ -123,14 +129,14 @@ error.vue                404 et erreurs serveur
 lib/onglets.ts           les cinq onglets : chemin, libellé, titre
 components/sport/        écrans du suivi d'entraînement
 components/nutrition/    écrans du module nutrition
-composables/             l'état, persisté dans localStorage (23 fichiers, pas de Pinia)
-lib/                     la logique pure — aucun DOM, aucun stockage, testée (18 fichiers)
+composables/             l'état, persisté dans localStorage (30 fichiers, pas de Pinia)
+lib/                     la logique pure — aucun DOM, aucun stockage, testée (23 fichiers)
 data/                    les types et les tables de référence — les contenus sont vides
 data/exemple/            le pack d'exemple, converti en public/exemple.json
-server/api/              le connecteur MCP, OAuth, passkey, balances (31 routes)
+server/api/              le connecteur MCP, OAuth, passkey, balances (28 routes)
 ```
 
-Deux règles de rangement expliquent le reste :
+Quatre règles de rangement expliquent le reste :
 
 **`lib/` n'est pas auto-importé, `utils/` l'est.** Nuxt verse tout `utils/` et
 `composables/` dans l'espace de noms global. Une fonction nommée `clamp` ou `slugify`

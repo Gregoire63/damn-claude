@@ -15,12 +15,13 @@ import type { Scalar } from './pointer'
 // Le connecteur ne modifie rien : il dépose une phrase et un détail. Reste à
 // décider ce que l'application accepte d'appliquer TOUTE SEULE, d'un tap.
 //
-// Le choix retenu est étroit, et c'est volontaire. Deux gestes sont applicables
-// automatiquement — changer le plat d'un créneau, changer la séance prévue un jour
-// donné — parce qu'ils ont une forme fermée, vérifiable, et un effet réversible en
-// un geste. Tout le reste s'affiche mais ne s'applique pas : mieux vaut lire « à
-// faire à la main » que voir une série réécrite par une interprétation approximative
-// d'une phrase.
+// Le choix retenu reste étroit, et c'est volontaire. Neuf gestes sont applicables
+// automatiquement — plat, planning-seance, repas-libre, semaine, semaine-type,
+// recette, aliment, programme, correction — et chacun n'a été ouvert qu'une fois sa
+// forme FERMÉE et vérifiable : un détail qui ne se valide pas entièrement ici rend
+// `null`, quoi qu'annonce le résumé. Tout le reste s'affiche mais ne s'applique pas :
+// mieux vaut lire « à faire à la main » que voir une série réécrite par une
+// interprétation approximative d'une phrase.
 //
 // La validation est ici, pure et testable, plutôt que dans le composable : c'est la
 // frontière entre du texte venu de l'extérieur et les données de l'utilisateur.
