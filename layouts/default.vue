@@ -87,7 +87,7 @@ const {
   sheetOpen, sheetClosing, sheetVisible, sheetStyle, scrimStyle,
   expandSession, collapseSession, requestCollapse, onDragStart, onDragMove, onDragEnd,
   cancelPromptOpen, askCancel, confirmCancel, swapAsk, swapEx, confirmSwap,
-  pickVariant, startSession, restoreDraft,
+  pickVariant, startSession, demarrerApercu, restoreDraft,
   doneCount, workCount, isExDone, requiredEx, finishedCount, finishReady, finishSession,
   setEffort, addSet, addWarmup, removeSet, setLabel, toggleSet, warmupFor,
   overloadHint, isDumbbell, seanceWeight, lestOf, setLest, totalOf, derniere,
@@ -819,7 +819,15 @@ onUnmounted(() => {
         </div>
       </div>
 
-    <!-- Aperçu lecture seule d'une séance quand une autre est déjà en cours -->
+    <!--
+      Aperçu d'une séance, en lecture seule.
+
+      Il n'apparaissait qu'une fois coincé : toucher une autre séance alors qu'une
+      était en cours. C'était donc un message d'empêchement déguisé en écran, et le
+      seul moyen de LIRE une séance était de la démarrer. Le même calque sert
+      maintenant dans les deux cas — ce qui change est le pied : reprendre ce qui
+      tourne, ou démarrer ce qu'on vient de lire.
+    -->
     <div v-if="previewSession" class="preview-overlay" @click.self="previewSession = null">
       <div class="preview-sheet" :style="{ '--c': previewSession.color }">
         <div class="preview-head">
@@ -829,7 +837,7 @@ onUnmounted(() => {
           </div>
           <button class="sheet-close" aria-label="Fermer" @click="previewSession = null">×</button>
         </div>
-        <div class="preview-note">🔒 Une séance est déjà en cours. Termine-la ou abandonne-la d'abord.</div>
+        <div v-if="activeSession" class="preview-note">🔒 Une séance est déjà en cours. Termine-la ou abandonne-la d'abord.</div>
         <div class="preview-list">
           <div v-for="(e, idx) in previewSession.exercises" :key="e.id" class="preview-ex" :class="{ 'ex-opt': e.optionnel }">
             <div class="preview-ex-head">
@@ -845,7 +853,8 @@ onUnmounted(() => {
             <div class="preview-ex-head"><span class="preview-ex-name">⚡ {{ previewSession.sprint.title }}</span></div>
           </div>
         </div>
-        <button class="btn-primary preview-resume" @click="previewSession = null; expandSession()">↩ Reprendre la séance en cours</button>
+        <button v-if="activeSession" class="btn-primary preview-resume" @click="previewSession = null; expandSession()">↩ Reprendre la séance en cours</button>
+        <button v-else class="btn-primary preview-resume" :style="{ background: previewSession.color }" @click="demarrerApercu()">Démarrer cette séance →</button>
       </div>
     </div>
 

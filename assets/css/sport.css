@@ -353,6 +353,17 @@ input.fo-pct::-webkit-outer-spin-button, input.fo-pct::-webkit-inner-spin-button
 .sc-count { font-size: 12px; color: var(--text-muted); }
 .sc-go { font-family: var(--font-mono); font-size: 13px; font-weight: 700; color: var(--c); }
 
+/* Une carte, deux gestes : le corps ouvre l'aperçu, le bouton démarre.
+   `.sc-open` reprend la mise en page que la carte portait quand elle était
+   elle-même le bouton — d'où la remise à zéro du style natif. */
+.sc-open { display: flex; flex-direction: column; gap: 10px; width: 100%; text-align: left; background: none; border: 0; padding: 0; margin: 0; font: inherit; color: inherit; cursor: pointer; }
+.sc-start { width: 100%; }
+/* La carte n'est plus cliquable elle-même : sans ça, appuyer sur un bouton intérieur
+   déclenchait AUSSI la pression de la carte — deux mises à l'échelle et deux voiles
+   d'opacité l'un sur l'autre, soit un enfoncement deux fois trop marqué. */
+.sc-duo { cursor: default; }
+.sc-duo:active { transform: none; opacity: 1; }
+
 /* Semaine */
 /* La bande hebdomadaire, devenue un bouton : elle ouvre le calendrier.
    Le `text-align` et la remise à zéro des bordures sont ce qu'il faut pour qu'un

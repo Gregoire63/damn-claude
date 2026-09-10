@@ -88,6 +88,16 @@ valeur dans les fichiers servis.
 Un dépôt public garde tout dans son historique : effacer le fichier ne répare rien,
 seule la régénération des clés répare.
 
+**Fermer un calque et en ouvrir un autre dans le même battement.** La pile de
+`useBackStack` tient UNE entrée d'historique factice tant qu'il reste quelque chose à
+refermer, et la rendre appelle `history.back()`. Quand un calque en remplace un autre
+— l'aperçu d'une séance qu'on démarre —, Vue exécute les deux observateurs dans la
+même passe, dans l'ordre de DÉCLARATION, qui n'est pas celui des calques à l'écran.
+Si le retrait tombe en premier, le `popstate` arrive quand le nouveau calque s'est
+déjà inscrit, et c'est lui qui se fait refermer : on démarre la séance, la feuille se
+replie toute seule. D'où le désarmement différé d'une micro-tâche dans `sync()` — si
+quelque chose s'est réinscrit entre-temps, il n'y a plus rien à rendre.
+
 **Un composable qui fusionne puis réécrit sa clé doit s'hydrater LUI-MÊME.** Le
 motif est partout ici : `entries.value = merge(entries.value, neuf)` puis
 `write(CLE, entries.value)`. Sur un composable jamais hydraté, la partie gauche vaut
@@ -308,7 +318,7 @@ Deux invariants tenus par des tests :
 
 ## Les tests
 
-1265 tests, 72 fichiers, deux projets. La plupart tournent sur le **pack d'exemple**,
+1273 tests, 73 fichiers, deux projets. La plupart tournent sur le **pack d'exemple**,
 déclaré fichier par fichier (`vi.mock('../../data/nutritionProgram', …)`, voir
 `test/exemple.ts`) : vérifier que la modulation des féculents ne touche pas aux
 protéines demande des aliments aux vraies macros, pas trois objets fabriqués.

@@ -217,4 +217,55 @@ describe('l’ordre des calques', () => {
 
     pushState.mockRestore()
   })
+
+  /**
+   * Le troisième bug vécu : un calque se ferme pendant qu'un autre s'ouvre.
+   *
+   * On regarde une séance en aperçu, on la démarre depuis cet aperçu : la pile se
+   * vide et se remplit dans le même battement. Vue exécute les deux observateurs
+   * dans la même passe, et si le RETRAIT tombe en premier, l'ancien code appelait
+   * `history.back()`. Le `popstate` arrivait un instant plus tard, quand le nouveau
+   * calque s'était déjà inscrit — et c'est lui qui se faisait refermer. À l'écran :
+   * on démarrait la séance, et la feuille se repliait toute seule.
+   */
+  it('ne consomme pas l’historique quand un calque en remplace un autre', async () => {
+    const back = vi.spyOn(history, 'back')
+    const apercu = ref(true)
+    const feuille = ref(false)
+    const fermeFeuille = vi.fn()
+
+    monte(apercu, () => {})
+    monte(feuille, fermeFeuille)
+    await nextTick()
+
+    // L'échange, dans le même battement : l'aperçu part, la feuille arrive.
+    apercu.value = false
+    feuille.value = true
+    await nextTick()
+    await nextTick()
+
+    expect(back).not.toHaveBeenCalled()
+    // Et surtout : la feuille qui vient de s'ouvrir est toujours là.
+    expect(fermeFeuille).not.toHaveBeenCalled()
+
+    back.mockRestore()
+  })
+
+  /** Mais quand il ne reste vraiment rien, l'entrée factice DOIT être rendue —
+   *  sinon on recule d'un cran de trop au geste suivant, et on quitte l'app. */
+  it('rend l’entrée factice quand le dernier calque se ferme pour de bon', async () => {
+    history.pushState({ [MARK]: true }, '')
+    const back = vi.spyOn(history, 'back')
+    const ouvert = ref(true)
+
+    monte(ouvert, () => {})
+    await nextTick()
+
+    ouvert.value = false
+    await nextTick()
+    await nextTick()
+
+    expect(back).toHaveBeenCalled()
+    back.mockRestore()
+  })
 })

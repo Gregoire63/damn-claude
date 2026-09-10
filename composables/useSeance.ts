@@ -341,6 +341,29 @@ function creer() {
   }
 
   // ─────────── Séance ───────────
+  /**
+   * Regarder une séance sans s'y engager.
+   *
+   * L'aperçu existait déjà, mais on ne pouvait l'atteindre QUE par accident : en
+   * touchant une autre séance alors qu'une était en cours. Autrement dit, le seul
+   * moyen de lire le contenu d'une séance était de la démarrer — et pour vérifier si
+   * on avait le temps, ou quelles machines il fallait, on démarrait puis on annulait.
+   *
+   * C'est le même calque qu'avant, avec ou sans séance en cours : ce qui change est
+   * ce qu'il propose en bas, reprendre ou démarrer.
+   */
+  function apercuSession(s: Session) {
+    previewSession.value = s
+  }
+
+  /** Démarrer ce qu'on est en train de regarder. */
+  function demarrerApercu() {
+    const s = previewSession.value
+    if (!s) return
+    previewSession.value = null
+    startSession(s)
+  }
+
   function startSession(s: Session) {
     // Une séance est déjà en cours : impossible d'en démarrer une autre.
     // Même séance → on la reprend ; autre séance → aperçu en lecture seule.
@@ -753,7 +776,7 @@ function creer() {
     // cartes de confirmation
     cancelPromptOpen, askCancel, confirmCancel, swapAsk, swapEx, confirmSwap,
     // saisie
-    prefillRows, pickVariant, startSession, editSession, restoreDraft, clearActive,
+    prefillRows, pickVariant, startSession, apercuSession, demarrerApercu, editSession, restoreDraft, clearActive,
     doneCount, workCount, isExDone, requiredEx, finishedCount, finishReady, finishSession,
     setEffort, toggleSwap, addSet, addWarmup, removeSet, setLabel, toggleSet, warmupFor,
     // lecture

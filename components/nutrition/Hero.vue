@@ -251,7 +251,11 @@ function addNow() {
     </p>
 
     <div class="nu-hero-actions">
-      <button class="btn-primary flex-1" @click="eatSheet = true">🍽 Remplir les repas</button>
+      <!-- « Remplir les repas » se lisait comme « composer le menu », alors que le
+           geste est l'inverse : déclarer ce qui est DÉJÀ mangé. La feuille dit
+           d'ailleurs « coche au fur et à mesure » — le bouton dit maintenant le même
+           verbe, et il commande le compteur « repas pris » juste au-dessus. -->
+      <button class="btn-primary flex-1" @click="eatSheet = true">🍽 Cocher mes repas</button>
       <button v-if="!open" class="btn" @click="open = true; time = hhmm(new Date())">＋ Extra</button>
     </div>
     <div v-if="open" class="nu-quick">

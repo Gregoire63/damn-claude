@@ -610,7 +610,7 @@ restent lisibles l'une à côté de l'autre dans la feuille de style.
 filet — les deux questions du matin sur la même ligne. Puis les compteurs, la note
 hebdo et les boutons, sur toute la largeur.
 
-**Sur téléphone** : tout s'empile, et la séance passe **après** le bouton « Remplir mes
+**Sur téléphone** : tout s'empile, et la séance passe **après** le bouton « Cocher mes
 repas ». On ouvre l'appli pour manger cinq fois par jour et pour s'entraîner une : au
 premier coup d'œil, l'écran doit répondre à la question fréquente, pas à la rare.
 

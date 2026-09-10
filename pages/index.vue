@@ -16,7 +16,7 @@ import { useFlash } from '~/composables/useFlash'
 const { weekPlan, sessionIdFor, isPlanMoved } = useProfile()
 const { sessionLog } = useWorkout()
 const { todayISO, todayDow, todayIndex } = useJour()
-const { activeSession, deloadAdvised, startSession, editSession } = useSeance()
+const { activeSession, deloadAdvised, startSession, apercuSession, editSession } = useSeance()
 const { showFlash } = useFlash()
 
 /**
@@ -105,6 +105,9 @@ const todayRecord = computed(() => {
           <div class="sc-muscles"><span v-for="m in sessionMuscles(todaySession)" :key="m" class="sc-chip">{{ m }}</span></div>
           <div class="today-foot">
             <span class="muted">{{ todaySession.exercises.length }} exercices<template v-if="todaySession.sprint"> · ⚡ sprint</template></span>
+            <!-- Lire avant de s'engager. Le geste principal ne change pas de place :
+                 celui-ci se pose à côté, en second. -->
+            <button class="btn today-go" @click="apercuSession(todaySession)">👁 Voir</button>
             <button v-if="activeSession" class="btn-primary today-go" :style="{ background: todaySession.color }" @click="startSession(todaySession)">{{ activeSession.id === todaySession.id ? 'Reprendre →' : 'Aperçu' }}</button>
             <button v-else-if="todayRecord" class="btn-primary today-go" :style="{ background: todaySession.color }" @click="editSession(todayRecord!)">✏️ Modifier la séance →</button>
             <button v-else class="btn-primary today-go" :style="{ background: todaySession.color }" @click="startSession(todaySession)">Démarrer la séance →</button>
@@ -128,15 +131,28 @@ const todayRecord = computed(() => {
 
     <div class="section-label">{{ todaySession ? 'Ou commence une autre séance' : 'Toutes les séances' }}</div>
     <div class="session-grid">
-      <button v-for="s in otherSessions" :key="s.id" class="session-card" :style="{ '--c': s.color }" @click="startSession(s)">
-        <div class="sc-top">
-          <span class="sc-day">{{ s.tag }}</span>
-          <span v-if="s.sprint" class="sc-sprint">⚡ sprint</span>
-        </div>
-        <div class="sc-name">{{ s.name }}</div>
-        <div class="sc-muscles"><span v-for="m in sessionMuscles(s)" :key="m" class="sc-chip">{{ m }}</span></div>
-        <div class="sc-foot"><span class="sc-count mono">{{ s.exercises.length }} exercices</span><span class="sc-go">{{ activeSession ? (activeSession.id === s.id ? 'Reprendre →' : 'Aperçu') : 'Démarrer →' }}</span></div>
-      </button>
+      <!--
+        Deux gestes, deux cibles. Le corps de la carte OUVRE l'aperçu, le bouton
+        coloré DÉMARRE — au lieu d'un seul bouton qui démarrait où qu'on touche.
+
+        C'est aussi pour ça que la carte n'est plus un `<button>` : un bouton ne peut
+        pas en contenir un autre, et l'aperçu ne pouvait donc pas cohabiter avec le
+        démarrage tant que la carte entière en était un.
+      -->
+      <div v-for="s in otherSessions" :key="s.id" class="session-card sc-duo" :style="{ '--c': s.color }">
+        <button class="sc-open" @click="apercuSession(s)">
+          <div class="sc-top">
+            <span class="sc-day">{{ s.tag }}</span>
+            <span v-if="s.sprint" class="sc-sprint">⚡ sprint</span>
+          </div>
+          <div class="sc-name">{{ s.name }}</div>
+          <div class="sc-muscles"><span v-for="m in sessionMuscles(s)" :key="m" class="sc-chip">{{ m }}</span></div>
+          <div class="sc-foot"><span class="sc-count mono">{{ s.exercises.length }} exercices</span><span class="sc-go">👁 Voir</span></div>
+        </button>
+        <button class="btn-primary sc-start" :style="{ background: s.color }" @click="startSession(s)">
+          {{ activeSession ? (activeSession.id === s.id ? 'Reprendre →' : 'Aperçu') : 'Démarrer →' }}
+        </button>
+      </div>
     </div>
 
     <!--

@@ -49,9 +49,24 @@ function disarm() {
   if ((history.state as Record<string, unknown> | null)?.[MARK]) history.back()
 }
 
+/**
+ * Désarmer est DIFFÉRÉ d'une micro-tâche, et c'est le point le plus délicat du
+ * fichier.
+ *
+ * Un calque qui se ferme pendant qu'un autre s'ouvre — regarder une séance puis la
+ * démarrer depuis l'aperçu — vide la pile et la remplit dans le même battement. Vue
+ * exécute les deux observateurs dans la même passe, dans l'ordre où ils ont été
+ * déclarés, qui n'est pas celui des calques à l'écran. Si le retrait tombe en
+ * premier, `disarm()` appelle `history.back()` ; le `popstate` arrive un instant
+ * plus tard, quand le nouveau calque s'est déjà inscrit — et c'est LUI qui se fait
+ * refermer. À l'écran : on démarre la séance, et la feuille se replie toute seule.
+ *
+ * Reporter la décision à la fin de la passe suffit : si quelque chose s'est
+ * réinscrit entre-temps, il n'y a plus rien à désarmer.
+ */
 function sync() {
-  if (stack.length) arm()
-  else disarm()
+  if (stack.length) { arm(); return }
+  queueMicrotask(() => { if (!stack.length) disarm() })
 }
 
 function onPop() {
