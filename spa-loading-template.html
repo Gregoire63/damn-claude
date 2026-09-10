@@ -6,6 +6,9 @@
 <style>
   #sport-loading {
     position: fixed; inset: 0; z-index: 999999;
+    /* Le fondu de sortie. Sa durée doit rester égale à FONDU_MS dans
+       composables/useEcranChargement.ts, qui retire l'élément après. */
+    transition: opacity 0.32s ease;
     display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px;
     background: #fefcf8;
     font-family: 'DM Sans', system-ui, -apple-system, Arial, sans-serif;
@@ -36,6 +39,7 @@
     font-size: 11px; text-transform: uppercase; letter-spacing: 0.16em; color: #8b6f5c;
     font-family: 'Space Mono', ui-monospace, monospace;
   }
+  #sport-loading.sl-out { opacity: 0; pointer-events: none; }
   @media (prefers-color-scheme: dark) {
     #sport-loading { background: #17140f; }
     #sport-loading .sl-spinner { border-color: rgba(200, 162, 122, 0.25); border-top-color: #c8a27a; }
@@ -49,6 +53,21 @@
      après (cas des machines rapides où l'animation CSS n'a pas le temps d'être
      « committée »). Repli sur l'animation CSS si l'API n'existe pas. */
   (function () {
+    /* Sortir l'écran de la racine Nuxt, et noter l'heure.
+
+       Le gabarit est rendu DANS la racine de l'application, que le montage de Vue
+       remplace : sans ce déplacement, l'écran disparaît à l'octet près où l'app est
+       prête — soit un flash de quelques dizaines de millisecondes sur un
+       rechargement à chaud. Déplacé sous <body>, plus personne ne le remplace, et
+       c'est `retirerEcranChargement()` qui décide de son départ.
+
+       Ici, pendant l'analyse du HTML : plus tard serait trop tard. */
+    window.__slDebut = Date.now();
+    var ecran = document.getElementById('sport-loading');
+    if (ecran && document.body && ecran.parentNode !== document.body) {
+      try { document.body.appendChild(ecran); } catch (e) { /* on le laisse où il est */ }
+    }
+
     var el = document.getElementById('sl-spinner');
     if (el && typeof el.animate === 'function') {
       try {

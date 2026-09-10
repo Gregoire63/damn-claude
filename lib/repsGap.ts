@@ -1,6 +1,7 @@
 // Import relatif : testé dans le projet « unit », qui tourne en Node pur sans la
 // résolution de chemins de Nuxt.
 import { bottomOfRange, topOfRange } from '../data/sportProgram'
+import { arrondi } from './nombres'
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Quand la fiche dit une chose et le carnet une autre.
@@ -88,7 +89,10 @@ export function repsGap(
     .map(rs => median(rs))
   if (parSeance.length < minSeances) return null
 
-  const m = median(parSeance)
+  // Arrondi ICI et pas dans les médianes intermédiaires : c'est la valeur qui part
+  // dans une PHRASE, lue par lui et par Claude. Une médiane de médianes tombe vite
+  // sur 7,625 — et le binaire y ajoute volontiers une queue de décimales.
+  const m = arrondi(median(parSeance))
   // Le plafond d'un nombre fixe est le plancher : « 15 » veut dire 15, pas « au moins 15 ».
   const plafond = haut ?? bas
   if (bas !== null && m < bas) return { median: m, bas, haut, sens: 'sous', seances: parSeance.length }

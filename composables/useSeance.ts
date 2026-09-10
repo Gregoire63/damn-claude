@@ -58,7 +58,7 @@ function creer() {
   } = useWorkout()
   const { start: startRest, secondsLeft: restLeft, stop: stopRest, addTime: addRest } = useRestTimer()
   const restFmt = (s: number) => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`
-  const { program: prog, sessionById } = useProgram()
+  const { program: prog, sessionById, echauffementRefuse, refuserEchauffement, rendreEchauffement } = useProgram()
   const { todayISO, todayDow } = useJour()
   const { showFlash } = useFlash()
 
@@ -485,8 +485,19 @@ function creer() {
     const src = work.find(s => s.done) ?? work[0]
     rows.push({ w: src?.w ?? '', r: src?.r ?? '', done: false, warm: false, w2: src?.w2 ?? '', r2: src?.r2 ?? '' })
   }
-  function addWarmup(exId: string) { const wu = warmupFor(exId); draft[exId].unshift({ w: wu !== null ? String(wu) : '', r: '', done: false, warm: true, w2: '', r2: '' }) }
-  function removeSet(exId: string, i: number) { if (draft[exId].length > 1) draft[exId].splice(i, 1) }
+  function addWarmup(exId: string) {
+    const wu = warmupFor(exId)
+    draft[exId].unshift({ w: wu !== null ? String(wu) : '', r: '', done: false, warm: true, w2: '', r2: '' })
+    rendreEchauffement(exId) // en redemander un lève le refus
+  }
+  function removeSet(exId: string, i: number) {
+    if (draft[exId].length <= 1) return
+    // Supprimer l'échauffement PROPOSÉ, c'est dire qu'on n'en veut pas sur ce
+    // mouvement — pas seulement aujourd'hui. Une série de travail, elle, ne dit rien
+    // de plus que « pas celle-là ».
+    if (draft[exId][i]?.warm) refuserEchauffement(exId)
+    draft[exId].splice(i, 1)
+  }
   // Libellé : « Éch » pour l'échauffement, sinon numéro de série de travail
   function setLabel(rows: { warm: boolean }[], i: number) {
     if (rows[i].warm) return 'Éch'
@@ -513,6 +524,9 @@ function creer() {
   function withWarmup(e: Exercise, rows: DraftRow[]): DraftRow[] {
     const work = rows.filter(r => !r.warm)
     if (e.bodyweight || e.superset) return work // pas d'échauffement chiffré ici
+    // Refusé une fois, refusé pour de bon. Le reproposer à chaque démarrage
+    // transformait une suppression en geste hebdomadaire.
+    if (echauffementRefuse(e.id)) return work
     const wu = warmupLoad(Math.max(0, ...work.map(r => parseFloat(r.w) || 0)))
     if (wu === null) return work // charge trop légère → échauffement inutile
     return [{ w: String(wu), r: '10', done: false, warm: true, w2: '', r2: '' }, ...work]

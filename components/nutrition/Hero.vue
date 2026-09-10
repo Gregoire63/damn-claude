@@ -10,6 +10,7 @@ import {
   adjustRemaining, adjustSignature, applySteps, buildDay, carryAdjustedTarget, dayIntake, donutArcs, hhmm, isDayPlayed, macroTargets, mondayOf, nextMeal, sessionsOn, sumMacros, timelineOf, weekBalance,
 } from '~/lib/nutritionStats'
 import { shiftIso } from '~/utils/sportStats'
+import { EXPLICATION_NATURE, LIBELLE_NATURE, natureRepas } from '~/lib/freeMeal'
 
 // Bandeau d'accueil : où j'en suis, et une saisie en trois secondes.
 //
@@ -19,9 +20,24 @@ import { shiftIso } from '~/utils/sportStats'
 // une destination, et ça n'a jamais mérité un onglet permanent.
 const props = defineProps<{ todayIso: string }>()
 
+/**
+ * L'étiquette du prochain repas, quand ce n'est pas celui du plan.
+ *
+ * Le bandeau annonce « 20 h 30 · Saumon, patate douce » sans dire si ce nom sort du
+ * catalogue ou d'un repas saisi à la main. Or c'est exactement là qu'on le lit en
+ * premier — et « du dehors » veut dire que le total du jour repose sur une
+ * estimation, ce qui ne se devine pas à la lecture d'un nom de plat.
+ */
+const natureSuivant = computed(() => {
+  const slot = next.value?.slot
+  if (!slot) return null
+  const f = freeMealFor(props.todayIso, slot)
+  return f ? natureRepas(f) : null
+})
+
 const {
   hydrate, dayPlanFor, dayFor, stepsFor, toggleEaten, eatenSlots, extrasFor, addExtra,
-  removeExtra, prepMode, library, isAdjustApplied,
+  removeExtra, prepMode, library, isAdjustApplied, freeMealFor,
 } = useNutrition()
 
 // Le bandeau peut être monté sans passer par l'onglet Nutrition : il hydrate lui-même.
@@ -219,6 +235,12 @@ function addNow() {
           <div v-if="next" class="nu-hero-next-big">
             <div class="mono nu-hero-next-t">{{ next.time }}</div>
             <div class="nu-hero-next-l">{{ next.label }}</div>
+            <div v-if="natureSuivant" class="nu-hero-next-tag">
+              <span
+                class="nu-tag" :class="natureSuivant === 'dehors' ? 'nu-tag-free' : 'nu-tag-vari'"
+                :title="EXPLICATION_NATURE[natureSuivant]"
+              >{{ LIBELLE_NATURE[natureSuivant] }}</span>
+            </div>
             <button class="btn-primary nu-hero-eat" @click="toggleEaten(props.todayIso, next.slot!)">✓ Mangé</button>
           </div>
           <div v-else class="muted">Tous les repas du plan sont validés.</div>

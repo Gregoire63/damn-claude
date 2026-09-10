@@ -7,6 +7,7 @@ import { useNutrition } from '~/composables/useNutrition'
 import { useTraining } from '~/composables/useTraining'
 import { useProgram } from '~/composables/useProgram'
 import { setText } from '~/lib/setText'
+import { EXPLICATION_NATURE, LIBELLE_NATURE, natureRepas } from '~/lib/freeMeal'
 import { useMesures } from '~/composables/useMesures'
 import { EFFORT_OPTIONS } from '~/utils/sportStats'
 import { variantName } from '~/data/exerciseVariants'
@@ -133,6 +134,16 @@ function move(to: string) {
 
 const swapping = ref<string | null>(null)
 const swapable = (slot: string) => choicesForSlot(slot, library.value, stock.value)
+
+/**
+ * D'où viennent les chiffres de ce repas-là.
+ *
+ * La même étiquette que dans l'onglet Nutrition, et calculée par la même fonction —
+ * elle manquait ici, si bien qu'en relisant un jour passé rien ne distinguait un
+ * kebab estimé de mémoire d'une portion pesée au gramme. Les deux affichaient un
+ * nombre de calories du même gris, et on finissait par douter des deux.
+ */
+const natureDe = (slot: string) => natureRepas(freeMealFor(props.iso, slot))
 const swapMeal = computed(() => plan.value?.meals.find(m => m.slot === swapping.value) ?? null)
 function swap(slot: string, id: string | null) {
   setPicked(props.iso, slot, id)
@@ -263,6 +274,14 @@ function openLibre() {
             <div class="ds-m-top">
               <span class="ds-m-dot" />
               <span class="ds-m-name">{{ m.name }}</span>
+              <!-- Trois cas, pas un : « du dehors » signale des chiffres estimés,
+                   « modifié » et « composé » des grammages aussi sûrs que ceux du
+                   catalogue. Rien du tout pour un repas du plan, qui est le cas
+                   courant — une étiquette sur chaque ligne ne dirait plus rien. -->
+              <span
+                v-if="m.free" class="nu-tag" :class="natureDe(m.slot) === 'dehors' ? 'nu-tag-free' : 'nu-tag-vari'"
+                :title="EXPLICATION_NATURE[natureDe(m.slot)]"
+              >{{ LIBELLE_NATURE[natureDe(m.slot)] }}</span>
               <span class="ds-m-time mono">{{ m.time }}</span>
             </div>
             <div class="ds-m-sub">

@@ -20,6 +20,7 @@ import { useNutrition } from '~/composables/useNutrition'
 import { useVault } from '~/composables/useVault'
 import { useDemarrage } from '~/composables/useDemarrage'
 import { useMesures } from '~/composables/useMesures'
+import { retirerEcranChargement } from '~/composables/useEcranChargement'
 import { useSnapshot } from '~/composables/useSnapshot'
 import { useWorkout } from '~/composables/useWorkout'
 import { useBackGuard } from '~/composables/useBackGuard'
@@ -308,6 +309,9 @@ onMounted(() => {
   // Service worker, mises à jour et purge des caches : tout est dans `useMaj()`.
   maj.installer(import.meta.dev)
   surveillerRetourAutorisation()
+  // L'écran de chargement ne se retire plus tout seul : il a été sorti de la racine
+  // Nuxt pour ne pas s'évaporer au montage. C'est ici qu'on le laisse partir.
+  retirerEcranChargement()
   hydrateProfile()
   // L'onglet D'ABORD, la séance ensuite : `restoreDraft` rouvre la feuille par-dessus,
   // et c'est bien l'onglet restauré qu'on doit retrouver en la repliant.

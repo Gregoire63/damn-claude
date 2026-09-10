@@ -25,6 +25,7 @@ const OFF_KEY = 'gr-prog-off-v1' // exercices retirés du programme
 const ORDER_KEY = 'gr-prog-order-v1' // ordre voulu, par séance
 const VAR_KEY = 'gr-prog-var-v1' // machines de remplacement redéfinies
 const SEANCES_KEY = 'gr-prog-seances-v1' // séances créées de toutes pièces
+const ECHAUFF_KEY = 'gr-prog-echauff-off-v1' // exercices dont l'échauffement auto a été refusé
 
 const patches = ref<Record<string, ExercisePatch>>({})
 const added = ref<Record<string, Exercise[]>>({})
@@ -32,6 +33,20 @@ const disabled = ref<string[]>([])
 const order = ref<Record<string, string[]>>({})
 const variants = ref<Record<string, VariantSpec[]>>({})
 const seances = ref<Session[]>([])
+/**
+ * Les exercices pour lesquels l'échauffement automatique a été REFUSÉ.
+ *
+ * L'échauffement était reproposé à chaque démarrage, quoi qu'on en fasse : on le
+ * supprimait, il revenait la séance suivante, et on le resupprimait. Un geste qu'on
+ * refait tous les lundis n'est pas un réglage, c'est une négociation perdue
+ * d'avance — surtout sur les mouvements où il n'a pas de sens (un rowing léger en
+ * fin de séance, quand tout est déjà chaud).
+ *
+ * Une LISTE et non un booléen global : la question ne se pose pas au squat comme
+ * aux élévations latérales. Et le refus se lève en réajoutant l'échauffement à la
+ * main — même geste, dans l'autre sens.
+ */
+const echauffOff = ref<string[]>([])
 
 let hydrated = false
 
@@ -56,6 +71,7 @@ export function useProgram() {
     order.value = safeParse(localStorage.getItem(ORDER_KEY), {})
     variants.value = safeParse(localStorage.getItem(VAR_KEY), {})
     seances.value = safeParse(localStorage.getItem(SEANCES_KEY), [])
+    echauffOff.value = safeParse(localStorage.getItem(ECHAUFF_KEY), [])
   }
   hydrate()
 
@@ -234,11 +250,40 @@ export function useProgram() {
     write(ORDER_KEY, order.value)
   }
 
+  /** L'échauffement automatique a-t-il été refusé pour cet exercice ? */
+  const echauffementRefuse = (exId: string) => echauffOff.value.includes(exId)
+
+  /** Supprimer l'échauffement proposé vaut refus — pour cet exercice, et pour la suite. */
+  function refuserEchauffement(exId: string) {
+    if (echauffOff.value.includes(exId)) return
+    echauffOff.value = [...echauffOff.value, exId]
+    write(ECHAUFF_KEY, echauffOff.value)
+  }
+
+  /** En rajouter un à la main lève le refus : c'est le même geste, dans l'autre sens. */
+  function rendreEchauffement(exId: string) {
+    if (!echauffOff.value.includes(exId)) return
+    echauffOff.value = echauffOff.value.filter(id => id !== exId)
+    write(ECHAUFF_KEY, echauffOff.value)
+  }
+
   function snapshot() {
-    return { programme: { sessions: seances.value, patches: patches.value, added: added.value, disabled: disabled.value, order: order.value, variants: variants.value } }
+    return {
+      programme: { sessions: seances.value, patches: patches.value, added: added.value, disabled: disabled.value, order: order.value, variants: variants.value },
+      // Hors de `programme` : le programme n'a pas bougé, c'est la SAISIE qu'on
+      // règle. Le mettre dedans obligerait `mergeProgram` à connaître un champ dont
+      // il n'a rien à faire.
+      echauffementsRefuses: echauffOff.value,
+    }
   }
   /** Restauration TOLÉRANTE : une sauvegarde d'avant cette fonctionnalité passe sans erreur. */
   function restore(data: Record<string, unknown>) {
+    // AVANT la sortie sur `programme` absent : les deux sont indépendants, et une
+    // sauvegarde peut très bien porter l'un sans l'autre.
+    if (Array.isArray(data?.echauffementsRefuses)) {
+      echauffOff.value = (data.echauffementsRefuses as unknown[]).filter(x => typeof x === 'string') as string[]
+      write(ECHAUFF_KEY, echauffOff.value)
+    }
     const p = data?.programme as ProgramCustom | undefined
     if (!p || typeof p !== 'object') return
     if (p.patches && typeof p.patches === 'object') { patches.value = p.patches; write(PATCH_KEY, patches.value) }
@@ -255,6 +300,7 @@ export function useProgram() {
     patchExercise, resetExercise, addExercise, disableExercise, enableExercise, setOrder,
     setVariants, resetVariants, placeAfter,
     addSession, removeSession,
+    echauffementRefuse, refuserEchauffement, rendreEchauffement,
     snapshot, restore,
   }
 }

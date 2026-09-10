@@ -1063,6 +1063,9 @@
 /* Préfixe `fm-` : `nu-` est déjà pris par toute la nutrition et `pk-` par la
    feuille de choix, dont ce formulaire réutilise les lignes d'option. */
 .nu-tag-free { background: #8b6f5c; }
+/* L'étiquette du prochain repas : sur sa propre ligne, sous le nom du plat, sinon
+   elle pousse le nom sur deux lignes dès qu'il est un peu long. */
+.nu-hero-next-tag { margin-top: 4px; }
 .fm-new { align-items: flex-start; gap: 12px; border-style: dashed; border-color: var(--accent-secondary); margin-bottom: 10px; }
 .fm-plus { flex: 0 0 auto; font-size: 20px; line-height: 1.1; color: var(--accent-secondary); }
 .fm-new .pk-name { display: flex; flex-direction: column; gap: 2px; }

@@ -88,6 +88,16 @@ valeur dans les fichiers servis.
 Un dépôt public garde tout dans son historique : effacer le fichier ne répare rien,
 seule la régénération des clés répare.
 
+**Un nombre calculé s'arrondit à sa SORTIE, jamais au milieu du calcul.**
+`lib/nombres.ts` → `arrondi(n)`, au centième. Deux causes fabriquent des nombres à
+rallonge, et la seconde surprend : la division qui ne tombe pas juste, et la
+représentation binaire des décimaux — `0.1 + 0.2` vaut `0.30000000000000004` sans
+qu'aucune division soit en cause. Arrondir en cours de route ferait dériver le
+résultat ; arrondir à la sortie ne change que ce qu'on lit. Attention : l'écran n'est
+pas la seule sortie — les PHRASES que le connecteur rend à Claude en sont une aussi,
+et c'est là que le défaut s'était logé (`lib/repsGap.ts`, « tu en fais 7,625 reps en
+médiane »).
+
 **Fermer un calque et en ouvrir un autre dans le même battement.** La pile de
 `useBackStack` tient UNE entrée d'historique factice tant qu'il reste quelque chose à
 refermer, et la rendre appelle `history.back()`. Quand un calque en remplace un autre
@@ -129,8 +139,8 @@ error.vue                404 et erreurs serveur
 lib/onglets.ts           les cinq onglets : chemin, libellé, titre (AUCUN import)
 components/sport/        écrans du suivi d'entraînement
 components/nutrition/    écrans du module nutrition
-composables/             l'état, persisté dans localStorage (30 fichiers, pas de Pinia)
-lib/                     logique pure — aucun DOM, aucun stockage, testée (23 fichiers)
+composables/             l'état, persisté dans localStorage (31 fichiers, pas de Pinia)
+lib/                     logique pure — aucun DOM, aucun stockage, testée (24 fichiers)
 utils/                   auto-importé par Nuxt : uniquement du vocabulaire spécifique
 data/                    types et tables de référence — les contenus sont VIDES
 data/exemple/            le pack d'exemple → public/exemple.json
@@ -318,7 +328,7 @@ Deux invariants tenus par des tests :
 
 ## Les tests
 
-1273 tests, 73 fichiers, deux projets. La plupart tournent sur le **pack d'exemple**,
+1292 tests, 76 fichiers, deux projets. La plupart tournent sur le **pack d'exemple**,
 déclaré fichier par fichier (`vi.mock('../../data/nutritionProgram', …)`, voir
 `test/exemple.ts`) : vérifier que la modulation des féculents ne touche pas aux
 protéines demande des aliments aux vraies macros, pas trois objets fabriqués.
