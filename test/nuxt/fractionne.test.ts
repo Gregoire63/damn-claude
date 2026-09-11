@@ -112,14 +112,23 @@ describe('le bilan de fin', () => {
     expect(f.bilan.value).toEqual({ sprints: 2, sprintS: 5, echauffementS: 10 })
   })
 
-  it('ne rend rien quand on arrête en cours de route', async () => {
+  /**
+   * Arrêter ne jette plus ce qui a été couru.
+   *
+   * La règle d'avant — couper = bilan vide — partait d'une bonne intention : ne rien
+   * inscrire qu'on n'ait pas voulu. En pratique elle punissait le cas normal. On
+   * coupe un fractionné parce que la piste est prise ou que les jambes ne suivent
+   * plus, pas parce qu'on renonce à noter sa séance ; et c'est exactement le moment
+   * où l'on a le moins envie de retaper quatre lignes.
+   */
+  it('garde ce qui a été couru quand on arrête en cours de route', async () => {
     const f = await charger()
     f.definir(COURT)
     f.lancer()
-    vi.advanceTimersByTime(12_000)
+    vi.advanceTimersByTime(12_000) // l'échauffement est passé, aucun sprint encore
     f.arreter()
     expect(f.enCours.value).toBe(false)
-    expect(f.bilan.value).toBeNull()
+    expect(f.bilan.value).toEqual({ sprints: 0, sprintS: 5, echauffementS: 10 })
   })
 })
 
@@ -202,5 +211,41 @@ describe('le réglage', () => {
     const avant = { ...f.reglage.value }
     f.restore({ logs: {} })
     expect(f.reglage.value).toEqual(avant)
+  })
+})
+
+describe('arrêter en cours de route', () => {
+  /**
+   * Le geste le plus fréquent après « terminé » : la piste est prise, les jambes ne
+   * suivent pas, on coupe. Ça ne doit pas effacer ce qui a été couru — c'est
+   * justement le moment où l'on a le moins envie de retaper quoi que ce soit.
+   */
+  it('rend ce qui a été fait, pas rien', async () => {
+    const f = await charger()
+    f.definir(COURT)
+    f.lancer()
+
+    // [0 échauff 10][repos 15][sprint 1 → 20][repos 25][sprint 2 → 30]
+    vi.advanceTimersByTime(22_000) // on est dans le repos qui suit le premier sprint
+    f.arreter()
+
+    expect(f.bilan.value).toEqual({ sprints: 1, sprintS: 5, echauffementS: 10 })
+  })
+
+  it('ne rend rien quand on coupe avant le premier sprint fini', async () => {
+    const f = await charger()
+    f.definir({ ...COURT, echauffementS: 0, reposApresS: 0 })
+    f.lancer()
+    vi.advanceTimersByTime(2_000) // en plein premier sprint
+    f.arreter()
+    expect(f.bilan.value).toBeNull()
+  })
+
+  /** Arrêter alors que rien ne tourne ne doit rien inventer. */
+  it('ne rend rien quand rien ne tournait', async () => {
+    const f = await charger()
+    f.definir(COURT)
+    f.arreter()
+    expect(f.bilan.value).toBeNull()
   })
 })

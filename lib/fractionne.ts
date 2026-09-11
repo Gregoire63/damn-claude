@@ -95,6 +95,31 @@ export function planDe(r: Reglage): Segment[] {
   return out
 }
 
+/**
+ * Ce qui a été RÉELLEMENT couru quand on coupe le bloc avant la fin.
+ *
+ * Arrêter un fractionné ne remplissait rien : le journal restait vide alors qu'on
+ * venait de faire quatre sprints sur six. Or c'est là qu'on a le moins envie de
+ * ressaisir quoi que ce soit — on coupe parce qu'on n'en peut plus, ou parce que la
+ * piste est prise, pas parce qu'on a changé d'avis sur l'idée de noter sa séance.
+ *
+ * Seuls les segments STRICTEMENT terminés comptent : `index` est celui du segment en
+ * cours, et un sprint interrompu au milieu n'est pas un sprint. Mieux vaut en
+ * compter un de moins que d'inscrire un effort qui n'a pas eu lieu — c'est le
+ * chiffre qui servira de base à la séance suivante.
+ */
+export function bilanPartiel(plan: Segment[], index: number, r: Reglage): { sprints: number, sprintS: number, echauffementS: number } | null {
+  if (index <= 0) return null
+  let sprints = 0
+  let echauffementS = 0
+  for (const s of plan.slice(0, Math.min(index, plan.length))) {
+    if (s.kind === 'sprint') sprints++
+    else if (s.kind === 'echauffement') echauffementS += s.dureeS
+  }
+  if (!sprints && !echauffementS) return null
+  return { sprints, sprintS: r.sprintS, echauffementS }
+}
+
 /** Durée totale du bloc, en secondes — annoncée avant de lancer. */
 export function dureeTotale(r: Reglage): number {
   return planDe(r).reduce((n, s) => n + s.dureeS, 0)

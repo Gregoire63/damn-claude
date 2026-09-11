@@ -1,8 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import {
-  BORNES, REGLAGE_DEFAUT, bornesDe, borner, dureeTotale, fmtChrono, fmtDuree,
-  planDe, segmentA, texteAnnonce,
-} from '../../lib/fractionne'
+import { BORNES, REGLAGE_DEFAUT, bilanPartiel, borner, bornesDe, dureeTotale, fmtChrono, fmtDuree, planDe, segmentA, texteAnnonce } from '../../lib/fractionne'
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Le plan d'un fractionné.
@@ -142,5 +139,52 @@ describe('les formats', () => {
     expect(fmtChrono(9)).toBe('0:09')
     expect(fmtChrono(125)).toBe('2:05')
     expect(fmtChrono(-3)).toBe('0:00') // jamais de temps négatif à l'écran
+  })
+})
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Couper le bloc en route.
+// ─────────────────────────────────────────────────────────────────────────────
+//
+// Arrêter un fractionné ne remplissait rien : le journal restait vide alors qu'on
+// venait de faire quatre sprints sur six. Or c'est là qu'on a le moins envie de
+// ressaisir quoi que ce soit — on coupe parce qu'on n'en peut plus, ou parce que la
+// piste est prise, pas parce qu'on a changé d'avis sur l'idée de noter sa séance.
+
+describe('le bilan d’un bloc écourté', () => {
+  const R = { echauffementS: 300, reposApresS: 60, sprintS: 30, reposS: 120, sprints: 6, retourAuCalmeS: 0 }
+  const PLAN = planDe(R)
+  // [0 échauff][1 repos][2 sprint 1][3 repos][4 sprint 2][5 repos][6 sprint 3]…
+
+  it('ne compte que les sprints STRICTEMENT terminés', () => {
+    // On coupe pendant le deuxième sprint (index 4) : un seul est fini.
+    expect(bilanPartiel(PLAN, 4, R)).toEqual({ sprints: 1, sprintS: 30, echauffementS: 300 })
+  })
+
+  /** Un sprint interrompu au milieu n'est pas un sprint. Mieux vaut en compter un de
+   *  moins que d'inscrire un effort qui n'a pas eu lieu : ce chiffre sert de base à
+   *  la séance suivante. */
+  it('ne compte pas celui qu’on est en train de courir', () => {
+    expect(bilanPartiel(PLAN, 2, R)!.sprints).toBe(0)
+    expect(bilanPartiel(PLAN, 3, R)!.sprints).toBe(1)
+  })
+
+  it('rend l’échauffement seul quand on coupe juste après', () => {
+    expect(bilanPartiel(PLAN, 1, R)).toEqual({ sprints: 0, sprintS: 30, echauffementS: 300 })
+  })
+
+  it('ne rend rien quand on coupe avant d’avoir rien fait', () => {
+    expect(bilanPartiel(PLAN, 0, R)).toBeNull()
+    expect(bilanPartiel(PLAN, -1, R)).toBeNull()
+  })
+
+  /** Sans échauffement dans le réglage, couper au premier sprint ne rend rien. */
+  it('ne rend rien quand le premier sprint n’est pas fini et qu’il n’y a pas d’échauffement', () => {
+    const sans = { ...R, echauffementS: 0, reposApresS: 0 }
+    expect(bilanPartiel(planDe(sans), 0, sans)).toBeNull()
+  })
+
+  it('encaisse un index au-delà du plan', () => {
+    expect(bilanPartiel(PLAN, 999, R)!.sprints).toBe(6)
   })
 })

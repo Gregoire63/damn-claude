@@ -1,5 +1,6 @@
 import { ref, watch } from 'vue'
 import { KEEPALIVE_WAV } from '~/data/keepAliveAudio'
+import { baisserLeSonUnInstant, partagerLeSon } from '~/composables/usePartageAudio'
 
 // Timer de repos partagé (module-scope) : la page peut le démarrer automatiquement
 // quand une série est validée, et le composant SportRestTimer l'affiche.
@@ -161,6 +162,11 @@ export function sonner(tones: ToneSpec[], volume?: number) {
   if (!import.meta.client || !soundEnabled.value) return
   const ctx = getCtx()
   if (!ctx) return
+  // Le temps du bip, on demande au système de baisser ce qui joue à côté — et de le
+  // remonter juste après. C'est ce que fait un GPS ; c'est ce qu'on veut ici, et
+  // c'est l'inverse de couper la musique.
+  const fin = Math.max(...tones.map(t => t.t + t.d), 0)
+  baisserLeSonUnInstant(Math.round(fin * 1000) + 400)
   try { playTones(ctx, volume ?? soundVolume.value, tones) } catch { /* audio indisponible */ }
 }
 
@@ -197,16 +203,53 @@ function ensureKeepAlive(): HTMLAudioElement | null {
  * repos tourne gelait le repos en arrière-plan, et son bip ne sonnait jamais.
  */
 let veilleurs = 0
-function startKeepAlive() {
-  veilleurs++
+
+/**
+ * La piste ne tourne QUE quand l'onglet est caché, et c'est la moitié qui manquait.
+ *
+ * Elle n'existe que pour empêcher Chrome Android de geler les minuteurs d'un onglet
+ * en arrière-plan. Tant que l'écran est devant les yeux, il n'y a rien à empêcher —
+ * et la jouer quand même coûtait très cher : le système donne le focus audio à la
+ * page, la musique de l'utilisateur s'arrête, et il faut aller la relancer à la main
+ * sans savoir pourquoi elle s'est tue.
+ *
+ * Autrement dit : valider une série coupait Spotify. Pour rien, puisque l'onglet
+ * était à l'écran.
+ */
+function veilleSouhaitee(): boolean {
+  return veilleurs > 0 && import.meta.client && document.visibilityState === 'hidden'
+}
+
+function appliquerVeille() {
   const a = ensureKeepAlive()
   if (!a) return
-  try { a.currentTime = 0; const p = a.play(); if (p && typeof p.catch === 'function') p.catch(() => {}) } catch { /* ignore */ }
+  if (veilleSouhaitee()) {
+    if (!a.paused) return
+    try { a.currentTime = 0; const p = a.play(); if (p && typeof p.catch === 'function') p.catch(() => {}) } catch { /* ignore */ }
+  }
+  else if (!a.paused) {
+    try { a.pause() } catch { /* ignore */ }
+  }
+}
+
+let ecouteVisibilite = false
+function ecouterVisibilite() {
+  if (ecouteVisibilite || !import.meta.client) return
+  ecouteVisibilite = true
+  document.addEventListener('visibilitychange', appliquerVeille)
+}
+
+function startKeepAlive() {
+  veilleurs++
+  ecouterVisibilite()
+  // Se déclarer « ambient » AVANT de jouer quoi que ce soit : déclaré après, le
+  // premier son a déjà pris le focus, et le mal est fait.
+  partagerLeSon()
+  appliquerVeille()
 }
 function stopKeepAlive() {
   veilleurs = Math.max(0, veilleurs - 1)
-  if (veilleurs > 0) return
-  if (keepAlive) { try { keepAlive.pause() } catch { /* ignore */ } }
+  appliquerVeille()
 }
 
 // Débloque l'audio sur un geste utilisateur (obligatoire sur iOS/mobile)

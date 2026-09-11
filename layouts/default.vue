@@ -115,10 +115,15 @@ function remplirSprint(b: { sprints: number, sprintS: number, echauffementS: num
   const gardees = sprintDraft.value.filter(r => !vide(r))
   const ajout: typeof sprintDraft.value = []
   if (b.echauffementS > 0) ajout.push({ kind: 'echauffement', count: '1', duration: fmtDuree(b.echauffementS), intensity: '' })
-  ajout.push({ kind: 'sprint', count: String(b.sprints), duration: `${b.sprintS} s`, intensity: '' })
+  // Le bloc peut avoir été coupé après l'échauffement seul : une ligne « 0 sprint »
+  // ne dit rien, et il faudrait la supprimer à la main.
+  if (b.sprints > 0) ajout.push({ kind: 'sprint', count: String(b.sprints), duration: `${b.sprintS} s`, intensity: '' })
+  if (!ajout.length) return
   sprintDraft.value = [...gardees, ...ajout]
   sprintOpen.value = true
-  showFlash(`Fractionné terminé — ${b.sprints} × ${b.sprintS} s inscrits`, 'ok')
+  showFlash(b.sprints > 0
+    ? `Fractionné inscrit — ${b.sprints} × ${b.sprintS} s`
+    : 'Échauffement inscrit', 'ok')
 }
 
 /**

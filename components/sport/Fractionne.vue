@@ -29,7 +29,15 @@ const {
 /** Le calque plein écran. Se réduit sans arrêter le bloc — le chrono continue derrière. */
 const affiche = ref(false)
 /** Les cinq nombres, repliés par défaut : on les règle une fois, pas à chaque séance. */
-const reglagesOuverts = ref(false)
+/**
+ * Ouverts par défaut, et repliables.
+ *
+ * Ils existaient déjà, derrière un bouton « Régler » : on ne les voyait donc pas, et
+ * la carte ressemblait à un chrono figé sur des valeurs qu'on n'avait pas choisies.
+ * Un réglage qu'on doit chercher n'est pas un réglage — surtout celui-là, qu'on
+ * ajuste d'une séance à l'autre selon la forme du jour.
+ */
+const reglagesOuverts = ref(true)
 
 const total = computed(() => dureeTotale(reglage.value))
 const resume = computed(() => {

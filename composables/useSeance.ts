@@ -10,6 +10,7 @@ import { isTimed } from '~/lib/program'
 import { setText } from '~/lib/setText'
 import { WARMUP_REST, restFor } from '~/lib/rest'
 import { warmupLoad, isEffort } from '~/utils/sportStats'
+import { weightOn } from '~/lib/weight'
 import type { Effort, PrKind } from '~/utils/sportStats'
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -289,10 +290,25 @@ function creer() {
    * l'ancienne valeur, visiblement à corriger, qu'un chiffre calculé sur un poids
    * inventé.
    */
+  /**
+   * Le poids de corps RÉELLEMENT mesuré à cette date ou avant.
+   *
+   * `bodyWeightAt` se rabat sur la toute première pesée du carnet quand la date la
+   * précède — c'est le bon choix là où il sert (afficher un ordre de grandeur vaut
+   * mieux qu'un tiret), et une faute ICI. On soustrairait un poids que ce jour-là n'a
+   * jamais vu, et le lest reconstitué serait faux d'autant : un « −1 kg » sur des
+   * dips faits sans ceinture, qu'on croit corriger en tapant 0 et qui revient la
+   * séance suivante.
+   */
+  function poidsMesureA(iso: string): number | null {
+    const w = weightOn(bodyWeight.value, iso)
+    return w?.exact ? w.kg : null
+  }
+
   function rebase(e: Exercise, valeur: number | null | undefined, dateSeance: string): string {
     if (valeur == null) return ''
     if (!e.bodyweight) return String(valeur)
-    const alors = bodyWeightAt(dateSeance)
+    const alors = poidsMesureA(dateSeance)
     const maintenant = seanceWeight.value
     if (alors === null || maintenant === null) return String(valeur)
     const lest = valeur - alors
@@ -374,6 +390,8 @@ function creer() {
     }
     activeSession.value = s
     editingRecord.value = null
+    // AVANT le préremplissage : c'est ce poids-là qui va construire les lignes.
+    poidsFige.value = poidsDuJour.value
     for (const k of Object.keys(draft)) delete draft[k]
     for (const k of Object.keys(draftEffort)) delete draftEffort[k]
     for (const k of Object.keys(draftSwap)) delete draftSwap[k]
@@ -395,6 +413,8 @@ function creer() {
     if (!s) return
     activeSession.value = s
     editingRecord.value = rec
+    // Une séance rouverte se relit au poids de SON jour, pas à celui d'aujourd'hui.
+    poidsFige.value = poidsDuJour.value
     editReturn.value = router.currentRoute.value.path
     for (const k of Object.keys(draft)) delete draft[k]
     for (const k of Object.keys(draftEffort)) delete draftEffort[k]
@@ -537,6 +557,7 @@ function creer() {
     stopRest() // coupe le chrono de repos (son/vibration/keep-alive)
     activeSession.value = null
     editingRecord.value = null
+    poidsFige.value = null
     previewSession.value = null
     sheetOpen.value = false; sheetClosing.value = false; dragY.value = 0
     for (const k of Object.keys(draft)) delete draft[k]
@@ -651,7 +672,26 @@ function creer() {
    * approché et daté qu'un champ vide qu'on remplira au jugé.
    */
   const seanceIso = computed(() => editingRecord.value?.at.slice(0, 10) ?? todayISO.value ?? null)
-  const seanceWeight = computed(() => (seanceIso.value ? bodyWeightAt(seanceIso.value) : null) ?? latestWeight.value)
+  const poidsDuJour = computed(() => (seanceIso.value ? bodyWeightAt(seanceIso.value) : null) ?? latestWeight.value)
+
+  /**
+   * Le poids de référence est FIGÉ au démarrage de la séance, et c'est une
+   * correction, pas une optimisation.
+   *
+   * Le stockage garde le TOTAL ; le lest affiché est la différence entre ce total et
+   * le poids du jour. Tant que ce poids bouge, la différence bouge avec lui — et il
+   * bouge : la balance se synchronise à l'ouverture de l'application, donc souvent
+   * APRÈS qu'on a démarré la séance et prérempli les lignes.
+   *
+   * Ce qu'on voyait alors : on ouvre les dips, le champ « lest » est vide comme il
+   * doit l'être ; la pesée du matin arrive ; tous les champs affichent −1. Rien n'a
+   * été saisi, rien n'a été enregistré, et pourtant l'écran a changé d'avis.
+   *
+   * Figé, le lest montré reste celui qui a servi à construire les lignes. La pesée
+   * du jour servira à la séance SUIVANTE, qui est le moment où elle a un sens.
+   */
+  const poidsFige = ref<number | null>(null)
+  const seanceWeight = computed(() => poidsFige.value ?? poidsDuJour.value)
 
   /**
    * Le LEST, c'est-à-dire la seule part de la charge qui soit une décision.
@@ -721,6 +761,7 @@ function creer() {
             note: sessionNote.value,
             sprintDraft: sprintDraft.value,
             sessionStart: sessionStart.value,
+            poidsFige: poidsFige.value,
             openEx: openEx.value,
             editingAt: editingRecord.value?.at ?? null,
             editReturn: editReturn.value,
@@ -767,6 +808,9 @@ function creer() {
       sessionNote.value = typeof s.note === 'string' ? s.note : ''
       sprintDraft.value = Array.isArray(s.sprintDraft) ? s.sprintDraft : []
       sessionStart.value = typeof s.sessionStart === 'number' ? s.sessionStart : Date.now()
+      // Sans ça, un rechargement accidentel en pleine séance rebasculerait sur le
+      // poids du jour — et déplacerait tous les lests déjà à l'écran.
+      poidsFige.value = typeof s.poidsFige === 'number' ? s.poidsFige : null
       openEx.value = s.openEx ?? sess.exercises[0].id
       editReturn.value = s.editReturn || '/'
       editingRecord.value = s.editingAt ? (sessionLog().find(r => r.at === s.editingAt) || null) : null

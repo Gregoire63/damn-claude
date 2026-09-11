@@ -1,7 +1,7 @@
 import { computed, ref } from 'vue'
 import type { Reglage, Segment } from '~/lib/fractionne'
 import {
-  REGLAGE_DEFAUT, bornesDe, borner, dureeTotale, planDe, segmentA, texteAnnonce,
+  REGLAGE_DEFAUT, bilanPartiel, borner, bornesDe, dureeTotale, planDe, segmentA, texteAnnonce,
 } from '~/lib/fractionne'
 import { debloquerAudio, motifVibration, sonAutorise, sonner, veilleAudio } from '~/composables/useRestTimer'
 
@@ -227,6 +227,8 @@ function lancer() {
 
 function arreter() {
   const tournait = enCours.value
+  // AVANT la remise à zéro de `index` : c'est lui qui dit où on s'est arrêté.
+  const fait = tournait ? bilanPartiel(plan.value, index.value, reglage.value) : null
   arreterBoucle()
   rendreVeille()
   if (tournait) veilleAudio(false)
@@ -235,7 +237,9 @@ function arreter() {
   index.value = -1
   resteS.value = 0
   totalResteS.value = 0
-  bilan.value = null
+  // Couper le bloc ne doit pas effacer ce qui a été couru. Quatre sprints sur six
+  // restent quatre sprints, et personne n'a envie de les retaper à la main.
+  bilan.value = fait
   taire()
 }
 

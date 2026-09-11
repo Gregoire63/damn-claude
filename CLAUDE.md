@@ -88,6 +88,24 @@ valeur dans les fichiers servis.
 Un dépôt public garde tout dans son historique : effacer le fichier ne répare rien,
 seule la régénération des clés répare.
 
+**Une page qui joue du son PREND le focus audio du téléphone.** Spotify se fait
+interrompre, et le seul moyen de le récupérer est d'aller le relancer à la main. La
+piste inaudible de veille — celle qui empêche Chrome Android de geler les minuteurs —
+ne tourne donc QUE quand l'onglet est caché, c'est-à-dire au seul moment où elle sert.
+L'application se déclare en plus `audioSession.type = 'ambient'` (se mélange) et passe
+en `'transient'` le temps d'un bip (baisse la musique, puis la rend), là où le
+navigateur connaît l'API. Le bip, lui, doit couvrir la musique : c'est le seul son qui
+ait le droit de s'imposer, et seulement une seconde.
+
+**Le lest est une DIFFÉRENCE, donc sa référence se fige.** Le stockage garde le TOTAL
+(poids de corps + lest) ; le champ montre le lest, calculé en retirant le poids du
+jour. Tant que ce poids bouge, tous les lests affichés bougent — et il bouge : la
+balance se synchronise à l'ouverture, donc souvent après le démarrage de la séance.
+`poidsFige` capture la référence au démarrage et voyage avec le brouillon. Corollaire :
+`rebase` refuse un poids DEVINÉ (`weightOn(...).exact`), là où `bodyWeightAt` se rabat
+volontiers sur la première pesée du carnet — bon choix pour afficher un ordre de
+grandeur, faute ici.
+
 **Un nombre calculé s'arrondit à sa SORTIE, jamais au milieu du calcul.**
 `lib/nombres.ts` → `arrondi(n)`, au centième. Deux causes fabriquent des nombres à
 rallonge, et la seconde surprend : la division qui ne tombe pas juste, et la
@@ -139,7 +157,7 @@ error.vue                404 et erreurs serveur
 lib/onglets.ts           les cinq onglets : chemin, libellé, titre (AUCUN import)
 components/sport/        écrans du suivi d'entraînement
 components/nutrition/    écrans du module nutrition
-composables/             l'état, persisté dans localStorage (31 fichiers, pas de Pinia)
+composables/             l'état, persisté dans localStorage (32 fichiers, pas de Pinia)
 lib/                     logique pure — aucun DOM, aucun stockage, testée (24 fichiers)
 utils/                   auto-importé par Nuxt : uniquement du vocabulaire spécifique
 data/                    types et tables de référence — les contenus sont VIDES
@@ -328,7 +346,7 @@ Deux invariants tenus par des tests :
 
 ## Les tests
 
-1292 tests, 76 fichiers, deux projets. La plupart tournent sur le **pack d'exemple**,
+1316 tests, 78 fichiers, deux projets. La plupart tournent sur le **pack d'exemple**,
 déclaré fichier par fichier (`vi.mock('../../data/nutritionProgram', …)`, voir
 `test/exemple.ts`) : vérifier que la modulation des féculents ne touche pas aux
 protéines demande des aliments aux vraies macros, pas trois objets fabriqués.
