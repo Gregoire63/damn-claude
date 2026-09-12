@@ -23,8 +23,16 @@ import { cookedWeight } from '~/lib/cooked'
  * recette pour toujours. Ouverte depuis le catalogue, elle n'a aucun repas sous la
  * main : elle montre alors le foyer courant, sans rien retenir.
  */
-const props = defineProps<{ id: string, date?: string, slot?: string }>()
-const emit = defineEmits<{ close: [] }>()
+/**
+ * `supprimable` n'est vrai que depuis le CATALOGUE.
+ *
+ * La même fiche s'ouvre depuis une journée et depuis la session de préparation —
+ * c'est-à-dire pendant qu'on cuisine, le téléphone posé à côté de la planche. Un
+ * bouton « Supprimer » à cet endroit-là ne rend service à personne et se touche du
+ * dos de la main.
+ */
+const props = withDefaults(defineProps<{ id: string, date?: string, slot?: string, supprimable?: boolean }>(), { supprimable: false })
+const emit = defineEmits<{ close: [], supprimer: [id: string] }>()
 
 const { cookedRatios, library, setFatPct, fatPct, dairyFoods } = useNutrition()
 
@@ -393,6 +401,8 @@ const openFat = ref<string | null>(null)
         <p class="nu-steps rs-steps">{{ recipe.steps }}</p>
 
         <button class="btn rs-done" @click="emit('close')">Fermer</button>
+        <!-- Après « Fermer », jamais avant : la fiche se lit d'abord. -->
+        <button v-if="props.supprimable" class="btn danger btn-bloc" @click="emit('supprimer', recipe.id)">✕ Supprimer ce plat</button>
     </template>
   </Sheet>
 </template>

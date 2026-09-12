@@ -88,8 +88,26 @@ function optionsFor(slotId: string) {
       ? ['boite', 'diner']
       : ['collation', 'pdj']
   return Object.values(library.value.recipes)
-    .filter(r => !r.disabled && kinds.includes(r.kind))
+    .filter(r => !r.disabled && !r.deleted && kinds.includes(r.kind))
     .sort((a, b) => a.name.localeCompare(b.name))
+}
+
+/**
+ * Les options d'UN créneau précis : les plats choisissables, plus celui qui occupe
+ * déjà la case s'il a été supprimé.
+ *
+ * Sans cette exception, la liste déroulante n'aurait aucune option correspondant à sa
+ * valeur et s'afficherait vide — un créneau muet, alors que c'est précisément celui
+ * qu'il faut remplir. Les créneaux d'une semaine type ne sont pas vidés à la
+ * suppression : ils sont la mémoire des journées déjà vécues (voir
+ * lib/suppression.ts). Le plat y reste donc, nommé et marqué.
+ */
+function optionsDuCreneau(dow: number, slotId: string, fallback?: string) {
+  const options = optionsFor(slotId)
+  const actuel = slotRecipe(dow, slotId, fallback)
+  const r = actuel ? library.value.recipes[actuel] : null
+  if (!r || !r.deleted) return options
+  return [{ ...r, name: `${r.name} — supprimé, à remplacer` }, ...options]
 }
 
 /** Les créneaux d'un jour : ils dépendent de la séance, réglée dans le planning. */
@@ -293,7 +311,7 @@ function useMakeAhead() {
                 @change="setMenuSlot(d.dow, s.id, ($event.target as HTMLSelectElement).value)"
               >
                 <option value="">— rien ce jour-là —</option>
-                <option v-for="r in optionsFor(s.id)" :key="r.id" :value="r.id">{{ r.name }}</option>
+                <option v-for="r in optionsDuCreneau(d.dow, s.id, s.recipe)" :key="r.id" :value="r.id">{{ r.name }}</option>
               </select>
             </label>
 
@@ -313,7 +331,7 @@ function useMakeAhead() {
                   @change="setMenuSlot(d.dow, s.id, ($event.target as HTMLSelectElement).value)"
                 >
                   <option value="">— rien ce jour-là —</option>
-                  <option v-for="r in optionsFor(s.id)" :key="r.id" :value="r.id">{{ r.name }}</option>
+                  <option v-for="r in optionsDuCreneau(d.dow, s.id, s.recipe)" :key="r.id" :value="r.id">{{ r.name }}</option>
                 </select>
               </label>
             </template>

@@ -588,8 +588,13 @@ async function callTool(name: string, args: Record<string, unknown>): Promise<un
         asArray(nut.userRecipes) as never,
         (nut.recipePatches ?? {}) as never,
         asArray(nut.disabledRecipes) as never,
+        asArray(nut.goneRecipes) as never,
       )
-      const foods = mergeFoods(asArray(nut.userFoods) as never, (nut.foodPatches ?? {}) as never)
+      const foods = mergeFoods(
+        asArray(nut.userFoods) as never,
+        (nut.foodPatches ?? {}) as never,
+        asArray(nut.goneFoods) as never,
+      )
       /**
        * Le programme du miroir, retirés compris.
        *
@@ -604,8 +609,12 @@ async function callTool(name: string, args: Record<string, unknown>): Promise<un
       const off = new Set(custom.disabled ?? [])
       const actifsDe = (sid: string) => sessions.find(s => s.id === sid)?.exercises.map(e => e.id) ?? []
       const ctx = {
-        foodKnown: (id: string) => !!foods[id],
-        recipeKnown: (id: string) => !!recettes[id],
+        // Un plat supprimé reste dans la table — il faut pouvoir nommer ce qui a été
+        // mangé en mars — mais il ne se PROPOSE plus. Sans cette nuance, une semaine
+        // venue du connecteur pourrait remettre dans un créneau un plat retiré la
+        // veille, et le créneau s'afficherait vide sans que rien ne l'explique.
+        foodKnown: (id: string) => !!foods[id] && !foods[id]!.deleted,
+        recipeKnown: (id: string) => !!recettes[id] && !recettes[id]!.deleted,
         sessionKnown: (id: string) => sessions.some(s => s.id === id),
         sessionIds: () => sessions.map(s => s.id),
         exerciseKnown: (id: string) => toutes.some(s => s.exercises.some(e => e.id === id)),
@@ -770,10 +779,15 @@ async function callTool(name: string, args: Record<string, unknown>): Promise<un
       const recipes = mergeRecipes(
         (nut.userRecipes ?? []) as never,
         (nut.recipePatches ?? {}) as never,
+        [],
+        asArray(nut.goneRecipes) as never,
       )
       const off = new Set((nut.disabledRecipes ?? []) as string[])
       const kind = typeof args.kind === 'string' ? args.kind : ''
+      // Les plats supprimés ne sont pas listés : les montrer reviendrait à les faire
+      // proposer, c'est-à-dire à défaire la suppression par la porte du connecteur.
       const list = Object.values(recipes)
+        .filter(r => !r.deleted)
         .filter(r => !kind || r.kind === kind)
         .map(r => ({
           id: r.id,
@@ -788,9 +802,14 @@ async function callTool(name: string, args: Record<string, unknown>): Promise<un
     }
     case 'aliments': {
       const nut = (d.nutrition ?? {}) as Record<string, unknown>
-      const foods = mergeFoods((nut.userFoods ?? []) as never, (nut.foodPatches ?? {}) as never)
+      const foods = mergeFoods(
+        (nut.userFoods ?? []) as never,
+        (nut.foodPatches ?? {}) as never,
+        asArray(nut.goneFoods) as never,
+      )
       const q = typeof args.cherche === 'string' ? args.cherche.toLowerCase() : ''
       const list = Object.values(foods)
+        .filter(f => !f.deleted)
         .filter(f => !q || f.name.toLowerCase().includes(q) || f.id.includes(q))
         .map(f => ({ id: f.id, nom: f.name, cat: f.cat, pour_100g: { kcal: f.kcal, p: f.p, g: f.g, l: f.l } }))
         .sort((a, b) => a.nom.localeCompare(b.nom))
@@ -802,8 +821,13 @@ async function callTool(name: string, args: Record<string, unknown>): Promise<un
         asArray(nut.userRecipes) as never,
         (nut.recipePatches ?? {}) as never,
         asArray(nut.disabledRecipes) as never,
+        asArray(nut.goneRecipes) as never,
       )
-      const foods = mergeFoods(asArray(nut.userFoods) as never, (nut.foodPatches ?? {}) as never)
+      const foods = mergeFoods(
+        asArray(nut.userFoods) as never,
+        (nut.foodPatches ?? {}) as never,
+        asArray(nut.goneFoods) as never,
+      )
       const id = String(args.id ?? '')
 
       /**
@@ -883,7 +907,7 @@ async function callTool(name: string, args: Record<string, unknown>): Promise<un
       if (!id) {
         return {
           rappel: 'Appelle « recette » avec un id pour voir les ingrédients et les grammages, ou avec { date, slot } pour relire un repas libre.',
-          plats: Object.values(recettes).filter(r => !r.disabled).map(r => ({ id: r.id, nom: r.name, type: r.kind })),
+          plats: Object.values(recettes).filter(r => !r.disabled && !r.deleted).map(r => ({ id: r.id, nom: r.name, type: r.kind })),
         }
       }
       const r = recettes[id]
@@ -895,6 +919,10 @@ async function callTool(name: string, args: Record<string, unknown>): Promise<un
         nom: r.name,
         type: r.kind,
         perso: !!r.custom,
+        // Un plat supprimé reste lisible : le journal de mars le référence encore et
+        // il faut pouvoir le nommer. Mais il ne se propose plus, et le dire évite de
+        // bâtir une semaine autour d'un plat qui n'existe plus pour lui.
+        ...(r.deleted ? { supprime: true, rappel_supprime: 'Ce plat a été supprimé du catalogue : il reste consultable pour l\'historique, mais ne le propose plus.' } : {}),
         batch_cooking: r.batch,
         // La conservation EFFECTIVE, pas seulement le champ posé sur la recette :
         // faute de valeur explicite, elle est déduite du plus fragile des
@@ -1045,8 +1073,13 @@ async function callTool(name: string, args: Record<string, unknown>): Promise<un
         asArray(nut.userRecipes) as never,
         (nut.recipePatches ?? {}) as never,
         asArray(nut.disabledRecipes) as never,
+        asArray(nut.goneRecipes) as never,
       )
-      const foods = mergeFoods(asArray(nut.userFoods) as never, (nut.foodPatches ?? {}) as never)
+      const foods = mergeFoods(
+        asArray(nut.userFoods) as never,
+        (nut.foodPatches ?? {}) as never,
+        asArray(nut.goneFoods) as never,
+      )
 
       // ─── Le poids, l'âge, le métabolisme ──────────────────────────────────
       /**
@@ -1304,6 +1337,7 @@ function bilan(
     asArray(nut.userRecipes) as never,
     (nut.recipePatches ?? {}) as never,
     asArray(nut.disabledRecipes) as never,
+    asArray(nut.goneRecipes) as never,
   )
   const nomDe = (id: string | undefined) => (id ? recettes[id]?.name ?? id : null)
   // Le plat RÉELLEMENT pris l'emporte sur celui du plan : c'est ce qu'il a mangé.

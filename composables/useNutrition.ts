@@ -8,6 +8,8 @@ import {
   dowIndex, emptyDay, mergeFoods, mergeRecipes, mondayOf, normalizeWeek, resolveDay, selectionTotals,
   shoppingFromWeek, slugify, stockOf, weekDaysOn,
 } from '~/lib/nutritionStats'
+import type { Reference, UsagesPlat } from '~/lib/suppression'
+import { usagesAliment, usagesPlat } from '~/lib/suppression'
 import { freeMealFrom, withFreeMeals } from '~/lib/freeMeal'
 import { ratioFromWeighing } from '~/lib/cooked'
 import type { FreeMeal } from '~/lib/freeMeal'
@@ -30,6 +32,8 @@ const FOODPATCH_KEY = 'gr-nutri-foodpatch-v1' // aliments livrés, modifiés
 const RECIPES_KEY = 'gr-nutri-recipes-v1' // plats créés
 const RECIPEPATCH_KEY = 'gr-nutri-recipepatch-v1' // plats livrés, modifiés
 const OFF_KEY = 'gr-nutri-off-v1' // plats mis de côté
+const GONE_RECIPES_KEY = 'gr-nutri-plats-supprimes-v1' // plats retirés du catalogue
+const GONE_FOODS_KEY = 'gr-nutri-aliments-supprimes-v1' // aliments retirés du catalogue
 const MENUS_KEY = 'gr-nutri-menus-v1' // semaines types : les menus de sept jours
 const ACTIVE_KEY = 'gr-nutri-menu-active-v1' // semaine type en cours
 const ASSIGN_KEY = 'gr-nutri-menu-map-v1' // semaine appliquée, par lundi
@@ -45,6 +49,23 @@ const COOKED_KEY = 'gr-nutri-cuit-v1' // ratios cru → cuit relevés à la bala
 const LEGACY_SEL_KEY = 'gr-nutri-selection-v1'
 const LEGACY_START_KEY = 'gr-nutri-start-v1'
 export interface Basket { date: string, total: number, days: number }
+/**
+ * De quoi défaire une suppression de plat.
+ *
+ * On photographie les tranches touchées plutôt que de rejouer le nettoyage à
+ * l'envers. Une annulation par rejeu doit deviner ce qui était là avant — et se
+ * trompe dès qu'un créneau était déjà vide pour une autre raison. La photo, elle, ne
+ * se trompe jamais : elle remet exactement l'état d'il y a trois secondes.
+ */
+export interface AnnulationPlat {
+  id: string
+  nom: string
+  overrides: Record<string, DayOverride>
+  picked: Record<string, Record<string, string>>
+  disabledRecipes: string[]
+  goneRecipes: string[]
+}
+export interface AnnulationAliment { id: string, nom: string, goneFoods: string[] }
 const prices = ref<PriceMap>({})
 const checked = ref<Record<string, boolean>>({})
 const eaten = ref<Record<string, string[]>>({})
@@ -93,6 +114,20 @@ const foodPatches = ref<Record<string, Partial<Food>>>({})
 const userRecipes = ref<Recipe[]>([])
 const recipePatches = ref<Record<string, Partial<Recipe>>>({})
 const disabledRecipes = ref<string[]>([])
+/**
+ * Les identifiants retirés du catalogue — des PIERRES TOMBALES, pas une poubelle.
+ *
+ * Ni le plat ni l'aliment ne sont effacés de `userRecipes` / `userFoods`, et ce n'est
+ * pas de la timidité : les totaux d'une journée passée se recalculent depuis le
+ * catalogue, ils ne sont stockés nulle part. Effacer pour de bon retirerait donc les
+ * calories du plat de tous les jours où il a été mangé. On le marque, la
+ * bibliothèque cesse de le proposer, et mars reste vrai.
+ *
+ * Un identifiant LIVRÉ suit le même chemin : sa fiche est dans le code, on ne peut
+ * de toute façon que la masquer. Même liste, même code, aucun cas particulier.
+ */
+const goneRecipes = ref<string[]>([])
+const goneFoods = ref<string[]>([])
 /**
  * Taux de matière grasse RÉELLEMENT ACHETÉ, par laitier.
  *
@@ -160,6 +195,8 @@ export function useNutrition() {
     userRecipes.value = safeParse(localStorage.getItem(RECIPES_KEY), [])
     recipePatches.value = safeParse(localStorage.getItem(RECIPEPATCH_KEY), {})
     disabledRecipes.value = safeParse(localStorage.getItem(OFF_KEY), [])
+    goneRecipes.value = safeParse(localStorage.getItem(GONE_RECIPES_KEY), [])
+    goneFoods.value = safeParse(localStorage.getItem(GONE_FOODS_KEY), [])
     freeMeals.value = safeParse(localStorage.getItem(FREE_KEY), {})
     freePresets.value = safeParse(localStorage.getItem(FREEPRESET_KEY), [])
     cookedRatios.value = safeParse(localStorage.getItem(COOKED_KEY), {})
@@ -200,7 +237,7 @@ export function useNutrition() {
   // ─── Bibliothèque ─────────────────────────────────────────────────────────
   /** Aliments et plats effectivement disponibles : livrés + créés + modifiés. */
   const library = computed<Library>(() => {
-    const foods = mergeFoods(userFoods.value, foodPatches.value)
+    const foods = mergeFoods(userFoods.value, foodPatches.value, goneFoods.value)
     // Le taux déclaré s'applique EN DERNIER : il redérive les macros depuis la fiche
     // telle qu'elle est après patch, et pas depuis la fiche d'origine. Sinon corriger
     // les protéines d'un fromage blanc effacerait la correction dès qu'on touche au
@@ -211,7 +248,7 @@ export function useNutrition() {
     }
     return {
       foods,
-      recipes: mergeRecipes(userRecipes.value, recipePatches.value, disabledRecipes.value),
+      recipes: mergeRecipes(userRecipes.value, recipePatches.value, disabledRecipes.value, goneRecipes.value),
     }
   })
 
@@ -222,8 +259,9 @@ export function useNutrition() {
    * que ce qui est coché correspond à l'étiquette du pot qu'on a dans la main.
    */
   const dairyFoods = computed(() => {
-    const base = mergeFoods(userFoods.value, foodPatches.value)
+    const base = mergeFoods(userFoods.value, foodPatches.value, goneFoods.value)
     return Object.values(base)
+      .filter(f => !f.deleted)
       .filter(isAdjustableDairy)
       .sort((a, b) => a.name.localeCompare(b.name))
       .map((f) => {
@@ -265,9 +303,144 @@ export function useNutrition() {
     foodPatches.value = { ...foodPatches.value, [id]: { ...foodPatches.value[id], ...patch } }
     write(FOODPATCH_KEY, foodPatches.value)
   }
-  function removeFood(id: string) {
-    userFoods.value = userFoods.value.filter(f => f.id !== id)
-    write(FOODS_KEY, userFoods.value)
+  // ─── Suppression ──────────────────────────────────────────────────────────
+  //
+  // Voir lib/suppression.ts pour le raisonnement : un identifiant est posé dans
+  // quatre endroits qui ne se voient pas, et supprimer sans les regarder faisait
+  // disparaître un repas d'une journée sans rien dire.
+
+  /** Tout ce qui pointe vers ce plat, pour le dire AVANT de supprimer. */
+  const usagesDuPlat = (id: string): UsagesPlat => usagesPlat(id, {
+    menus: menus.value,
+    recipes: library.value.recipes,
+    overrides: overrides.value,
+    picked: picked.value,
+    aujourdhui: isoOf(new Date()),
+  })
+
+  /** Les plats qui utilisent cet aliment. Non vide = la suppression est refusée. */
+  const usagesDeLAliment = (id: string): Reference[] => usagesAliment(id, library.value.recipes)
+
+  const estSupprime = (id: string) => goneRecipes.value.includes(id)
+  const estSupprimeAliment = (id: string) => goneFoods.value.includes(id)
+
+  /**
+   * De quoi défaire une suppression.
+   *
+   * On photographie les quatre tranches touchées plutôt que de rejouer le nettoyage
+   * à l'envers. Une annulation par rejeu doit deviner ce qui était là avant — et se
+   * trompe dès qu'un créneau était déjà vide pour une autre raison. La photo, elle,
+   * ne se trompe jamais : elle remet exactement l'état d'il y a trois secondes.
+   */
+  /**
+   * Retire un plat du catalogue, et coupe ce qui pointait vers lui DANS LE FUTUR.
+   *
+   * Refusé tant qu'un autre plat le sert en sauce : ses ingrédients entrent dans
+   * leurs macros, y compris dans les journées passées, et le leur retirer de force
+   * les allégerait rétroactivement sans qu'aucune ligne ne bouge à l'écran. Même
+   * règle que pour un aliment encore utilisé.
+   *
+   * Ce qui n'est PAS touché, et c'est le point délicat : les créneaux des semaines
+   * types. Une semaine type n'est pas une intention pour la semaine prochaine, c'est
+   * la seule mémoire de ce qui a été mangé — aucun total de journée n'est stocké,
+   * ils se recalculent depuis elle. Voir lib/suppression.ts pour les chiffres.
+   */
+  function supprimerPlat(id: string): { ok: true, annulation: AnnulationPlat } | { ok: false, plats: Reference[] } {
+    const plat = library.value.recipes[id]
+    if (!plat || estSupprime(id)) return { ok: false, plats: [] }
+    const u = usagesDuPlat(id)
+    if (u.sauceDe.length) return { ok: false, plats: u.sauceDe }
+
+    const avant: AnnulationPlat = {
+      id,
+      nom: plat.name,
+      overrides: JSON.parse(JSON.stringify(overrides.value)),
+      picked: JSON.parse(JSON.stringify(picked.value)),
+      disabledRecipes: [...disabledRecipes.value],
+      goneRecipes: [...goneRecipes.value],
+    }
+
+    // 1. La pierre tombale. Elle suffit à le sortir de tout ce qui se CHOISIT, et
+    //    `buildDay(..., sansSupprimes)` le fait sauter des journées à venir.
+    goneRecipes.value = [...goneRecipes.value, id]
+    write(GONE_RECIPES_KEY, goneRecipes.value)
+
+    const aujourdhui = isoOf(new Date())
+
+    // 2. Les exceptions de planning à venir qui l'imposaient. Celles du passé
+    //    restent : elles disent ce qui a été mangé ce jour-là.
+    const over = { ...overrides.value }
+    let toucheOver = false
+    for (const [iso, o] of Object.entries(over)) {
+      if (iso < aujourdhui || (o.lunch !== id && o.dinner !== id)) continue
+      const net: DayOverride = { ...o }
+      if (net.lunch === id) delete net.lunch
+      if (net.dinner === id) delete net.dinner
+      toucheOver = true
+      if (Object.keys(net).length) over[iso] = net
+      else delete over[iso]
+    }
+    if (toucheOver) { overrides.value = over; write(OVER_KEY, overrides.value) }
+
+    // 3. Les jours à venir où il avait été choisi à la place du plat prévu.
+    const pick = { ...picked.value }
+    let touchePick = false
+    for (const [iso, slots] of Object.entries(pick)) {
+      if (iso < aujourdhui) continue
+      const net = Object.fromEntries(Object.entries(slots).filter(([, v]) => v !== id))
+      if (Object.keys(net).length === Object.keys(slots).length) continue
+      touchePick = true
+      if (Object.keys(net).length) pick[iso] = net
+      else delete pick[iso]
+    }
+    if (touchePick) { picked.value = pick; write(PICKED_KEY, picked.value) }
+
+    // 4. Un plat supprimé n'a plus à être « de côté » : deux états pour une seule
+    //    absence, c'est un état qui ressort tout seul le jour où on le restaure.
+    if (disabledRecipes.value.includes(id)) {
+      disabledRecipes.value = disabledRecipes.value.filter(x => x !== id)
+      write(OFF_KEY, disabledRecipes.value)
+    }
+    return { ok: true, annulation: avant }
+  }
+
+  /** Remet exactement l'état d'avant la suppression. */
+  function annulerSuppressionPlat(a: AnnulationPlat) {
+    goneRecipes.value = [...a.goneRecipes]
+    write(GONE_RECIPES_KEY, goneRecipes.value)
+    overrides.value = a.overrides
+    write(OVER_KEY, overrides.value)
+    picked.value = a.picked
+    write(PICKED_KEY, picked.value)
+    disabledRecipes.value = [...a.disabledRecipes]
+    write(OFF_KEY, disabledRecipes.value)
+  }
+
+  /**
+   * Retire un aliment du catalogue — sauf s'il sert encore.
+   *
+   * Le refus n'est pas de la prudence : un plat dont un ingrédient a disparu ne
+   * signale rien, il pèse simplement moins. Trois cents kilocalories partent d'un
+   * coup et rien à l'écran ne dit pourquoi. On rend donc la liste des plats à
+   * corriger d'abord, ce qui transforme un mystère en tâche.
+   */
+  function supprimerAliment(id: string): { ok: true, annulation: AnnulationAliment } | { ok: false, plats: Reference[] } {
+    const plats = usagesDeLAliment(id)
+    if (plats.length) return { ok: false, plats }
+    const aliment = library.value.foods[id]
+    if (!aliment || estSupprimeAliment(id)) return { ok: false, plats: [] }
+    const avant: AnnulationAliment = { id, nom: aliment.name, goneFoods: [...goneFoods.value] }
+    goneFoods.value = [...goneFoods.value, id]
+    write(GONE_FOODS_KEY, goneFoods.value)
+    // Le taux de matière grasse déclaré n'a plus d'objet : le garder ferait
+    // réapparaître « acheté en 3 % » sur un aliment restauré des mois plus tard.
+    if (fatPct.value[id] !== undefined) setFatPct(id, 0)
+    return { ok: true, annulation: avant }
+  }
+
+  function annulerSuppressionAliment(a: AnnulationAliment) {
+    goneFoods.value = [...a.goneFoods]
+    write(GONE_FOODS_KEY, goneFoods.value)
   }
   /** Annule les modifications faites sur un aliment livré. */
   function resetFood(id: string) {
@@ -290,10 +463,6 @@ export function useNutrition() {
     }
     recipePatches.value = { ...recipePatches.value, [id]: { ...recipePatches.value[id], ...patch } }
     write(RECIPEPATCH_KEY, recipePatches.value)
-  }
-  function removeRecipe(id: string) {
-    userRecipes.value = userRecipes.value.filter(r => r.id !== id)
-    write(RECIPES_KEY, userRecipes.value)
   }
   /**
    * Ce plat porte-t-il une modification locale ?
@@ -562,7 +731,11 @@ export function useNutrition() {
     // Une exception de planning ne porte que sur les deux repas principaux.
     if (over.lunch && !pick.lunch) slots.lunch = over.lunch
     if (over.dinner && !pick.dinner) slots.dinner = over.dinner
-    return withFree(buildDay(dow, trained, library.value, { slots }), iso, trained)
+    // Un plat supprimé disparaît des jours À VENIR et reste dans ceux qui sont
+    // passés. Le test ne peut pas vivre plus bas : `buildDay` ne connaît pas la date,
+    // et c'est elle qui fait toute la différence entre « je ne le mangerai plus » et
+    // « je l'ai mangé le 12 mars ».
+    return withFree(buildDay(dow, trained, library.value, { slots }, iso >= isoOf(new Date())), iso, trained)
   }
 
   /**
@@ -734,6 +907,7 @@ export function useNutrition() {
       extras: extras.value, userFoods: userFoods.value, foodPatches: foodPatches.value, fatPct: fatPct.value,
       userRecipes: userRecipes.value, recipePatches: recipePatches.value,
       disabledRecipes: disabledRecipes.value,
+      goneRecipes: goneRecipes.value, goneFoods: goneFoods.value,
       freeMeals: freeMeals.value, freePresets: freePresets.value, cookedRatios: cookedRatios.value,
     }
   }
@@ -765,6 +939,8 @@ export function useNutrition() {
     if (Array.isArray(n.userRecipes)) { userRecipes.value = n.userRecipes; write(RECIPES_KEY, userRecipes.value) }
     if (n.recipePatches) { recipePatches.value = n.recipePatches; write(RECIPEPATCH_KEY, recipePatches.value) }
     if (Array.isArray(n.disabledRecipes)) { disabledRecipes.value = n.disabledRecipes; write(OFF_KEY, disabledRecipes.value) }
+    if (Array.isArray(n.goneRecipes)) { goneRecipes.value = n.goneRecipes; write(GONE_RECIPES_KEY, goneRecipes.value) }
+    if (Array.isArray(n.goneFoods)) { goneFoods.value = n.goneFoods; write(GONE_FOODS_KEY, goneFoods.value) }
     if (n.freeMeals) { freeMeals.value = n.freeMeals; write(FREE_KEY, freeMeals.value) }
     if (Array.isArray(n.freePresets)) { freePresets.value = n.freePresets; write(FREEPRESET_KEY, freePresets.value) }
     if (n.cookedRatios) { cookedRatios.value = n.cookedRatios as Record<string, number>; write(COOKED_KEY, cookedRatios.value) }
@@ -789,10 +965,13 @@ export function useNutrition() {
     isAdjustApplied, setAdjustApplied, clearAdjustApplied,
     isRecipePatched, isFoodPatched, patchedRecipes,
     extrasFor, addExtra, removeExtra,
-    addFood, patchFood, removeFood, resetFood, isCustomFood,
+    addFood, patchFood, resetFood, isCustomFood,
     dairyFoods, setFatPct, dairyCost, fatPct,
-    addRecipe, patchRecipe, removeRecipe, resetRecipe, isCustomRecipe,
+    addRecipe, patchRecipe, resetRecipe, isCustomRecipe,
     toggleRecipeActive, isRecipeActive,
+    usagesDuPlat, usagesDeLAliment, estSupprime, estSupprimeAliment,
+    supprimerPlat, annulerSuppressionPlat, supprimerAliment, annulerSuppressionAliment,
+    goneRecipes, goneFoods,
     setPrice, isChecked, toggleChecked, clearChecked, setPrepMode,
     cost, addBasket, removeBasket,
     exportData, restore,

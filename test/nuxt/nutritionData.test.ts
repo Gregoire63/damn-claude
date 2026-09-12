@@ -115,8 +115,11 @@ describe('bibliothèque', () => {
     vi.resetModules()
     const again = await load()
     expect(again.library.value.recipes[id]).toBeDefined()
-    again.removeRecipe(id)
-    expect(again.library.value.recipes[id]).toBeUndefined()
+    expect(again.supprimerPlat(id).ok).toBe(true)
+    // Marqué, pas effacé : les journées où il a été mangé se recalculent depuis la
+    // bibliothèque. Voir test/nuxt/suppressionCatalogue.test.ts.
+    expect(again.library.value.recipes[id].deleted).toBe(true)
+    expect(again.estSupprime(id)).toBe(true)
   })
 
   it('met un plat de côté sans le supprimer', async () => {

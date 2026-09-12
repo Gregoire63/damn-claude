@@ -31,12 +31,21 @@ export interface Library { foods: Record<string, Food>, recipes: Record<string, 
 export const BUILTIN: Library = { foods: FOOD_BY_ID, recipes: RECIPE_BY_ID }
 
 /** Fusionne les aliments livrés, les modifications et les créations. */
-export function mergeFoods(custom: Food[] = [], overrides: Record<string, Partial<Food>> = {}): Record<string, Food> {
+export function mergeFoods(
+  custom: Food[] = [],
+  overrides: Record<string, Partial<Food>> = {},
+  deleted: string[] = [],
+): Record<string, Food> {
   const out: Record<string, Food> = { ...FOOD_BY_ID }
   for (const f of custom) out[f.id] = { ...f }
   for (const [id, patch] of Object.entries(overrides)) {
     if (out[id]) out[id] = { ...out[id], ...patch, id }
   }
+  // Un aliment supprimé est MARQUÉ, pas retiré : une recette d'il y a six mois le
+  // référence encore, et ses macros se recalculent depuis ici. Le retirer ferait
+  // fondre le plat au lieu de le laisser dire ce qu'il contenait.
+  const gone = new Set(deleted)
+  for (const id of gone) if (out[id]) out[id] = { ...out[id], deleted: true }
   return out
 }
 
@@ -45,6 +54,7 @@ export function mergeRecipes(
   custom: Recipe[] = [],
   overrides: Record<string, Partial<Recipe>> = {},
   disabled: string[] = [],
+  deleted: string[] = [],
 ): Record<string, Recipe> {
   const out: Record<string, Recipe> = { ...RECIPE_BY_ID }
   for (const r of custom) out[r.id] = { ...r }
@@ -52,13 +62,18 @@ export function mergeRecipes(
     if (out[id]) out[id] = { ...out[id], ...patch, id }
   }
   const off = new Set(disabled)
-  for (const id of Object.keys(out)) out[id] = { ...out[id], disabled: off.has(id) }
+  const gone = new Set(deleted)
+  for (const id of Object.keys(out)) out[id] = { ...out[id], disabled: off.has(id), deleted: gone.has(id) }
   return out
 }
 
+/** Ce qu'on peut encore choisir : tout sauf ce qui a été supprimé. */
+export const catalogueRecipes = (lib: Library) => Object.values(lib.recipes).filter(r => !r.deleted)
+export const catalogueFoods = (lib: Library) => Object.values(lib.foods).filter(f => !f.deleted)
+
 /** Recettes candidates au planning, par type de repas. */
 export const activeRecipes = (lib: Library, kind: Recipe['kind']) =>
-  Object.values(lib.recipes).filter(r => r.kind === kind && !r.disabled)
+  Object.values(lib.recipes).filter(r => r.kind === kind && !r.disabled && !r.deleted)
 
 /** 1 kg de masse grasse ≈ 7 700 kcal. Sert à convertir un déficit en perte attendue. */
 export const KCAL_PER_KG_FAT = 7700
@@ -499,6 +514,20 @@ export function buildDay(
      */
     slots?: Record<string, string>
   },
+  /**
+   * Sauter les plats SUPPRIMÉS.
+   *
+   * Faux par défaut, et ce défaut est le point délicat. Un plat supprimé reste dans
+   * la bibliothèque pour que les journées passées gardent leurs repas et leurs
+   * calories (voir `Recipe.deleted`) — les totaux d'un jour ne sont stockés nulle
+   * part, ils se recalculent depuis ici. Une journée à VENIR, elle, ne doit plus le
+   * proposer : sinon on le supprime et il revient chaque lundi, ce qui n'est pas une
+   * suppression mais une négociation.
+   *
+   * C'est donc la DATE qui tranche, et l'appelant est le seul à la connaître : voir
+   * `dayPlanFor`.
+   */
+  sansSupprimes = false,
 ): DayPlan {
   // Cycle vide (aucun menu livré) : `index % 0` vaut NaN, et `CYCLE[NaN]` se répand
   // en `undefined` jusqu'au premier accès de champ. On saute le calcul plutôt que
@@ -511,7 +540,7 @@ export function buildDay(
   for (const slot of slots) {
     const rid = menu?.slots?.[slot.id] ?? slot.recipe ?? (slot.from === 'lunch' ? tpl.lunch : tpl.dinner)
     const recipe = lib.recipes[rid] ?? RECIPE_BY_ID[rid]
-    if (!recipe) continue
+    if (!recipe || (sansSupprimes && recipe.deleted)) continue
     // L'ordre compte : on rééquilibre le laitier AVANT de moduler les féculents.
     // La quantité de laitier dépend de ce que la recette apporte, pas du ratio du
     // jour, et le ratio ne touche de toute façon que les féculents.
@@ -2040,12 +2069,16 @@ export function recipeForSlot(week: MenuWeek, dow: number, slot: Slot): string |
  * jours de salle, et c'est lui qui module les féculents. Un jour marqué absent
  * renvoie `null` plutôt qu'une journée vide : c'est la différence entre « je ne
  * mange rien » et « je ne suis pas là », et seule la seconde doit sortir des courses.
+ *
+ * Les plats supprimés sont écartés sans condition de date : une semaine type n'a pas
+ * de date, elle dit ce qu'on VA cuisiner. En acheter les ingrédients serait le seul
+ * cas où une suppression coûte de l'argent.
  */
 export function weekDayPlans(week: MenuWeek, gym: boolean[], lib: Library = BUILTIN): (DayPlan | null)[] {
   return Array.from({ length: 7 }, (_, d) => {
     const day = week.days[d]
     if (!day || day.off) return null
-    return buildDay(d, gym[d] === true, lib, { slots: day.slots })
+    return buildDay(d, gym[d] === true, lib, { slots: day.slots }, true)
   })
 }
 

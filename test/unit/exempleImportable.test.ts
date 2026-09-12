@@ -62,11 +62,11 @@ describe('le pack d’exemple converti en sauvegarde', () => {
     // une recette à ses ingrédients et un jour de journal à ce qui a été mangé.
     expect(mergeFoods(FOODS_EXEMPLE)).toEqual(Object.fromEntries(FOODS_EXEMPLE.map(f => [f.id, f])))
     // Les recettes passent par la même porte, à une normalisation près : `mergeRecipes`
-    // pose `disabled: false` sur chaque entrée. Comparer au tableau brut ferait échouer
-    // un test qui n'a rien à reprocher au code — c'est ce qui s'est produit à la
-    // première écriture de ce fichier.
+    // pose `disabled: false` et `deleted: false` sur chaque entrée. Comparer au tableau
+    // brut ferait échouer un test qui n'a rien à reprocher au code — c'est ce qui s'est
+    // produit à la première écriture de ce fichier.
     expect(mergeRecipes(RECIPES_EXEMPLE))
-      .toEqual(Object.fromEntries(RECIPES_EXEMPLE.map(r => [r.id, { ...r, disabled: false }])))
+      .toEqual(Object.fromEntries(RECIPES_EXEMPLE.map(r => [r.id, { ...r, disabled: false, deleted: false }])))
   })
 
   it('produit un fichier que restore() ne jettera pas', () => {

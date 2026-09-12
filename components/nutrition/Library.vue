@@ -3,17 +3,24 @@ import { computed, ref } from 'vue'
 import { CAT_LABELS, CAT_ORDER } from '~/data/nutritionProgram'
 import type { FoodCat, Recipe, RecipeItem, RecipeKind } from '~/data/nutritionProgram'
 import { useNutrition } from '~/composables/useNutrition'
+import type { AnnulationAliment, AnnulationPlat } from '~/composables/useNutrition'
+import type { Reference } from '~/lib/suppression'
+import { useFlash } from '~/composables/useFlash'
 import { usePhotos } from '~/composables/usePhotos'
 import { FAT_STEPS, expandItems, macrosOf, roundMacros, validateFood, validateRecipe } from '~/lib/nutritionStats'
+import { PHRASE_HISTORIQUE, phraseNettoyage, phraseSauceServie, phraseUsages } from '~/lib/suppression'
 
 // Vue « Plats » : la bibliothèque complète, consultable et extensible.
 // Tout ce qui est livré avec le plan est modifiable, et tout ce qui manque peut être
 // créé — sinon on reste prisonnier d'une table de 31 aliments.
 const {
-  library, addRecipe, patchRecipe, removeRecipe, resetRecipe, isCustomRecipe, isRecipePatched,
+  library, addRecipe, patchRecipe, resetRecipe, isCustomRecipe, isRecipePatched,
   toggleRecipeActive, isRecipeActive, addFood, isCustomFood,
   dairyFoods, setFatPct, dairyCost,
+  usagesDuPlat, usagesDeLAliment, supprimerPlat, annulerSuppressionPlat,
+  supprimerAliment, annulerSuppressionAliment,
 } = useNutrition()
+const { showFlash } = useFlash()
 
 // Ménage des photos dont le plat a disparu : sans ça, supprimer un plat laisse son
 // image en base pour toujours. Le total occupé, lui, ne s'affiche plus — le poids
@@ -63,7 +70,11 @@ function matchesBase(r: Recipe, base: Base): boolean {
   return ids.some(i => BASES.find(b => b.id === base)!.foods.includes(i))
 }
 
+// Un plat supprimé reste dans la bibliothèque pour que les journées passées
+// gardent leurs calories (voir `Recipe.deleted`) — il n'a rien à faire dans une
+// grille où l'on choisit quoi manger.
 const allRecipes = computed(() => Object.values(library.value.recipes)
+  .filter(r => !r.deleted)
   .map(r => ({ r, macros: roundMacros(macrosOf(expandItems(r, library.value), library.value.foods)) }))
   .sort((a, b) => KINDS.findIndex(k => k.id === a.r.kind) - KINDS.findIndex(k => k.id === b.r.kind)
     || a.r.name.localeCompare(b.r.name)))
@@ -89,7 +100,7 @@ function clearFilters() {
 const sheetId = ref<string | null>(null)
 
 const foods = computed(() => CAT_ORDER
-  .map(cat => ({ cat, items: Object.values(library.value.foods).filter(f => f.cat === cat).sort((a, b) => a.name.localeCompare(b.name)) }))
+  .map(cat => ({ cat, items: Object.values(library.value.foods).filter(f => f.cat === cat && !f.deleted).sort((a, b) => a.name.localeCompare(b.name)) }))
   .filter(g => g.items.length))
 
 // ─── Éditeur de plat ─────────────────────────────────────────────────────────
@@ -170,6 +181,60 @@ function saveFood() {
 
 const foodName = (id: string) => library.value.foods[id]?.name ?? id
 const kindLabel = (k: RecipeKind) => KINDS.find(x => x.id === k)?.label ?? k
+
+// ─── Suppression ─────────────────────────────────────────────────────────────
+//
+// Une croix sans un mot, et c'était fait. Le plat partait, ses créneaux restaient
+// dans les semaines types, et la journée concernée affichait un repas de moins sans
+// rien dire — voir lib/suppression.ts.
+//
+// Trois choses ont changé, et chacune répond à un vrai risque :
+//
+//  · on DIT ce qui pointe vers le plat avant de couper. « Sauce de 3 plats » arrête
+//    la main, là où « êtes-vous sûr ? » ne fait qu'ajouter un tap ;
+//  · on dit aussi ce qu'on ne touche PAS. Sans cette ligne, on n'ose pas faire le
+//    ménage de peur de fausser trois mois de suivi ;
+//  · on peut annuler après coup. La confirmation ne protège pas du regret, qui
+//    arrive une seconde trop tard.
+type ACouper =
+  | { kind: 'plat', id: string, nom: string, usages: ReturnType<typeof usagesDuPlat>, bloquants: Reference[] }
+  | { kind: 'aliment', id: string, nom: string, bloquants: Reference[] }
+
+const aCouper = ref<ACouper | null>(null)
+
+function demanderSuppressionPlat(id: string) {
+  const r = library.value.recipes[id]
+  if (!r) return
+  const usages = usagesDuPlat(id)
+  // Une sauce encore servie ne se supprime pas : ses ingrédients entrent dans les
+  // macros des plats qui la servent, y compris dans les journées passées.
+  aCouper.value = { kind: 'plat', id, nom: r.name, usages, bloquants: usages.sauceDe }
+}
+function demanderSuppressionAliment(id: string) {
+  const f = library.value.foods[id]
+  if (f) aCouper.value = { kind: 'aliment', id, nom: f.name, bloquants: usagesDeLAliment(id) }
+}
+
+function confirmerSuppression() {
+  const cible = aCouper.value
+  if (!cible || cible.bloquants.length) return
+  aCouper.value = null
+  const res = cible.kind === 'plat' ? supprimerPlat(cible.id) : supprimerAliment(cible.id)
+  if (!res.ok) return
+  const a = res.annulation
+  if (cible.kind === 'plat') {
+    // Fermer ce qui parlait du plat disparu : une fiche ou un formulaire d'édition
+    // resté ouvert sur un plat qui n'existe plus est une page vide sans explication.
+    if (draftId.value === cible.id) { draft.value = null; draftId.value = null }
+    if (sheetId.value === cible.id) sheetId.value = null
+  }
+  showFlash(`« ${a.nom} » supprimé`, 'ok', {
+    label: 'Annuler',
+    run: () => (cible.kind === 'plat'
+      ? annulerSuppressionPlat(a as AnnulationPlat)
+      : annulerSuppressionAliment(a as AnnulationAliment)),
+  })
+}
 </script>
 
 <template>
@@ -187,9 +252,12 @@ const kindLabel = (k: RecipeKind) => KINDS.find(x => x.id === k)?.label ?? k
     <!-- ─── Plats ─────────────────────────────────────────────────────── -->
     <template v-if="tab === 'plats'">
       <button class="btn-primary" @click="newRecipe()">＋ Créer un plat</button>
+      <!-- « De côté » et « Supprimer » sont deux gestes différents, et personne ne
+           devine lequel prendre sans qu'on le dise. -->
       <p class="muted">
-        Calories et macros sont calculées à partir des ingrédients. Un plat mis de côté
-                reste consultable mais n'apparaît plus dans le planning.
+        Calories et macros sont calculées à partir des ingrédients. Un plat <b>mis de côté</b>
+                reste ici mais ne tombe plus dans le planning ; un plat <b>supprimé</b> quitte aussi
+                cette page. Dans les deux cas, les journées déjà passées gardent leurs calories.
       </p>
 
       <!-- Ne reste que ce sur quoi on peut agir. Le total occupé s'affichait ici :
@@ -273,13 +341,13 @@ const kindLabel = (k: RecipeKind) => KINDS.find(x => x.id === k)?.label ?? k
               <button class="btn" :class="{ sel: !isRecipeActive(r.id) }" @click="toggleRecipeActive(r.id)">
                 {{ isRecipeActive(r.id) ? 'De côté' : 'Réactiver' }}
               </button>
-              <button v-if="isCustomRecipe(r.id)" class="btn" @click="removeRecipe(r.id)">✕</button>
+              <button class="btn danger" @click="demanderSuppressionPlat(r.id)">✕ Supprimer</button>
               <!-- Uniquement sur les plats RÉELLEMENT modifiés : leurs grammages
                    locaux écrasent ceux du programme, y compris après une mise à
                    jour. Affiché partout, ce bouton ne disait rien ; affiché ici, il
                    pointe exactement les plats qui ne suivent plus le plan. -->
               <button
-                v-else-if="isRecipePatched(r.id)" class="btn warn"
+                v-if="isRecipePatched(r.id)" class="btn warn"
                 title="Ce plat a été modifié : il garde tes grammages et ignore les mises à jour du programme"
                 @click="resetRecipe(r.id)"
               >↺ modifié</button>
@@ -350,6 +418,7 @@ const kindLabel = (k: RecipeKind) => KINDS.find(x => x.id === k)?.label ?? k
             <span v-if="isCustomFood(f.id)" class="nu-tag mine">perso</span>
           </span>
           <span class="mono muted">{{ f.kcal }} kcal · {{ f.p }} P / {{ f.g }} G / {{ f.l }} L</span>
+          <button class="nu-del" :aria-label="`Supprimer ${f.name}`" @click="demanderSuppressionAliment(f.id)">×</button>
         </div>
       </div>
     </template>
@@ -358,7 +427,7 @@ const kindLabel = (k: RecipeKind) => KINDS.find(x => x.id === k)?.label ?? k
     <Teleport to="body">
       <div class="sport-app sport-portal">
         <transition name="sheet">
-          <NutritionRecipeSheet v-if="sheetId" :id="sheetId" @close="sheetId = null" />
+          <NutritionRecipeSheet v-if="sheetId" :id="sheetId" supprimable @close="sheetId = null" @supprimer="demanderSuppressionPlat" />
         </transition>
       </div>
     </Teleport>
@@ -414,6 +483,9 @@ const kindLabel = (k: RecipeKind) => KINDS.find(x => x.id === k)?.label ?? k
             <div v-for="(e, i) in errors" :key="i">⚠️ {{ e }}</div>
           </div>
           <button class="btn-primary" @click="saveRecipe()">Enregistrer</button>
+          <!-- En bas, après Enregistrer, et jamais à côté : on ouvre ce formulaire
+               pour corriger un grammage, pas pour supprimer. -->
+          <button v-if="draftId" class="btn danger btn-bloc" @click="demanderSuppressionPlat(draftId)">✕ Supprimer ce plat</button>
       </Sheet>
     </transition>
 
@@ -440,5 +512,58 @@ const kindLabel = (k: RecipeKind) => KINDS.find(x => x.id === k)?.label ?? k
           <button class="btn-primary" @click="saveFood()">Enregistrer</button>
       </Sheet>
     </transition>
+
+    <!-- ─── Confirmation de suppression ───────────────────────────────── -->
+    <!--
+      Téléportée, et placée APRÈS la fiche d'un plat dans ce fichier : les deux
+      feuilles partagent le même z-index, c'est donc l'ordre dans le document qui
+      les départage. Rendue ici sans téléport, la confirmation ouverte depuis une
+      fiche se serait dessinée DERRIÈRE elle — un bouton qui ne fait rien.
+    -->
+    <Teleport to="body">
+      <div class="sport-app sport-portal">
+        <transition name="sheet">
+          <!--
+            Elle NOMME ce qui va bouger plutôt que de demander « êtes-vous sûr ? ».
+            Une question à laquelle on répond oui sans lire ne protège de rien.
+          -->
+          <Sheet v-if="aCouper" persistent title="Supprimer ?" @close="aCouper = null">
+            <p class="nu-sup-nom"><b>{{ aCouper.nom }}</b></p>
+
+            <!-- Un élément encore utilisé ne se supprime pas : le retirer de force
+                 allégerait en silence les plats qui s'en servent, y compris dans les
+                 journées déjà passées. On rend la liste à corriger. -->
+            <template v-if="aCouper.bloquants.length">
+              <p>
+                Impossible.
+                {{ aCouper.kind === 'plat'
+                  ? phraseSauceServie(aCouper.bloquants)
+                  : (aCouper.bloquants.length > 1 ? 'Ces plats l’utilisent encore.' : 'Ce plat l’utilise encore.')
+                    + ' Retire-le de leurs ingrédients d’abord.' }}
+              </p>
+              <ul class="nu-sup-liste">
+                <li v-for="pl in aCouper.bloquants" :key="pl.id">{{ pl.nom }}</li>
+              </ul>
+              <button class="btn-primary" @click="aCouper = null">J’ai compris</button>
+            </template>
+
+            <template v-else-if="aCouper.kind === 'plat'">
+              <p>{{ phraseUsages(aCouper.usages) }}</p>
+              <p v-if="phraseNettoyage(aCouper.usages)" class="muted">{{ phraseNettoyage(aCouper.usages) }}</p>
+              <p class="muted">{{ PHRASE_HISTORIQUE }}</p>
+              <button class="btn-primary danger" @click="confirmerSuppression()">Supprimer le plat</button>
+              <button class="btn btn-bloc" @click="aCouper = null">Annuler</button>
+            </template>
+
+            <template v-else>
+              <p>Aucun plat ne l’utilise.</p>
+              <p class="muted">{{ PHRASE_HISTORIQUE }}</p>
+              <button class="btn-primary danger" @click="confirmerSuppression()">Supprimer l’aliment</button>
+              <button class="btn btn-bloc" @click="aCouper = null">Annuler</button>
+            </template>
+          </Sheet>
+        </transition>
+      </div>
+    </Teleport>
   </div>
 </template>

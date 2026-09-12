@@ -23,8 +23,19 @@ import { ref } from 'vue'
  */
 export type FlashTon = 'ok' | 'echec'
 
+/**
+ * Le bouton du bandeau — « Annuler », et rien d'autre pour l'instant.
+ *
+ * Une suppression a besoin d'être rattrapable là où elle vient de se produire. Une
+ * confirmation avant ne suffit pas : on l'a lue, on a dit oui, et c'est une seconde
+ * plus tard qu'on se rend compte. Le seul endroit où l'annulation se trouve sans
+ * réfléchir est l'endroit où l'application vient d'annoncer l'acte.
+ */
+export interface ActionFlash { label: string, run: () => void }
+
 const message = ref('')
 const ton = ref<FlashTon>('ok')
+const action = ref<ActionFlash | null>(null)
 let minuteur: ReturnType<typeof setTimeout> | null = null
 
 export function useFlash() {
@@ -36,12 +47,26 @@ export function useFlash() {
    * trois secondes n'est pas lu, il est aperçu — et c'est précisément celui qu'il
    * faut lire.
    */
-  function showFlash(texte: string, tonalite: FlashTon = 'ok') {
+  function showFlash(texte: string, tonalite: FlashTon = 'ok', act: ActionFlash | null = null) {
     message.value = texte
     ton.value = tonalite
+    action.value = act
     if (minuteur) clearTimeout(minuteur)
-    const duree = tonalite === 'echec' || texte.length > 40 ? 6000 : 3000
-    minuteur = setTimeout(() => { message.value = ''; minuteur = null }, duree)
+    // Un bandeau qui porte un bouton tient plus longtemps : il faut lire, décider et
+    // viser. Trois secondes suffisent à annoncer, pas à rattraper.
+    const duree = act || tonalite === 'echec' || texte.length > 40 ? 6000 : 3000
+    minuteur = setTimeout(cacher, duree)
   }
-  return { flash: message, flashTon: ton, showFlash }
+  function cacher() {
+    message.value = ''
+    action.value = null
+    if (minuteur) { clearTimeout(minuteur); minuteur = null }
+  }
+  /** Déclenche l'action et referme : un « Annuler » qui reste affiché invite à re-cliquer. */
+  function lancerAction() {
+    const a = action.value
+    cacher()
+    a?.run()
+  }
+  return { flash: message, flashTon: ton, flashAction: action, showFlash, lancerAction, cacherFlash: cacher }
 }

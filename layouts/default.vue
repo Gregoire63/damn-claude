@@ -62,7 +62,7 @@ const router = useRouter()
 
 const TABS = ONGLETS
 const pageTitle = computed(() => titreDe(route.path))
-const { flash, flashTon, showFlash } = useFlash()
+const { flash, flashTon, flashAction, showFlash, lancerAction } = useFlash()
 const maj = useMaj()
 
 // Les propositions de Claude : le badge de l'en-tête, et la feuille qu'il ouvre.
@@ -492,7 +492,10 @@ onUnmounted(() => {
     </transition>
 
     <transition name="flash">
-      <div v-if="flash" class="flash" :class="flashTon" role="status">{{ flash }}</div>
+      <div v-if="flash" class="flash" :class="flashTon" role="status">
+        <span class="flash-txt">{{ flash }}</span>
+        <button v-if="flashAction" class="flash-act" @click="lancerAction()">{{ flashAction.label }}</button>
+      </div>
     </transition>
 
 

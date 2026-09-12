@@ -19,6 +19,10 @@ export interface Food {
   l: number // lipides (g)
   buy?: string // repère d'achat / de pesée affiché dans la liste de courses
   custom?: boolean // ajouté par l'utilisateur depuis l'emballage
+  /**
+   * Supprimé du catalogue. Voir `Recipe.deleted` — même raison, même mécanique.
+   */
+  deleted?: boolean
   micro?: Partial<Record<MicroKey, number>> // micronutriments pour 100 g (voir MICRO_REFS)
   /**
    * Jours de conservation au réfrigérateur UNE FOIS CUISINÉ, à 4 °C.
@@ -100,6 +104,19 @@ export interface Recipe {
   items: RecipeItem[]
   custom?: boolean // créée par l'utilisateur, pas livrée avec le plan
   disabled?: boolean // mise de côté : consultable, mais ne tombe plus dans le planning
+  /**
+   * Supprimée du catalogue — et pourtant encore là.
+   *
+   * Les totaux d'une journée PASSÉE se recalculent depuis le catalogue : ils ne
+   * sont stockés nulle part (voir `buildDay`). Faire vraiment disparaître un plat
+   * retirerait donc ses calories de tous les jours où il a été mangé — un mardi de
+   * mars perdrait six cents kilocalories parce qu'on a fait le ménage en septembre.
+   *
+   * Le plat reste donc calculable et nommable, et ce drapeau le retire de partout
+   * où l'on CHOISIT : la bibliothèque, les filtres, le planning, les semaines types.
+   * C'est la différence avec `disabled`, qui le laisse dans la bibliothèque.
+   */
+  deleted?: boolean
   /**
    * Sauce servie avec ce plat. Ses ingrédients entrent dans les macros et dans les
    * courses, mais PAS dans la boîte : elle se prépare à part, dans un petit pot, et

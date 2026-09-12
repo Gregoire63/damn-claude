@@ -106,6 +106,33 @@ balance se synchronise à l'ouverture, donc souvent après le démarrage de la s
 volontiers sur la première pesée du carnet — bon choix pour afficher un ordre de
 grandeur, faute ici.
 
+**Un plat supprimé n'est pas effacé : il est MARQUÉ, et le passé ne bouge pas.**
+Aucun total de journée n'est stocké — ils se recalculent à chaque affichage depuis le
+catalogue ET depuis la semaine type (`buildDay`). Deux conséquences, et la seconde
+piège même quand on connaît la première :
+
+- effacer un plat retire ses calories de tous les jours où il a été mangé. D'où les
+  pierres tombales (`gr-nutri-plats-supprimes-v1`, `gr-nutri-aliments-supprimes-v1`) et
+  le drapeau `deleted`, qui le sort de partout où l'on CHOISIT et le laisse partout où
+  l'on REGARDE ;
+- **« nettoyer » les semaines types fait exactement le même dégât.** Une semaine type
+  n'est pas une intention pour la semaine prochaine : c'est la seule mémoire de ce qui
+  a été mangé les jeudis précédents. Vider un créneau les vide tous. Mesuré à l'écran
+  avant correction : un jeudi passé tombait de 2 022 à 1 464 kcal. Les créneaux ne sont
+  donc PAS touchés — le sélecteur de la semaine y affiche « … — supprimé, à remplacer ».
+
+C'est la DATE qui tranche : `buildDay(..., sansSupprimes)` est vrai pour une journée à
+venir, faux pour une journée passée. Une semaine type, qui n'a pas de date, l'écarte
+toujours — c'est le seul endroit où le laisser passer coûterait de l'argent en courses.
+Les exceptions de planning et les plats « pris à la place » ne se coupent qu'à partir
+d'aujourd'hui.
+
+Corollaire : une SAUCE encore servie ne se supprime pas, exactement comme un aliment
+encore utilisé. Ses ingrédients entrent dans les macros des plats qui la servent, y
+compris dans le passé ; la retirer de force les allégerait sans qu'aucune ligne ne
+bouge à l'écran. On refuse, et on nomme les fiches à corriger. Voir
+`lib/suppression.ts`.
+
 **Un nombre calculé s'arrondit à sa SORTIE, jamais au milieu du calcul.**
 `lib/nombres.ts` → `arrondi(n)`, au centième. Deux causes fabriquent des nombres à
 rallonge, et la seconde surprend : la division qui ne tombe pas juste, et la
@@ -158,7 +185,7 @@ lib/onglets.ts           les cinq onglets : chemin, libellé, titre (AUCUN impor
 components/sport/        écrans du suivi d'entraînement
 components/nutrition/    écrans du module nutrition
 composables/             l'état, persisté dans localStorage (32 fichiers, pas de Pinia)
-lib/                     logique pure — aucun DOM, aucun stockage, testée (24 fichiers)
+lib/                     logique pure — aucun DOM, aucun stockage, testée (25 fichiers)
 utils/                   auto-importé par Nuxt : uniquement du vocabulaire spécifique
 data/                    types et tables de référence — les contenus sont VIDES
 data/exemple/            le pack d'exemple → public/exemple.json
@@ -346,7 +373,7 @@ Deux invariants tenus par des tests :
 
 ## Les tests
 
-1316 tests, 78 fichiers, deux projets. La plupart tournent sur le **pack d'exemple**,
+1358 tests, 80 fichiers, deux projets. La plupart tournent sur le **pack d'exemple**,
 déclaré fichier par fichier (`vi.mock('../../data/nutritionProgram', …)`, voir
 `test/exemple.ts`) : vérifier que la modulation des féculents ne touche pas aux
 protéines demande des aliments aux vraies macros, pas trois objets fabriqués.

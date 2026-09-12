@@ -244,6 +244,13 @@ input.fo-pct::-webkit-outer-spin-button, input.fo-pct::-webkit-inner-spin-button
 .btn:active { transform: scale(0.98); }
 .btn.ghost { background: transparent; color: var(--accent-primary); text-decoration: none; }
 .btn.sel { background: var(--accent-primary); border-color: var(--accent-primary); color: var(--bg-primary); }
+/* Le rouge d'une action qui retire. Il reste un bouton ordinaire tant qu'on ne
+   l'a pas visé : un bord et un texte, pas un aplat. Un aplat rouge dans une
+   rangée d'actions attire la main avant que la phrase ait été lue. */
+.btn.danger { color: #b5502f; border-color: #e6c3b0; }
+.btn.danger:hover { border-color: #b5502f; }
+.btn-primary.danger { background: #b5502f; }
+.btn-primary.danger:hover { background: #9a4326; }
 .btn-primary { background: var(--accent-primary); border: none; color: var(--bg-primary); border-radius: 12px; padding: 12px 18px; font-family: var(--font-body); font-size: 14px; font-weight: 600; cursor: pointer; transition: background 0.2s, transform 0.15s; }
 .btn-primary:hover { background: var(--accent-strong); }
 .btn-primary:active { transform: scale(0.98); }
@@ -283,10 +290,20 @@ input.fo-pct::-webkit-outer-spin-button, input.fo-pct::-webkit-inner-spin-button
   position: fixed; z-index: 32;
   left: 12px; right: 12px; margin: 0 auto; max-width: 460px;
   bottom: calc(76px + env(safe-area-inset-bottom, 0px));
+  display: flex; align-items: center; gap: 10px;
   background: #e7f0e2; border: 1px solid #bcd8ae; color: #3f7a4f;
   border-radius: 12px; padding: 11px 14px; font-size: 14px; font-weight: 500; line-height: 1.4;
   box-shadow: 0 10px 30px rgba(42, 40, 38, 0.18);
 }
+.flash-txt { flex: 1; min-width: 0; }
+/* Le bouton d'annulation. Cible large et bord marqué : on le vise en marchant, une
+   fois sur deux avec le pouce de la main qui tient le téléphone. */
+.flash-act {
+  flex: none; border: 1px solid currentColor; background: transparent; color: inherit;
+  border-radius: 999px; padding: 7px 14px; font: inherit; font-weight: 600; cursor: pointer;
+  min-height: 36px;
+}
+.flash-act:active { opacity: 0.7; }
 .flash-enter-active, .flash-leave-active { transition: opacity 0.18s var(--ease-out), transform 0.18s var(--ease-out); }
 .flash-enter-from, .flash-leave-to { opacity: 0; transform: translateY(10px); }
 /* Un échec sur fond vert se lit de loin comme une réussite. La couleur porte la

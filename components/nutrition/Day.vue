@@ -162,6 +162,7 @@ const statusIcon: Record<DayStatus, string> = {
 
 /** Plats de la bibliothèque proposés en extra, les plus légers d'abord. */
 const addable = computed(() => Object.values(library.value.recipes)
+  .filter(r => !r.deleted)
   .map(r => ({ recipe: r, macros: roundMacros(extraFromRecipe(r, library.value, 'preview')) }))
   .sort((a, b) => a.macros.kcal - b.macros.kcal))
 
