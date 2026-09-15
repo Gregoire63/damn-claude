@@ -89,13 +89,25 @@ Un dépôt public garde tout dans son historique : effacer le fichier ne répare
 seule la régénération des clés répare.
 
 **Une page qui joue du son PREND le focus audio du téléphone.** Spotify se fait
-interrompre, et le seul moyen de le récupérer est d'aller le relancer à la main. La
-piste inaudible de veille — celle qui empêche Chrome Android de geler les minuteurs —
-ne tourne donc QUE quand l'onglet est caché, c'est-à-dire au seul moment où elle sert.
+interrompre ou baisser, et le seul moyen de le récupérer est d'aller le relancer à la
+main. La piste inaudible de veille — celle qui empêche Chrome de geler les minuteurs
+d'un onglet en arrière-plan — coûte donc cher, et il a fallu deux passes pour que le
+compte y soit :
+
+1. elle ne tourne QUE quand l'onglet est caché. Écran devant les yeux, il n'y a rien
+   à empêcher ;
+2. elle ne démarre qu'au bout de QUATRE MINUTES de fond. Chrome serre la vis en deux
+   temps (« Heavy throttling of chained JS timers », Chrome 88) : sous cinq minutes,
+   les minuteurs sont regroupés à la seconde — largement assez pour un décompte qui
+   se recale sur `endAt` — et au-delà seulement, une fois par minute. Un repos entre
+   séries dure une à trois minutes : il n'a jamais eu besoin de cette piste. Sans ce
+   délai, quitter l'app pour lire un message faisait baisser la musique pour rien.
+
 L'application se déclare en plus `audioSession.type = 'ambient'` (se mélange) et passe
 en `'transient'` le temps d'un bip (baisse la musique, puis la rend), là où le
-navigateur connaît l'API. Le bip, lui, doit couvrir la musique : c'est le seul son qui
-ait le droit de s'imposer, et seulement une seconde.
+navigateur connaît l'API — Chrome Android ne la connaît pas, d'où le point 2, qui lui
+ne dépend de rien. Le bip, lui, doit couvrir la musique : c'est le seul son qui ait le
+droit de s'imposer, et seulement une seconde.
 
 **Le lest est une DIFFÉRENCE, donc sa référence se fige.** Le stockage garde le TOTAL
 (poids de corps + lest) ; le champ montre le lest, calculé en retirant le poids du
@@ -373,7 +385,7 @@ Deux invariants tenus par des tests :
 
 ## Les tests
 
-1358 tests, 80 fichiers, deux projets. La plupart tournent sur le **pack d'exemple**,
+1370 tests, 81 fichiers, deux projets. La plupart tournent sur le **pack d'exemple**,
 déclaré fichier par fichier (`vi.mock('../../data/nutritionProgram', …)`, voir
 `test/exemple.ts`) : vérifier que la modulation des féculents ne touche pas aux
 protéines demande des aliments aux vraies macros, pas trois objets fabriqués.

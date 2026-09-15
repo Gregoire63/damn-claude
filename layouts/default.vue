@@ -7,6 +7,7 @@ import { setText } from '~/lib/setText'
 import { fmtRest, restFor } from '~/lib/rest'
 import { EFFORT_OPTIONS } from '~/utils/sportStats'
 import { exMuscles } from '~/lib/muscles'
+import type { Exercise } from '~/data/sportProgram'
 import { isoOf } from '~/utils/sportStats'
 import { fmtDuree } from '~/lib/fractionne'
 import { useSeance } from '~/composables/useSeance'
@@ -63,6 +64,13 @@ const router = useRouter()
 const TABS = ONGLETS
 const pageTitle = computed(() => titreDe(route.path))
 const { flash, flashTon, flashAction, showFlash, lancerAction } = useFlash()
+
+/**
+ * L'exercice dont on regarde la fiche. Un objet et non un identifiant : la même
+ * fenêtre s'ouvre depuis la séance en cours ET depuis l'aperçu d'une séance qu'on
+ * n'a pas démarrée, et ces deux listes ne vivent pas au même endroit.
+ */
+const infoEx = ref<Exercise | null>(null)
 const maj = useMaj()
 
 // Les propositions de Claude : le badge de l'en-tête, et la feuille qu'il ouvre.
@@ -591,6 +599,13 @@ onUnmounted(() => {
               </div>
               <div class="set-counter mono" :class="{ complete: draft[e.id] && workCount(e.id) > 0 && doneCount(e.id) === workCount(e.id) }">{{ doneCount(e.id) }}/{{ workCount(e.id) || e.sets }}</div>
             </button>
+            <!-- Deux boutons, deux fréquences. Le « i » se touche une fois, la
+                 première fois ; le 💬 se relit entre deux séries. -->
+            <button
+              class="ex-info-btn"
+              :aria-label="`Comment exécuter ${e.name}`"
+              @click="infoEx = e"
+            >i</button>
             <button
               class="ex-note-btn" :class="{ has: !!draftNote[e.id]?.trim() }"
               :aria-label="`Commentaire sur ${e.name}`"
@@ -598,7 +613,11 @@ onUnmounted(() => {
             >💬</button>
           </div>
           <div v-if="openEx === e.id" class="ex-body">
-            <LazySportExerciseMove :ex-id="e.id"><LazySportMuscleMap :muscles="e.muscles" /></LazySportExerciseMove>
+            <!-- Photos, schéma musculaire et consignes ouvraient cette carte, à
+                 chaque fois, y compris à la quatrième série où l'on sait déjà à quoi
+                 le mouvement ressemble. Ils sont derrière le « i » de l'en-tête :
+                 voir components/sport/ExerciseInfo.vue. Ce qui reste ici est ce qui
+                 change d'une série à l'autre. -->
             <div v-if="e.bodyweight" class="hint-pill bw">
               🧍 Saisis uniquement le <strong>lest</strong> ; laisse vide sans lest.
               <template v-if="seanceWeight">Ton poids du jour ({{ seanceWeight }} kg) est ajouté automatiquement&nbsp;;</template>
@@ -645,10 +664,6 @@ onUnmounted(() => {
               {{ variantName(e.id, draftVariant[e.id], e.name) }} ·
               équivalent {{ e.name }} ×{{ ratioFor(e.id, draftVariant[e.id]).ratio.toLocaleString('fr-FR') }}
             </p>
-            <div class="cues">
-              <div v-for="(c, i) in e.cues" :key="i" class="cue"><span class="cue-arrow">›</span>{{ c }}</div>
-              <div v-if="e.machine" class="muted italic mt-6">{{ e.machine }}</div>
-            </div>
             <div class="sets">
               <!-- Le repos prévu, annoncé AVANT de valider.
                    Le minuteur partait tout seul avec une durée qu'on découvrait au
@@ -842,27 +857,52 @@ onUnmounted(() => {
     -->
     <div v-if="previewSession" class="preview-overlay" @click.self="previewSession = null">
       <div class="preview-sheet" :style="{ '--c': previewSession.color }">
+        <!-- Le même en-tête que la séance en cours : pastille de couleur, nom, croix.
+             L'aperçu portait un titre et un sur-titre à lui, et on ne reconnaissait
+             pas la séance qu'on allait démarrer dans celle qui démarrait. -->
         <div class="preview-head">
-          <div>
-            <div class="preview-eyebrow">Aperçu · lecture seule</div>
-            <h3 class="preview-title">{{ previewSession.name }}</h3>
+          <div class="ssh-title">
+            <span class="ssh-dot" aria-hidden="true"></span>
+            <div>
+              <div class="ssh-name">{{ previewSession.name }}</div>
+              <div class="preview-sub mono muted">
+                {{ previewSession.tag }} · {{ previewSession.exercises.length }} exercices<template v-if="previewSession.sprint"> · ⚡ sprint</template>
+              </div>
+            </div>
           </div>
           <button class="sheet-close" aria-label="Fermer" @click="previewSession = null">×</button>
         </div>
         <div v-if="activeSession" class="preview-note">🔒 Une séance est déjà en cours. Termine-la ou abandonne-la d'abord.</div>
+
+        <!-- Les MÊMES cartes que dans la séance : `.exercise`, `.exhead`, `.ex-name`,
+             le compteur à droite, le « i » de la fiche. Ce qui change est ce qu'il y
+             a dedans — ici on lit, là on saisit — et rien d'autre. -->
         <div class="preview-list">
-          <div v-for="(e, idx) in previewSession.exercises" :key="e.id" class="preview-ex" :class="{ 'ex-opt': e.optionnel }">
-            <div class="preview-ex-head">
-              <span class="preview-ex-name">{{ idx + 1 }}. {{ e.name }}<span v-if="e.optionnel" class="ex-opt-tag">facultatif</span></span>
-              <span class="preview-ex-sets mono">{{ e.sets }} × {{ e.reps }}</span>
+          <div v-for="(e, idx) in previewSession.exercises" :key="e.id" class="card no-pad exercise preview-ex" :class="{ 'ex-opt': e.optionnel }">
+            <div class="exhead-row">
+              <div class="exhead">
+                <div>
+                  <div class="ex-name">{{ idx + 1 }}. {{ e.name }}<span v-if="e.optionnel" class="ex-opt-tag">facultatif</span></div>
+                  <div class="muted mt-2">⏱ Repos {{ fmtRest(restFor(e)) }}</div>
+                </div>
+                <div class="set-counter mono">{{ e.sets }} × {{ e.reps }}</div>
+              </div>
+              <button class="ex-info-btn" :aria-label="`Comment exécuter ${e.name}`" @click="infoEx = e">i</button>
             </div>
-            <div class="sc-muscles"><span v-for="m in exMuscles(e)" :key="m" class="sc-chip">{{ m }}</span></div>
-            <div v-if="e.cues && e.cues.length" class="preview-cues">
-              <div v-for="(c, i) in e.cues" :key="i" class="cue"><span class="cue-arrow">›</span>{{ c }}</div>
+            <div class="preview-ex-foot">
+              <span v-for="m in exMuscles(e)" :key="m" class="sc-chip">{{ m }}</span>
             </div>
           </div>
-          <div v-if="previewSession.sprint" class="preview-ex">
-            <div class="preview-ex-head"><span class="preview-ex-name">⚡ {{ previewSession.sprint.title }}</span></div>
+          <div v-if="previewSession.sprint" class="card no-pad exercise sprint-exercise preview-ex">
+            <div class="exhead">
+              <div>
+                <div class="ex-name">⚡ {{ previewSession.sprint.title }}</div>
+                <div class="muted mt-2">Optionnel<template v-if="previewSession.sprint.goal"> · {{ previewSession.sprint.goal }}</template></div>
+              </div>
+              <div v-if="previewSession.sprint.protocol.length >= 2" class="set-counter mono">
+                {{ previewSession.sprint.protocol[0].value }} × {{ previewSession.sprint.protocol[1].value }}
+              </div>
+            </div>
           </div>
         </div>
         <button v-if="activeSession" class="btn-primary preview-resume" @click="previewSession = null; expandSession()">↩ Reprendre la séance en cours</button>
@@ -952,6 +992,12 @@ onUnmounted(() => {
         <button class="btn-primary flex-1" @click="closeNote()">Terminé</button>
       </div>
     </Popup>
+
+    <!-- La fiche d'un mouvement : photos, muscles, consignes, machine.
+         Écrite ICI et non dans la carte de l'exercice, parce que la même fenêtre
+         s'ouvre depuis la séance en cours et depuis l'aperçu d'une séance qu'on n'a
+         pas démarrée. Deux copies auraient divergé au premier ajout. -->
+    <LazySportExerciseInfo v-if="infoEx" :ex="infoEx" @close="infoEx = null" />
 
     <!-- Mini-feuille « séance en cours » : docké au-dessus de la barre d'onglets,
          affiche la durée en direct ; on tape dessus pour rouvrir la séance -->

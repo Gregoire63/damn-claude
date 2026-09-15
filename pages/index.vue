@@ -60,7 +60,7 @@ const weekIsos = computed<(string | null)[]>(() => {
 })
 const weekDays = computed(() => weekIsos.value.map((iso, i) => {
   const s = sessionById(iso ? sessionIdFor(iso) : weekPlan.value[i])
-  return { dow: DOW[i], session: s, short: s ? courtDe(s.name) : '', sprint: !!s?.sprint, moved: !!iso && isPlanMoved(iso) }
+  return { dow: DOW[i], session: s, short: s ? courtDe(s.name) : '', moved: !!iso && isPlanMoved(iso) }
 }))
 const todayEntry = computed(() => (todayIndex.value === null ? null : weekDays.value[todayIndex.value]))
 const todaySession = computed(() => todayEntry.value?.session ?? null)
@@ -104,7 +104,7 @@ const todayRecord = computed(() => {
           <div v-if="doneToday.length" class="done-badge">✓ Déjà fait aujourd'hui : {{ doneToday.map(s => s.name).join(', ') }}</div>
           <div class="sc-muscles"><span v-for="m in sessionMuscles(todaySession)" :key="m" class="sc-chip">{{ m }}</span></div>
           <div class="today-foot">
-            <span class="muted">{{ todaySession.exercises.length }} exercices<template v-if="todaySession.sprint"> · ⚡ sprint</template></span>
+            <span class="muted">{{ todaySession.exercises.length }} exercices</span>
             <!-- Lire avant de s'engager. Le geste principal ne change pas de place :
                  celui-ci se pose à côté, en second. -->
             <button class="btn today-go" @click="apercuSession(todaySession)">👁 Voir</button>
@@ -141,13 +141,17 @@ const todayRecord = computed(() => {
       -->
       <div v-for="s in otherSessions" :key="s.id" class="session-card sc-duo" :style="{ '--c': s.color }">
         <button class="sc-open" @click="apercuSession(s)">
+          <!-- « ⚡ sprint » occupait ce coin. C'était une étiquette : elle disait ce
+               que la séance contient, à un endroit où l'on cherche ce qu'on peut
+               FAIRE — et le seul geste de la carte, lire la séance, était annoncé
+               tout en bas en petit. Le sprint se lit dans la feuille, avec le reste. -->
           <div class="sc-top">
             <span class="sc-day">{{ s.tag }}</span>
-            <span v-if="s.sprint" class="sc-sprint">⚡ sprint</span>
+            <span class="sc-voir">👁 Voir</span>
           </div>
           <div class="sc-name">{{ s.name }}</div>
           <div class="sc-muscles"><span v-for="m in sessionMuscles(s)" :key="m" class="sc-chip">{{ m }}</span></div>
-          <div class="sc-foot"><span class="sc-count mono">{{ s.exercises.length }} exercices</span><span class="sc-go">👁 Voir</span></div>
+          <div class="sc-foot"><span class="sc-count mono">{{ s.exercises.length }} exercices</span></div>
         </button>
         <button class="btn-primary sc-start" :style="{ background: s.color }" @click="startSession(s)">
           {{ activeSession ? (activeSession.id === s.id ? 'Reprendre →' : 'Aperçu') : 'Démarrer →' }}
@@ -178,7 +182,6 @@ const todayRecord = computed(() => {
           <template v-if="d.session">
             <span class="week-dot"></span>
             <span class="week-label">{{ d.short }}</span>
-            <span v-if="d.sprint" class="week-sprint">⚡</span>
           </template>
           <span v-else class="week-rest">repos</span>
         </div>

@@ -58,7 +58,7 @@ const progExStats = computed(() => (progressSessionObj.value?.exercises ?? []).m
         :style="{ '--c': s.color }"
         @click="progressSession = progressSession === s.id ? null : s.id"
       >
-        <div class="sc-top"><span class="sc-day">{{ s.tag }}</span><span v-if="s.sprint" class="sc-sprint">⚡</span></div>
+        <div class="sc-top"><span class="sc-day">{{ s.tag }}</span></div>
         <div class="sc-name">{{ s.name }}</div>
         <div class="sc-muscles"><span v-for="m in sessionMuscles(s)" :key="m" class="sc-chip">{{ m }}</span></div>
         <div class="sc-foot">

@@ -4,7 +4,7 @@
 
 <p align="center">
   <a href="https://github.com/Gregoire63/damn-claude/actions/workflows/ci.yml"><img src="https://github.com/Gregoire63/damn-claude/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
-  <img src="https://img.shields.io/badge/tests-1358-3f7a4f" alt="1358 tests">
+  <img src="https://img.shields.io/badge/tests-1370-3f7a4f" alt="1370 tests">
   <img src="https://img.shields.io/badge/Nuxt-4-00DC82" alt="Nuxt 4">
   <a href="LICENSE"><img src="https://img.shields.io/badge/licence-AGPL--3.0-8b6f5c" alt="AGPL-3.0"></a>
   <img src="https://img.shields.io/badge/data-on%20your%20phone-6b6560" alt="Local data">
@@ -119,7 +119,7 @@ waits.
 |---|---|
 | `npm run dev` | Development server |
 | `npm run build` | Production build (**never** `nuxt generate`) |
-| `npm test` | 1358 tests, 80 files, two Vitest projects |
+| `npm test` | 1370 tests, 81 files, two Vitest projects |
 | `npm run check` | Three guards: duplicate CSS selectors, duplicate data keys, invalid Vue markup |
 | `npm run exemple` | Regenerates `public/exemple.json` from `data/exemple/` |
 

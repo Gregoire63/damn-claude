@@ -4,7 +4,7 @@
 
 <p align="center">
   <a href="https://github.com/Gregoire63/damn-claude/actions/workflows/ci.yml"><img src="https://github.com/Gregoire63/damn-claude/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
-  <img src="https://img.shields.io/badge/tests-1358-3f7a4f" alt="1358 tests">
+  <img src="https://img.shields.io/badge/tests-1370-3f7a4f" alt="1370 tests">
   <img src="https://img.shields.io/badge/Nuxt-4-00DC82" alt="Nuxt 4">
   <a href="LICENSE"><img src="https://img.shields.io/badge/licence-AGPL--3.0-8b6f5c" alt="AGPL-3.0"></a>
   <img src="https://img.shields.io/badge/données-sur%20ton%20téléphone-6b6560" alt="Données locales">
@@ -115,7 +115,7 @@ séance), sinon il n'y a rien à simuler et elles attendent.
 |---|---|
 | `npm run dev` | Serveur de développement |
 | `npm run build` | Build de production (**jamais** `nuxt generate`) |
-| `npm test` | 1358 tests, 80 fichiers, deux projets Vitest |
+| `npm test` | 1370 tests, 81 fichiers, deux projets Vitest |
 | `npm run check` | Trois garde-fous : sélecteurs CSS en double, clés de données en double, balisage Vue invalide |
 | `npm run exemple` | Régénère `public/exemple.json` depuis `data/exemple/` |
 

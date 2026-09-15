@@ -205,31 +205,68 @@ function ensureKeepAlive(): HTMLAudioElement | null {
 let veilleurs = 0
 
 /**
- * La piste ne tourne QUE quand l'onglet est caché, et c'est la moitié qui manquait.
+ * La piste ne tourne QUE quand l'onglet est caché, et pas tout de suite.
  *
- * Elle n'existe que pour empêcher Chrome Android de geler les minuteurs d'un onglet
- * en arrière-plan. Tant que l'écran est devant les yeux, il n'y a rien à empêcher —
- * et la jouer quand même coûtait très cher : le système donne le focus audio à la
- * page, la musique de l'utilisateur s'arrête, et il faut aller la relancer à la main
- * sans savoir pourquoi elle s'est tue.
+ * ── D'abord : seulement caché ───────────────────────────────────────────────
  *
- * Autrement dit : valider une série coupait Spotify. Pour rien, puisque l'onglet
- * était à l'écran.
+ * Elle n'existe que pour empêcher Chrome de geler les minuteurs d'un onglet en
+ * arrière-plan. Écran devant les yeux, il n'y a rien à empêcher — et la jouer quand
+ * même coûtait très cher : le système donne le focus audio à la page, la musique
+ * s'arrête, et il faut aller la relancer à la main sans savoir pourquoi elle s'est
+ * tue. Valider une série coupait Spotify, pour rien.
+ *
+ * ── Ensuite : seulement au bout de quatre minutes ───────────────────────────
+ *
+ * La correction précédente déplaçait le problème sans le résoudre : la piste partait
+ * dès qu'on quittait l'application, donc exactement quand on va lire un message
+ * pendant son repos — et la musique baissait là au lieu de baisser ici.
+ *
+ * Or Chrome ne serre la vis qu'en DEUX temps (voir « Heavy throttling of chained JS
+ * timers », Chrome 88) :
+ *
+ *   · onglet caché depuis moins de cinq minutes → les minuteurs sont regroupés à la
+ *     SECONDE. Un `setInterval(250 ms)` tombe à 1 Hz, ce qui suffit très largement à
+ *     un décompte qui se recale de toute façon sur `endAt` ;
+ *   · au-delà de cinq minutes → une fois par MINUTE, et là le bip de fin arrive en
+ *     retard. C'est le seul moment où la piste sert. Jouer du son exempte de ce
+ *     second palier.
+ *
+ * Un repos entre séries dure une à trois minutes : il n'atteint jamais le second
+ * palier, et n'a donc jamais eu besoin de la piste. Elle est armée pour quatre
+ * minutes — une minute de marge avant le couperet — et ne démarre que si l'onglet
+ * est TOUJOURS caché et qu'un minuteur tourne encore. En pratique, un bloc de
+ * fractionné la déclenche ; un repos, jamais.
  */
+const DELAI_VEILLE_MS = 4 * 60 * 1000
+let armement: ReturnType<typeof setTimeout> | null = null
+
 function veilleSouhaitee(): boolean {
   return veilleurs > 0 && import.meta.client && document.visibilityState === 'hidden'
+}
+
+function desarmerVeille() {
+  if (armement) { clearTimeout(armement); armement = null }
 }
 
 function appliquerVeille() {
   const a = ensureKeepAlive()
   if (!a) return
-  if (veilleSouhaitee()) {
-    if (!a.paused) return
+  if (!veilleSouhaitee()) {
+    desarmerVeille()
+    if (!a.paused) { try { a.pause() } catch { /* ignore */ } }
+    return
+  }
+  // Déjà en train de jouer, ou déjà en attente : on ne réarme pas. Sans cette garde,
+  // deux allers-retours en arrière-plan repousseraient le départ indéfiniment.
+  if (!a.paused || armement) return
+  armement = setTimeout(() => {
+    armement = null
+    if (!veilleSouhaitee()) return
+    // Se déclarer « ambient » AVANT de jouer : déclaré après, le premier son a déjà
+    // pris le focus, et le mal est fait.
+    partagerLeSon()
     try { a.currentTime = 0; const p = a.play(); if (p && typeof p.catch === 'function') p.catch(() => {}) } catch { /* ignore */ }
-  }
-  else if (!a.paused) {
-    try { a.pause() } catch { /* ignore */ }
-  }
+  }, DELAI_VEILLE_MS)
 }
 
 let ecouteVisibilite = false
@@ -242,9 +279,6 @@ function ecouterVisibilite() {
 function startKeepAlive() {
   veilleurs++
   ecouterVisibilite()
-  // Se déclarer « ambient » AVANT de jouer quoi que ce soit : déclaré après, le
-  // premier son a déjà pris le focus, et le mal est fait.
-  partagerLeSon()
   appliquerVeille()
 }
 function stopKeepAlive() {

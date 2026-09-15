@@ -13,8 +13,19 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 // arrière-plan — démarrait avec le repos, écran allumé, alors qu'il n'y avait
 // justement rien à empêcher.
 //
-// D'où la règle figée ici : la veille ne tourne QUE quand l'onglet est caché. C'est
-// le seul moment où elle sert, et le seul où le vol de focus est un prix acceptable.
+// Première règle, donc : la veille ne tourne QUE quand l'onglet est caché.
+//
+// Elle ne suffisait pas. Symptôme suivant, rapporté tel quel : « la musique se baisse
+// quand je mets l'app en fond ». La piste partait dès qu'on quittait l'application,
+// c'est-à-dire exactement quand on va lire un message pendant son repos — la musique
+// baissait là au lieu de baisser ici.
+//
+// Or Chrome serre la vis en DEUX temps : sous cinq minutes de fond, les minuteurs
+// sont regroupés à la seconde, ce qui suffit à un décompte ; au-delà, une fois par
+// minute, et là le bip arrive en retard. Un repos dure une à trois minutes : il
+// n'atteint jamais le second palier. La piste est donc ARMÉE pour quatre minutes et
+// ne démarre que si l'onglet est toujours caché — un bloc de fractionné la
+// déclenche, un repos jamais.
 
 /**
  * Chaque instance porte son propre état, et on ne regarde que la DERNIÈRE créée.
@@ -51,32 +62,77 @@ beforeEach(() => {
   localStorage.clear()
   vi.resetModules()
   dernier = null
+  // La veille s'ARME pour quatre minutes : sans minuteurs factices, le fichier
+  // entier devrait attendre pour tester une décision prise en une ligne.
+  vi.useFakeTimers()
   vi.stubGlobal('Audio', AudioFactice)
   Object.defineProperty(document, 'visibilityState', { configurable: true, get: () => 'visible' })
 })
 
-afterEach(() => { vi.unstubAllGlobals() })
+afterEach(() => { vi.useRealTimers(); vi.unstubAllGlobals() })
 
 const charger = async () => await import('../../composables/useRestTimer')
+
+/** Le délai d'armement, repris du composable : quatre minutes. */
+const DELAI = 4 * 60 * 1000
 
 describe('la piste de veille', () => {
   it('ne démarre PAS quand l’écran est devant les yeux', async () => {
     const { veilleAudio } = await charger()
     veilleAudio(true)
+    vi.advanceTimersByTime(DELAI * 2)
     expect(joue()).toBe(false)
   })
 
-  it('démarre quand l’onglet passe en arrière-plan', async () => {
+  /** Le cœur de la seconde correction : passer en arrière-plan ne fait RIEN tout de
+   *  suite. C'est ce qui laisse la musique tranquille pendant un repos. */
+  it('ne démarre pas non plus dès qu’on quitte l’application', async () => {
     const { veilleAudio } = await charger()
     veilleAudio(true)
     cacher('hidden')
+    expect(joue()).toBe(false)
+    // Trois minutes plus tard — un repos long — toujours rien.
+    vi.advanceTimersByTime(3 * 60 * 1000)
+    expect(joue()).toBe(false)
+  })
+
+  it('démarre au bout de quatre minutes en arrière-plan', async () => {
+    const { veilleAudio } = await charger()
+    veilleAudio(true)
+    cacher('hidden')
+    vi.advanceTimersByTime(DELAI + 10)
     expect(joue()).toBe(true)
+  })
+
+  /** Revenir avant l'échéance désarme : c'est le cas normal, et il ne doit rien
+   *  coûter du tout. */
+  it('ne démarre pas si on revient avant l’échéance', async () => {
+    const { veilleAudio } = await charger()
+    veilleAudio(true)
+    cacher('hidden')
+    vi.advanceTimersByTime(DELAI - 1000)
+    cacher('visible')
+    vi.advanceTimersByTime(DELAI * 2)
+    expect(joue()).toBe(false)
+  })
+
+  /** Et le minuteur qui se termine pendant l'attente ne doit rien laisser derrière. */
+  it('ne démarre pas si le minuteur s’arrête pendant l’attente', async () => {
+    const { veilleAudio } = await charger()
+    veilleAudio(true)
+    cacher('hidden')
+    vi.advanceTimersByTime(60_000)
+    veilleAudio(false)
+    vi.advanceTimersByTime(DELAI * 2)
+    expect(joue()).toBe(false)
   })
 
   it('s’arrête dès qu’on revient sur l’application', async () => {
     const { veilleAudio } = await charger()
     veilleAudio(true)
     cacher('hidden')
+    vi.advanceTimersByTime(DELAI + 10)
+    expect(joue()).toBe(true)
     cacher('visible')
     expect(joue()).toBe(false)
   })
@@ -86,6 +142,7 @@ describe('la piste de veille', () => {
     veilleAudio(true)
     veilleAudio(false)
     cacher('hidden')
+    vi.advanceTimersByTime(DELAI * 2)
     expect(joue()).toBe(false)
   })
 
@@ -100,6 +157,7 @@ describe('la piste de veille', () => {
     veilleAudio(true)
     veilleAudio(true)
     cacher('hidden')
+    vi.advanceTimersByTime(DELAI + 10)
     expect(joue()).toBe(true)
 
     veilleAudio(false)
@@ -108,19 +166,23 @@ describe('la piste de veille', () => {
     expect(joue()).toBe(false)
   })
 
-  /** Cachée, revenue, recachée : la piste suit. Et deux passages en arrière-plan
-   *  d'affilée ne relancent pas la lecture deux fois — elle joue déjà. */
-  it('repart après un aller-retour en arrière-plan, sans s’empiler', async () => {
+  /**
+   * Deux allers-retours en arrière-plan ne doivent ni empiler les lectures, ni —
+   * c'est le piège de l'armement — repousser le départ à chaque retour.
+   */
+  it('repart après un aller-retour, sans s’empiler', async () => {
     const { veilleAudio } = await charger()
     veilleAudio(true)
     cacher('hidden')
+    vi.advanceTimersByTime(DELAI + 10)
     cacher('visible')
 
     const avant = dernier!.lectures
     cacher('hidden')
     cacher('hidden')
+    vi.advanceTimersByTime(DELAI + 10)
     expect(joue()).toBe(true)
-    // Deux passages en arrière-plan, UNE seule relance : elle jouait déjà.
+    // Deux passages en arrière-plan, UNE seule relance.
     expect(dernier!.lectures - avant).toBe(1)
   })
 })
@@ -148,7 +210,6 @@ describe('la session audio', () => {
   /** Baisser, puis RENDRE. Un état transitoire qu'on oublie de rendre devient
    *  permanent — c'est le vol de focus repris par la porte de service. */
   it('baisse le temps d’un bip, puis remet le partage', async () => {
-    vi.useFakeTimers()
     const audioSession = { type: 'auto' }
     vi.stubGlobal('navigator', Object.assign(Object.create(Object.getPrototypeOf(navigator)), navigator, { audioSession }))
     const { baisserLeSonUnInstant } = await import('../../composables/usePartageAudio')
@@ -158,6 +219,5 @@ describe('la session audio', () => {
 
     vi.advanceTimersByTime(700)
     expect(audioSession.type).toBe('ambient')
-    vi.useRealTimers()
   })
 })
