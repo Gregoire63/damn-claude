@@ -126,6 +126,66 @@ export interface ConvivesRepas {
   membres: string[]
   /** Ceux qui ne sont là que ce soir. */
   invites: Invite[]
+  /**
+   * Combien de fois chacun mange CE plat. Absent, ou 1 : une fois, ce soir.
+   *
+   * ── Pourquoi ce n'est pas un appétit ────────────────────────────────────
+   *
+   * Cuisiner pour le lendemain, c'est doubler la casserole sans changer l'assiette.
+   * Monter l'appétit à 200 % dirait autre chose : que la personne mange deux fois
+   * plus CE SOIR — et `partDeMoi` suivrait, donc la fiche annoncerait une assiette
+   * deux fois plus grosse et le suivi compterait un dîner double. Les grammages
+   * seraient bons et tout le reste faux.
+   *
+   * Le nombre de repas multiplie donc ce qu'on PÈSE, et rien d'autre. La part qui
+   * revient à chacun ce soir reste une portion, la sienne.
+   *
+   * Par personne et non global, parce que c'est comme ça que ça tombe : on prévoit
+   * deux jours pour soi et un seul pour l'autre, qui déjeune dehors le lendemain.
+   * Un multiplicateur unique obligerait à cuisiner un repas de trop.
+   *
+   * Rangé à part des `membres` et non fondu dedans : ce qui vaut 1 n'est pas écrit,
+   * donc une sauvegarde d'avant ce réglage se relit sans migration, et un repas
+   * ordinaire ne coûte toujours rien à stocker.
+   */
+  repas?: Record<string, number>
+}
+
+/** Bornes du nombre de repas. Au-delà de neuf, ce n'est plus un plat, c'est un stock. */
+export const REPAS_MIN = 1
+export const REPAS_MAX = 9
+
+export const bornerRepas = (n: unknown): number => {
+  const v = Math.round(Number(n))
+  return Number.isFinite(v) ? Math.min(REPAS_MAX, Math.max(REPAS_MIN, v)) : REPAS_MIN
+}
+
+/** Combien de fois ce membre mange ce plat. L'absence vaut une fois. */
+export const repasDe = (repas: ConvivesRepas | null, id: string): number =>
+  bornerRepas(repas?.repas?.[id] ?? 1)
+
+/** Quelqu'un cuisine-t-il pour plus d'un repas ? Décide de ce que l'écran annonce. */
+export const aDesRepasEnPlus = (repas: ConvivesRepas | null): boolean =>
+  !!repas && repas.membres.some(id => repasDe(repas, id) > 1)
+
+/**
+ * Repose le nombre de repas d'un membre. Un retour à 1 EFFACE l'entrée plutôt que
+ * de l'écrire : c'est ce qui garde « ordinaire » indiscernable de « jamais touché »,
+ * et donc le stockage lisible.
+ */
+export function avecRepas(c: ConvivesRepas, id: string, n: number): ConvivesRepas {
+  const suivant = { ...(c.repas ?? {}) }
+  const v = bornerRepas(n)
+  if (v <= 1) delete suivant[id]
+  else suivant[id] = v
+  const out: ConvivesRepas = { ...c, repas: suivant }
+  if (!Object.keys(suivant).length) delete out.repas
+  return out
+}
+
+/** Le même nombre pour tout le monde — le geste courant : « je cuisine pour demain ». */
+export function repasPourTous(c: ConvivesRepas, n: number): ConvivesRepas {
+  return c.membres.reduce((acc, id) => avecRepas(acc, id, n), c)
 }
 
 /** Par défaut, ceux du foyer qui sont au repas : le réglage courant, sans surprise. */
@@ -147,14 +207,32 @@ export function normaliserRepas(brut: unknown): ConvivesRepas | null {
   if (!membres.length && !invites.length) return null
   // `MOI` est toujours à table : tout le reste de l'application compte dans SA part,
   // et un repas dont il serait absent n'aurait ni cible, ni macros, ni sens ici.
-  return { membres: membres.includes(MOI.id) ? membres : [MOI.id, ...membres], invites }
+  const tous = membres.includes(MOI.id) ? membres : [MOI.id, ...membres]
+  // Les repas en plus : seulement pour des gens réellement à table, et seulement
+  // au-dessus de 1. Une entrée orpheline — le membre a été décoché depuis — ferait
+  // réapparaître un ×2 le jour où on le recoche, sans que rien ne l'ait demandé.
+  const repas: Record<string, number> = {}
+  const brutRepas = (o.repas && typeof o.repas === 'object' ? o.repas : {}) as Record<string, unknown>
+  for (const id of tous) {
+    const n = bornerRepas(brutRepas[id] ?? 1)
+    if (n > 1) repas[id] = n
+  }
+  const propre: ConvivesRepas = { membres: tous, invites }
+  if (Object.keys(repas).length) propre.repas = repas
+  return propre
 }
 
-/** Ce par quoi multiplier les quantités pour CE repas. */
+/**
+ * Ce par quoi multiplier les quantités pour CE repas.
+ *
+ * Somme des appétits de ceux qui mangent, chacun compté autant de fois qu'il
+ * emporte de repas. Un invité compte une fois : il est à table ce soir, c'est tout
+ * ce que ça veut dire. Quelqu'un qui repart avec une boîte est un convive de plus.
+ */
 export function facteurRepas(repas: ConvivesRepas | null, foyer: Convive[]): number {
   if (!repas) return facteurConvives(foyer)
   const parId = new Map(foyer.map(c => [c.id, c]))
-  const membres = repas.membres.reduce((n, id) => n + borner(parId.get(id)?.appetit ?? 1), 0)
+  const membres = repas.membres.reduce((n, id) => n + borner(parId.get(id)?.appetit ?? 1) * repasDe(repas, id), 0)
   const invites = repas.invites.reduce((n, i) => n + borner(i.appetit), 0)
   const somme = membres + invites
   return somme > 0 ? Math.round(somme * 100) / 100 : 1
@@ -171,16 +249,31 @@ export function facteurRepas(repas: ConvivesRepas | null, foyer: Convive[]): num
 export function partDeMoi(repas: ConvivesRepas | null, foyer: Convive[]): number {
   const facteur = facteurRepas(repas, foyer)
   const moi = foyer.find(c => c.id === MOI.id)?.appetit ?? 1
+  // UNE portion, même quand on en cuisine trois : le numérateur ne porte pas le
+  // nombre de repas. C'est toute la différence entre « je cuisine pour demain » et
+  // « je mange le double ce soir » — et la confondre ferait compter deux dîners.
   return facteur > 0 ? Math.min(1, borner(moi) / facteur) : 1
 }
 
-/** « Moi + Camille + 2 invités ». Ce qu'on écrit en tête de la fiche. */
+/**
+ * « Moi ×2 + Camille + 2 invités ». Ce qu'on écrit en tête de la fiche.
+ *
+ * Le ×2 est NOMMÉ et pas seulement compté dans le facteur : c'est le seul endroit
+ * où l'on relit sa propre décision de la veille, la casserole déjà sur le feu.
+ */
 export function libelleRepas(repas: ConvivesRepas | null, foyer: Convive[]): string {
   if (!repas) return libelleConvives(foyer)
   const noms = repas.membres
-    .map(id => foyer.find(c => c.id === id)?.nom)
+    .map((id) => {
+      const nom = foyer.find(c => c.id === id)?.nom
+      if (!nom) return null
+      const n = repasDe(repas, id)
+      return n > 1 ? `${nom} ×${n}` : nom
+    })
     .filter((n): n is string => !!n)
   const n = repas.invites.length
   const bouts = [...noms, ...(n ? [`${n} invité${n > 1 ? 's' : ''}`] : [])]
-  return bouts.length <= 1 ? 'Moi seul' : bouts.join(' + ')
+  if (!bouts.length) return 'Moi seul'
+  if (bouts.length === 1) return bouts[0]!.includes('×') ? bouts[0]! : 'Moi seul'
+  return bouts.join(' + ')
 }

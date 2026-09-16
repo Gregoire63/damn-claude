@@ -15,6 +15,9 @@ import {
   buildDay, roundMacros, sessionsOn,
 } from '~/lib/nutritionStats'
 import { useEnergy } from '~/composables/useEnergy'
+import { useActivites } from '~/composables/useActivites'
+import type { Activite } from '~/lib/activites'
+import { ficheActivite, fmtDureeActivite, nomActivite } from '~/lib/activites'
 import { useDayPlan } from '~/composables/useDayPlan'
 
 // Ce qui s'est passé une journée donnée — et deux façons d'y revenir : rouvrir la
@@ -34,6 +37,7 @@ const emit = defineEmits<{ close: [], edit: [rec: SessionRecord] }>()
 const { sessionLog, bodyWeightAt } = useWorkout()
 const { dayFor, setOverride, dayPlanFor, stepsFor, eatenSlots, library, stock, pickedFor, setPicked, freeMealFor } = useNutrition()
 const { burnOn, energyOn } = useEnergy()
+const activitesStore = useActivites()
 const { viewOf } = useDayPlan()
 const { entries: bodyEntries, suspectAts } = useMesures()
 
@@ -50,6 +54,31 @@ const effortIcon = (e?: string) => EFFORT_OPTIONS.find(o => o.value === e)?.icon
 const recColor = (r: SessionRecord) => prog.value.find(p => p.id === r.sessionId)?.color || '#8b6f5c'
 
 const eatSheet = ref(false)
+
+// ─── Le sport qui n'est pas une séance ───────────────────────────────────────
+//
+// Il vit ICI et pas dans un écran à lui : une activité est un événement d'une
+// JOURNÉE, comme la séance et les repas, et c'est cette feuille qui raconte une
+// journée. Un onglet séparé aurait obligé à choisir une date deux fois — une pour
+// ouvrir le jour, une pour l'y ranger.
+const activites = computed(() => activitesStore.duJour(props.iso))
+/** `null` = on en crée une ; un objet = on modifie celle-là. */
+const editee = ref<Activite | null>(null)
+const saisieOuverte = ref(false)
+
+function ouvrirActivite(a: Activite | null) {
+  editee.value = a
+  saisieOuverte.value = true
+}
+function validerActivite(champs: Omit<Activite, 'id'>) {
+  if (editee.value) activitesStore.modifier(editee.value.id, champs)
+  else activitesStore.ajouter(champs)
+  saisieOuverte.value = false
+}
+function supprimerActivite(id: string) {
+  activitesStore.retirer(id)
+  saisieOuverte.value = false
+}
 
 const title = computed(() => {
   const d = new Date(props.iso + 'T00:00:00')
@@ -194,6 +223,10 @@ function openLibre() {
             <span><b>{{ energy.baseKcal }}</b> métabolisme</span>
             <span>+ <b>{{ energy.stepsKcal }}</b> pas<template v-if="energy.stepsEstimated"> (estimés)</template></span>
             <span>+ <b>{{ energy.sessionKcal }}</b> séance<template v-if="records.length"> réelle</template></span>
+            <!-- Ligne à part de « séance » : les deux ne se calculent pas pareil, et
+                 les fondre ferait croire à une seule dépense qu'on pourrait corriger
+                 d'un seul endroit. -->
+            <span v-if="energy.activitesKcal">+ <b>{{ energy.activitesKcal }}</b> autres activités</span>
             <span>− <b>{{ energy.deficit }}</b> déficit</span>
           </div>
         </div>
@@ -256,6 +289,36 @@ function openLibre() {
           :today-iso="todayIso"
           @pick="move"
           @close="moving = false"
+        />
+
+        <!-- Autre sport : ce que la séance ne raconte pas. Un foot du samedi, une
+             rando, deux heures de vélo n'existaient nulle part — la journée
+             s'affichait donc à sa cible de repos, plusieurs centaines de calories en
+             dessous de ce qui avait vraiment été brûlé. -->
+        <div class="ds-section">
+          Autres activités
+          <span v-if="activites.length" class="mono ds-section-n">{{ energy?.activitesKcal ?? 0 }} kcal</span>
+        </div>
+        <div v-if="activites.length" class="ds-acts">
+          <button v-for="a in activites" :key="a.id" class="ds-act" @click="ouvrirActivite(a)">
+            <span class="ds-act-i" aria-hidden="true">{{ ficheActivite(a.type).icone }}</span>
+            <span class="ds-act-m">
+              <span class="ds-act-n">{{ nomActivite(a) }}</span>
+              <span class="mono muted">{{ a.heure }} · {{ fmtDureeActivite(a.minutes) }}</span>
+            </span>
+            <span class="mono ds-act-k">
+              {{ a.kcal }} kcal<span v-if="a.estime" class="ds-act-e"> est.</span>
+            </span>
+          </button>
+        </div>
+        <button class="btn ds-act-add" @click="ouvrirActivite(null)">＋ Ajouter une activité</button>
+        <SportActiviteSheet
+          v-if="saisieOuverte"
+          :activite="editee"
+          :iso="iso"
+          @valider="validerActivite"
+          @supprimer="supprimerActivite"
+          @close="saisieOuverte = false"
         />
 
         <!-- Repas -->

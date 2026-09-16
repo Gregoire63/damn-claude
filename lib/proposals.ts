@@ -4,6 +4,9 @@ import { boundedValue, getAt, isScalar } from './pointer'
 import { freeMealFrom } from './freeMeal'
 import type { ExercisePatch, VariantSpec } from './program'
 import { restFor } from './rest'
+import { MINUTES_MAX, MINUTES_MIN, TYPES_ACTIVITE } from './activites'
+import type { ConvivesRepas, Invite } from './foyer'
+import { APPETIT_MAX, APPETIT_MIN, MOI, REPAS_MAX, REPAS_MIN, borner, normaliserRepas } from './foyer'
 import type { Exercise, Session } from '../data/sportProgram'
 import type { FreeMeal } from './freeMeal'
 import type { Scalar } from './pointer'
@@ -54,6 +57,23 @@ export type Plan =
     vers?: unknown
   }
   | { kind: 'repas-libre', date: string, slot: string, repas: FreeMeal | null }
+  | {
+    kind: 'convives'
+    date: string
+    creneau: string
+    /** `null` = revenir à l'ordinaire, c'est-à-dire au foyer courant. */
+    convives: ConvivesRepas | null
+  }
+  | {
+    kind: 'activite'
+    /** Trois gestes fermés, comme partout ailleurs : un « autre » écrirait sur une
+     *  interprétation, et une interprétation qui écrit est une donnée perdue. */
+    op: 'ajouter' | 'modifier' | 'supprimer'
+    /** Obligatoire sauf sur `ajouter`, où l'application le fabrique. */
+    id: string | null
+    /** Complet sur `ajouter`, partiel sur `modifier`, absent sur `supprimer`. */
+    champs?: Partial<ActiviteSpec>
+  }
   | { kind: 'aliment', id: string | null, aliment: FoodSpec }
   | {
     kind: 'programme'
@@ -74,6 +94,23 @@ export type Plan =
     /** Machines de remplacement, qui REMPLACENT la liste. */
     variants?: VariantSpec[]
   }
+
+/**
+ * Un sport qui n'est pas une séance, tel qu'une proposition a le droit de le décrire.
+ *
+ * `kcal: null` n'est pas « zéro calorie » : c'est « estime-le toi-même ». C'est même
+ * le cas courant — dicter « foot d'une heure et demie hier soir » ne devrait pas
+ * obliger à calculer une dépense de tête, et l'application sait la chiffrer sur le
+ * poids de CE jour-là, ce qu'une conversation ne connaît pas forcément.
+ */
+export interface ActiviteSpec {
+  type: string
+  nom: string
+  date: string
+  heure: string
+  minutes: number
+  kcal: number | null
+}
 
 /** Un ingrédient, tel qu'une proposition a le droit de le décrire. Valeurs pour 100 g. */
 export interface FoodSpec {
@@ -135,6 +172,21 @@ export interface PlanCtx {
   exerciseAt?: (id: string) => { seance: string, seanceNom: string, actif: boolean, ex: Exercise } | null
   setAt?: (exId: string, date: string, index: number) => { w: number, r: number } | null
   weightAt?: (date: string) => number | null
+  /** Une activité hors séance existe-t-elle encore ? Modifier ou supprimer une
+   *  activité déjà effacée depuis le téléphone doit être un refus, pas un no-op. */
+  activiteKnown?: (id: string) => boolean
+  /** Quelqu'un du foyer. Un identifiant inventé mettrait à table un convive dont
+   *  personne ne connaît l'appétit — donc un facteur de quantités faux. */
+  membreKnown?: (id: string) => boolean
+  /**
+   * Qui mange CE repas-là aujourd'hui — exception s'il y en a une, foyer sinon.
+   *
+   * C'est ce qui permet une proposition PARTIELLE : « double la portion de demain
+   * midi » ne devrait pas obliger à ré-énumérer qui est à table. Sans cet accès, le
+   * seul choix serait de tout redemander à chaque fois, et une liste recopiée de
+   * mémoire finit toujours par perdre quelqu'un.
+   */
+  convivesAt?: (date: string, creneau: string) => ConvivesRepas
   /** L'instantané complet de la sauvegarde, pour vérifier un champ quelconque. */
   snapshot?: () => Record<string, unknown>
 }
@@ -224,6 +276,8 @@ export function planFor(p: RawProposal, ctx: PlanCtx = {}): Plan | null {
   if (p.action === 'semaine-type') return weekTemplateFor(p, ctx)
   if (p.action === 'correction') return fixFor(p, ctx)
   if (p.action === 'programme') return programFor(p, ctx)
+  if (p.action === 'activite') return activiteFor(p, ctx)
+  if (p.action === 'convives') return convivesFor(p, ctx)
   if (p.action === 'plat') {
     const date = pick(d, ['date', 'jour'])
     const slot = pick(d, ['slot', 'creneau'])
@@ -296,6 +350,189 @@ export function planFor(p: RawProposal, ctx: PlanCtx = {}): Plan | null {
 const num = (v: unknown, min: number, max: number): number | null => {
   const n = typeof v === 'number' ? v : Number(v)
   return Number.isFinite(n) && n >= min && n <= max ? n : null
+}
+/**
+ * Qui est à table, et combien de fois chacun mange ce plat.
+ *
+ * ── Pourquoi une cible à elle, alors que le passe-partout y arrivait déjà ───
+ *
+ * `/repasConvives/<date>/<créneau>/repas/moi` s'écrivait par « correction / champ ».
+ * Ça marchait, et ça ne se relisait pas : la carte de validation affichait un chemin
+ * JSON et deux nombres. On valide ce qu'on comprend — un chemin, on l'approuve sans
+ * le lire, ce qui est exactement ce que cette boîte de propositions sert à éviter.
+ *
+ * ── Partielle par défaut, et c'est le point délicat ────────────────────────
+ *
+ * « Double la portion de demain midi » ne devrait pas obliger à ré-énumérer qui est
+ * à table. Chaque champ absent garde donc ce qui est EN PLACE (`convivesAt`), et
+ * seuls les champs envoyés remplacent. C'est l'inverse de la règle « la liste
+ * remplace » qui vaut pour les ingrédients d'une recette — parce qu'ici la liste
+ * n'est pas le sujet de la phrase : le nombre de repas l'est, et une liste recopiée
+ * de mémoire à chaque fois finit toujours par perdre quelqu'un.
+ *
+ * `repas: 2` en NOMBRE est le raccourci du cas courant — tout le monde, deux repas.
+ * `repas: { moi: 2 }` traite l'asymétrie : deux jours pour lui, un seul pour qui
+ * déjeune dehors demain. `repas: null` revient à un seul repas pour tous.
+ */
+export function convivesFor(p: RawProposal, ctx: PlanCtx): Extract<Plan, { kind: 'convives' }> | null {
+  const d = p.patch ?? {}
+  const date = pick(d, ['date', 'jour'])
+  const creneau = pick(d, ['creneau', 'slot'])
+  if (!isIsoDate(date) || typeof creneau !== 'string') return null
+  if (!(SLOTS as readonly string[]).includes(creneau)) return null
+
+  // `null` explicite : ce repas redevient ordinaire. Un geste légitime — on avait
+  // prévu du monde, la soirée est annulée — et le seul moyen d'effacer une exception.
+  const vers = pick(d, ['vers', 'convives'])
+  if (vers === null) return { kind: 'convives', date, creneau, convives: null }
+
+  const src = (vers && typeof vers === 'object' ? vers : d) as Record<string, unknown>
+  const actuel = ctx.convivesAt?.(date, creneau) ?? { membres: [MOI.id], invites: [] }
+
+  let membres = actuel.membres
+  const qui = pick(src, ['membres', 'qui'])
+  if (qui !== undefined) {
+    if (!Array.isArray(qui)) return null
+    const ids = qui.map(String)
+    // Un identifiant inventé mettrait à table quelqu'un dont personne ne connaît
+    // l'appétit : le facteur de quantités serait faux, et rien ne le dirait.
+    if (ctx.membreKnown && ids.some(id => !ctx.membreKnown!(id))) return null
+    membres = ids
+  }
+
+  let invites = actuel.invites
+  const brutsInvites = pick(src, ['invites'])
+  if (brutsInvites !== undefined) {
+    if (!Array.isArray(brutsInvites)) return null
+    const out: Invite[] = []
+    for (const i of brutsInvites.slice(0, 12)) {
+      const o = (i && typeof i === 'object' ? i : {}) as Record<string, unknown>
+      const a = num(o.appetit ?? o.part ?? 1, APPETIT_MIN, APPETIT_MAX)
+      if (a === null) return null
+      out.push({ nom: String(o.nom ?? '').trim().slice(0, 24) || 'Invité', appetit: borner(a) })
+    }
+    invites = out
+  }
+
+  let repas = actuel.repas
+  const combien = pick(src, ['repas', 'nb_repas'])
+  if (combien !== undefined) {
+    if (combien === null) repas = undefined
+    else if (typeof combien === 'number') {
+      const n = num(combien, REPAS_MIN, REPAS_MAX)
+      if (n === null) return null
+      repas = Object.fromEntries(membres.map(id => [id, Math.round(n)]))
+    }
+    else if (typeof combien === 'object') {
+      const out: Record<string, number> = {}
+      for (const [id, v] of Object.entries(combien as Record<string, unknown>)) {
+        const n = num(v, REPAS_MIN, REPAS_MAX)
+        if (n === null) return null
+        out[id] = Math.round(n)
+      }
+      repas = out
+    }
+    else return null
+  }
+
+  // Une proposition qui ne propose rien s'archiverait « appliquée » sans que rien
+  // n'ait changé — le pire des trois états, puisqu'on la croit faite.
+  if (qui === undefined && brutsInvites === undefined && combien === undefined) return null
+
+  // La MÊME normalisation que la saisie à la main : « Moi » réinjecté, comptes
+  // orphelins jetés, valeurs bornées. Deux validateurs auraient divergé.
+  const propre = normaliserRepas({ membres, invites, repas })
+  return propre ? { kind: 'convives', date, creneau, convives: propre } : null
+}
+
+const OPS_ACTIVITE = ['ajouter', 'modifier', 'supprimer'] as const
+const HEURE_HHMM = /^([01]\d|2[0-3]):[0-5]\d$/
+
+/**
+ * Le sport hors séance, dicté plutôt que saisi.
+ *
+ * Trois gestes, et une asymétrie assumée sur `kcal` : sur un AJOUT, l'absence veut
+ * dire « estime-le », parce que c'est ce qu'on veut en dictant « foot d'une heure et
+ * demie hier soir ». Sur une MODIFICATION, l'absence veut dire « n'y touche pas » —
+ * sinon corriger l'heure remettrait la dépense à l'estimation et effacerait le
+ * chiffre qu'on avait relevé. Un `null` explicite, lui, redemande l'estimation dans
+ * les deux cas : c'est le seul moyen de revenir en arrière après une correction.
+ */
+export function activiteFor(p: RawProposal, ctx: PlanCtx): Extract<Plan, { kind: 'activite' }> | null {
+  const d = p.patch ?? {}
+  const op = String(pick(d, ['op', 'geste']) ?? 'ajouter')
+  if (!(OPS_ACTIVITE as readonly string[]).includes(op)) return null
+  const id = pick(d, ['id', 'activite'])
+  const idOk = typeof id === 'string' && isId(id)
+
+  if (op === 'supprimer') {
+    if (!idOk) return null
+    if (ctx.activiteKnown && !ctx.activiteKnown(id)) return null
+    return { kind: 'activite', op: 'supprimer', id }
+  }
+
+  const champs: Partial<ActiviteSpec> = {}
+
+  const type = pick(d, ['type', 'sport', 'activite_type'])
+  if (type !== undefined) {
+    if (typeof type !== 'string' || !TYPES_ACTIVITE.some(t => t.id === type)) return null
+    champs.type = type
+  }
+  const nom = pick(d, ['nom', 'label', 'titre'])
+  if (nom !== undefined) {
+    if (typeof nom !== 'string') return null
+    champs.nom = nom.trim().slice(0, 40)
+  }
+  const date = pick(d, ['date', 'jour'])
+  if (date !== undefined) {
+    if (!isIsoDate(date)) return null
+    champs.date = date
+  }
+  const heure = pick(d, ['heure', 'debut'])
+  if (heure !== undefined) {
+    if (typeof heure !== 'string' || !HEURE_HHMM.test(heure)) return null
+    champs.heure = heure
+  }
+  const minutes = pick(d, ['minutes', 'duree_min', 'duree'])
+  if (minutes !== undefined) {
+    const m = num(minutes, MINUTES_MIN, MINUTES_MAX)
+    if (m === null) return null
+    champs.minutes = Math.round(m)
+  }
+  const kcal = pick(d, ['kcal', 'calories'])
+  if (kcal === null) champs.kcal = null
+  else if (kcal !== undefined) {
+    const k = num(kcal, 0, 10000)
+    if (k === null) return null
+    champs.kcal = Math.round(k)
+  }
+
+  if (op === 'modifier') {
+    if (!idOk) return null
+    if (ctx.activiteKnown && !ctx.activiteKnown(id)) return null
+    // Une modification qui ne modifie rien n'est pas un geste : elle s'afficherait
+    // comme appliquée sans que quoi que ce soit ait changé.
+    if (!Object.keys(champs).length) return null
+    return { kind: 'activite', op: 'modifier', id, champs }
+  }
+
+  // Ajouter : il faut au minimum de quoi rattacher la dépense à une journée et la
+  // chiffrer. Le reste a des défauts raisonnables — pas la date ni la durée.
+  if (!champs.date || champs.minutes === undefined) return null
+  return {
+    kind: 'activite',
+    op: 'ajouter',
+    id: null,
+    champs: {
+      type: champs.type ?? 'autre',
+      nom: champs.nom ?? '',
+      date: champs.date,
+      heure: champs.heure ?? '12:00',
+      minutes: champs.minutes,
+      // Absent sur un ajout = « estime-le ». Voir l'en-tête.
+      kcal: champs.kcal === undefined ? null : champs.kcal,
+    },
+  }
 }
 
 const KINDS = ['pdj', 'boite', 'diner', 'collation', 'sauce'] as const

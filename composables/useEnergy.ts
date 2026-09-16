@@ -4,6 +4,7 @@ import { useNutrition } from '~/composables/useNutrition'
 import { useProfile } from '~/composables/useProfile'
 import { useMesures } from '~/composables/useMesures'
 import { useWorkout } from '~/composables/useWorkout'
+import { useActivites } from '~/composables/useActivites'
 import { SESSION_FORFAIT, ageOn, sessionBurn } from '~/lib/energy'
 import { bmrMifflin, dayEnergy, isDayPlayed, proteinPlan, sessionsOn } from '~/lib/nutritionStats'
 import { isoOf } from '~/utils/sportStats'
@@ -36,6 +37,7 @@ export function useEnergy() {
   const { profile } = useProfile()
   const { sessionLog, bodyWeightAt, currentWeight } = useWorkout()
   const { dayFor, stepsFor } = useNutrition()
+  const { kcalDuJour } = useActivites()
   const { bodyComp } = useMesures()
   const { nowHour } = useNow()
 
@@ -83,7 +85,13 @@ export function useEnergy() {
     const bmr = bmrOn(iso)
     if (bmr === null || !kg) return null
     const j = dayFor(iso)
-    return dayEnergy({ bmr, kg, tt: j.tt, steps: stepsFor(iso), sessionKcal: burnOn(iso) })
+    return dayEnergy({
+      bmr, kg, tt: j.tt, steps: stepsFor(iso),
+      sessionKcal: burnOn(iso),
+      // Le sport hors séance, tel qu'il a été noté. Toujours du réel : on l'ajoute
+      // après coup, donc il n'a pas de règle « prévu mais pas fait » comme la séance.
+      activitesKcal: kcalDuJour(iso),
+    })
   }
 
   /**
@@ -103,6 +111,9 @@ export function useEnergy() {
       tt: dayFor(iso).tt,
       steps: stepsFor(iso),
       sessionKcal: gym ? SESSION_FORFAIT : 0,
+      // Les activités de ce jour-là comptent aussi dans l'hypothèse : déplacer une
+      // séance sur un samedi de foot ne doit pas faire disparaître le foot.
+      activitesKcal: kcalDuJour(iso),
     })
   }
 

@@ -145,6 +145,28 @@ compris dans le passé ; la retirer de force les allégerait sans qu'aucune lign
 bouge à l'écran. On refuse, et on nomme les fiches à corriger. Voir
 `lib/suppression.ts`.
 
+**Un nombre de repas n'est PAS un appétit.** Cuisiner pour le lendemain double la
+casserole, pas l'assiette. `ConvivesRepas.repas` multiplie donc ce qu'on PÈSE et rien
+d'autre : `facteurRepas` le compte, `partDeMoi` l'ignore. Monter l'appétit à 200 %
+donnerait exactement les mêmes grammages et tout le reste faux — la fiche annoncerait
+une assiette double, et le suivi compterait un dîner de trop. Par personne et non
+global, parce que c'est comme ça que ça tombe : deux jours pour soi, un seul pour qui
+déjeune dehors demain. Les invités n'en ont pas — un invité est à table ce soir, un
+point c'est tout ; qui repart avec une boîte est un convive de plus.
+
+**Une dépense ajoutée est NETTE, sinon on compte deux fois la même heure.** La
+dépense de base (`bmr × PAL_SEDENTARY`) couvre déjà les vingt-quatre heures. Tout ce
+qu'on ajoute par-dessus — séance, activité hors séance — doit donc soustraire ce que
+le repos aurait coûté pendant sa durée : `brut − (bmr / 1440) × minutes`. C'est ce que
+`sessionBurn` documente depuis le premier jour, et `estimerKcal` reprend la même
+formule. Corollaire : `activitesKcal` est un poste SÉPARÉ de `sessionKcal` dans
+`dayEnergy`. Les deux ne se calculent pas pareil, et surtout `sessionKcal` porte une
+règle à lui — forfait tant que la journée n'est pas finie, zéro ensuite si rien n'a
+été enregistré. Une activité est toujours du réel : on la note après coup. Les fondre
+ferait hériter l'une de la règle de l'autre. Et une activité ne bascule PAS la journée
+en jour de salle : les féculents et les créneaux dépendent de la séance de
+musculation, pas de l'effort en général.
+
 **Un nombre calculé s'arrondit à sa SORTIE, jamais au milieu du calcul.**
 `lib/nombres.ts` → `arrondi(n)`, au centième. Deux causes fabriquent des nombres à
 rallonge, et la seconde surprend : la division qui ne tombe pas juste, et la
@@ -196,8 +218,8 @@ error.vue                404 et erreurs serveur
 lib/onglets.ts           les cinq onglets : chemin, libellé, titre (AUCUN import)
 components/sport/        écrans du suivi d'entraînement
 components/nutrition/    écrans du module nutrition
-composables/             l'état, persisté dans localStorage (32 fichiers, pas de Pinia)
-lib/                     logique pure — aucun DOM, aucun stockage, testée (25 fichiers)
+composables/             l'état, persisté dans localStorage (33 fichiers, pas de Pinia)
+lib/                     logique pure — aucun DOM, aucun stockage, testée (26 fichiers)
 utils/                   auto-importé par Nuxt : uniquement du vocabulaire spécifique
 data/                    types et tables de référence — les contenus sont VIDES
 data/exemple/            le pack d'exemple → public/exemple.json
@@ -385,7 +407,7 @@ Deux invariants tenus par des tests :
 
 ## Les tests
 
-1370 tests, 81 fichiers, deux projets. La plupart tournent sur le **pack d'exemple**,
+1448 tests, 84 fichiers, deux projets. La plupart tournent sur le **pack d'exemple**,
 déclaré fichier par fichier (`vi.mock('../../data/nutritionProgram', …)`, voir
 `test/exemple.ts`) : vérifier que la modulation des féculents ne touche pas aux
 protéines demande des aliments aux vraies macros, pas trois objets fabriqués.

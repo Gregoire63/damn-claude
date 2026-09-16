@@ -606,6 +606,17 @@ export interface DayEnergy {
   baseKcal: number // métabolisme + activité de fond
   stepsKcal: number
   sessionKcal: number
+  /**
+   * Le sport qui n'est pas une séance : foot du samedi, rando, deux heures de vélo.
+   *
+   * Un poste À PART de `sessionKcal`, et pas fondu dedans. Les deux ne se calculent
+   * pas de la même façon — la séance sur ce qui a vraiment été fait, l'activité sur
+   * une durée et un MET — et surtout `sessionKcal` porte une règle à lui : forfait
+   * tant que la journée n'est pas finie, zéro ensuite si rien n'a été enregistré.
+   * Une activité, elle, est toujours du réel : on l'ajoute après coup, c'est fait.
+   * Les mélanger ferait hériter l'une de la règle de l'autre.
+   */
+  activitesKcal: number
   need: number // dépense totale de la journée
   deficit: number
   target: number // ce qu'il faut manger
@@ -620,19 +631,22 @@ export function dayEnergy(opts: {
   tt: boolean
   steps?: number | null
   sessionKcal?: number
+  activitesKcal?: number
 }): DayEnergy {
   const stepsEstimated = opts.steps === null || opts.steps === undefined
   const steps = stepsEstimated ? defaultSteps(opts.tt) : Math.max(0, opts.steps!)
   const baseKcal = Math.round(opts.bmr * PAL_SEDENTARY)
   const stepsKcal = stepsBurn(steps, opts.kg)
   const sessionKcal = Math.round(opts.sessionKcal ?? 0)
-  const need = baseKcal + stepsKcal + sessionKcal
+  const activitesKcal = Math.max(0, Math.round(opts.activitesKcal ?? 0))
+  const need = baseKcal + stepsKcal + sessionKcal + activitesKcal
   const deficit = deficitFor(need)
   return {
     bmr: opts.bmr,
     baseKcal,
     stepsKcal,
     sessionKcal,
+    activitesKcal,
     need,
     deficit,
     target: Math.round((need - deficit) / 10) * 10,

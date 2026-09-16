@@ -7,6 +7,7 @@ import { useFractionne } from '~/composables/useFractionne'
 import { useFoyer } from '~/composables/useFoyer'
 import { useProgram } from '~/composables/useProgram'
 import { useRepasConvives } from '~/composables/useRepasConvives'
+import { useActivites } from '~/composables/useActivites'
 
 /**
  * L'instantané complet des données, en un seul endroit.
@@ -32,6 +33,7 @@ export function useSnapshot() {
   const { snapshot: programData } = useProgram()
   const foyer = useFoyer()
   const repasConvives = useRepasConvives()
+  const activites = useActivites()
 
   function buildSnapshot(): Record<string, unknown> {
     return {
@@ -59,6 +61,13 @@ export function useSnapshot() {
       // Qui est à table, repas par repas. Seules les EXCEPTIONS y figurent : un
       // repas absent d'ici se lit avec le foyer courant.
       ...repasConvives.snapshot(),
+      /*
+       * Le sport hors séance. Il part dans la sauvegarde ET dans le miroir, donc
+       * Claude le lit et peut en proposer l'ajout ou la correction — un foot noté
+       * de tête pèse sur la dépense du jour, et c'est justement ce qu'on veut
+       * pouvoir dicter plutôt que de saisir à la main.
+       */
+      ...activites.snapshot(),
     }
   }
 

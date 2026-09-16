@@ -253,6 +253,7 @@ const foodName = (id: string) => library.value.foods[id]?.name ?? id
         <span><b>{{ energy.baseKcal }}</b> métabolisme</span>
         <span>+ <b>{{ energy.stepsKcal }}</b> pas</span>
         <span>+ <b>{{ energy.sessionKcal }}</b> séance</span>
+        <span v-if="energy.activitesKcal">+ <b>{{ energy.activitesKcal }}</b> autres activités</span>
         <span>− <b>{{ energy.deficit }}</b> déficit</span>
         <span class="nu-energy-eq">= <b>{{ energy.target }}</b> kcal</span>
       </div>

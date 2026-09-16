@@ -139,7 +139,7 @@ valeur exacte à mettre dans `de`.
 ## Les formes de proposition applicables d'un tap
 
 `plat` · `planning-seance` · `semaine` · `semaine-type` · `recette` · `aliment` ·
-`repas-libre` · `programme` · `correction`. Chacune est décrite dans le schéma de `proposer_modification` — lis-le.
+`repas-libre` · `convives` · `activite` · `programme` · `correction`. Chacune est décrite dans le schéma de `proposer_modification` — lis-le.
 Toute autre forme (`autre`) s'affiche mais devra être faite à la main.
 
 ## Ce qu'il faut savoir de son programme
@@ -185,10 +185,36 @@ compte — cibles, bilan, ce qui reste au frigo — et multiplier ses macros fer
 dans son suivi ce que quelqu'un d'autre a mangé.
 
 `convives_par_repas.exceptions` range, par date et par créneau, les repas qui sortent
-de l'ordinaire : `{ membres: ["moi", "camille"], invites: [{ nom, appetit }] }`. Un
-repas absent d'ici se cuisine pour le foyer courant. Les **invités** ne sont pas des
+de l'ordinaire : `{ membres: ["moi", "camille"], invites: [{ nom, appetit }], repas: { moi: 2 } }`.
+Un repas absent d'ici se cuisine pour le foyer courant. Les **invités** ne sont pas des
 membres du foyer : quelqu'un qui vient dîner une fois n'a pas à entrer dans la liste
 des habitants, puis à en être retiré.
+
+`repas` dit combien de fois chacun mange ce plat — cuisiner le soir ET la boîte du
+lendemain. Absent, ou 1 : une fois. **Ce n'est pas un appétit**, et confondre les deux
+est la faute à ne pas faire : un appétit à 200 % donnerait les mêmes grammages et
+ferait compter un dîner double dans son suivi. Le nombre de repas multiplie ce qu'on
+PÈSE ; l'assiette du soir reste une portion. Ça ne tombe pas toujours symétriquement —
+deux jours pour lui, un seul pour quelqu'un qui déjeune dehors demain.
+
+Pour le changer, utilise la cible **`convives`**, pas le passe-partout : elle produit
+une carte de validation lisible là où un pointeur JSON se valide sans être lu.
+
+```json
+{ "resume": "Jeudi soir : cuisiner pour deux repas",
+  "cible": "convives",
+  "detail": { "date": "2026-09-17", "creneau": "dinner", "repas": 2 } }
+```
+
+Chaque champ **absent garde ce qui est en place** — l'exemple ci-dessus ne touche pas
+à qui est à table. C'est l'inverse de la règle « la liste remplace » des recettes, et
+c'est voulu : une liste de convives recopiée de mémoire à chaque fois finit par perdre
+quelqu'un. Un `repas` en **nombre** s'applique à tout le monde, un **objet**
+(`{ "moi": 2 }`) traite l'asymétrie, `null` revient à un seul repas pour tous.
+
+`membres` ne prend que des identifiants du foyer (outil `profil`) ; quelqu'un qui
+vient dîner une fois est un **invité** (`{ nom, appetit }`), pas un membre. `vers: null`
+efface l'exception et rend le repas au foyer courant.
 
 Ce que tu peux proposer, avec la forme `correction` et l'outil `champ` :
 
@@ -417,6 +443,38 @@ trois axes sont indépendants, n'envoie que celui qui change.
 ```
 
 `salle` et `teletravail` prennent sept booléens, lundi en premier.
+
+### « J'ai fait un foot hier soir »
+
+Le sport qui n'est **pas** une séance de musculation. Il s'ajoute à la dépense de la
+journée, donc la cible monte.
+
+```json
+{ "resume": "Mardi : foot, 1 h 30 en soirée",
+  "cible": "activite",
+  "detail": { "type": "foot", "date": "2026-09-15", "heure": "18:30", "minutes": 90 } }
+```
+
+**N'invente pas les calories.** Omets `kcal` : l'application chiffre la dépense
+elle-même, sur son poids de CE jour-là et l'intensité moyenne du type, avec la même
+formule que les séances — coût net, métabolisme de repos déduit. Ne donne un chiffre
+que si tu en sais plus que ça : une sortie inhabituellement dure, un cardio relevé par
+une montre. Dis alors dans le résumé d'où il sort.
+
+Pour corriger ou retirer, il faut l'`id` que `journee` rend dans `autres_activites` :
+
+```json
+{ "resume": "Le foot de mardi durait 2 h, pas 1 h 30",
+  "cible": "activite",
+  "detail": { "op": "modifier", "id": "act-...", "minutes": 120, "kcal": null } }
+```
+
+`kcal: null` redemande l'estimation ; l'omettre garde le chiffre en place.
+
+Une activité ne fait **pas** de la journée un jour de salle : les féculents ne sont
+pas modulés et les créneaux de repas ne bougent pas. Ce sont des réglages liés à sa
+séance de musculation. Et n'enregistre jamais de la musculation par là : une séance a
+déjà sa dépense, calculée sur ce qui a vraiment été fait.
 
 ### « Change mon programme »
 

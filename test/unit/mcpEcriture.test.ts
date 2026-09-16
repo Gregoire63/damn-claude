@@ -228,3 +228,198 @@ describe('le programme, modifié depuis une conversation', () => {
     expect(PROGRAM[0].exercises.some(e => e.id === UN_EXERCICE)).toBe(true)
   })
 })
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Le sport hors séance, dicté plutôt que saisi.
+// ─────────────────────────────────────────────────────────────────────────────
+//
+// « J'ai fait un foot d'une heure et demie hier soir. » Une phrase, et la dépense de
+// la journée devrait suivre — sans qu'on ait à calculer une dépense de tête ni à
+// ressortir son poids de ce jour-là.
+//
+// D'où l'asymétrie qui tient tout ce bloc : sur un AJOUT, l'absence de `kcal` veut
+// dire « estime-le », parce que c'est ce qu'on veut en dictant. Sur une
+// MODIFICATION, la même absence veut dire « n'y touche pas » — sinon corriger
+// l'heure remettrait la dépense à l'estimation et effacerait le chiffre relevé à la
+// montre. Un `null` explicite redemande l'estimation dans les deux cas.
+
+describe('une activité hors séance', () => {
+  const ctxAct = { ...ctx, activiteKnown: (id: string) => id === 'act-1' }
+
+  it('s’ajoute avec une date et une durée', () => {
+    const plan = planFor(brut('activite', { type: 'foot', date: '2026-09-12', heure: '18:30', minutes: 90 }), ctxAct)
+    expect(plan).toEqual({
+      kind: 'activite', op: 'ajouter', id: null,
+      champs: { type: 'foot', nom: '', date: '2026-09-12', heure: '18:30', minutes: 90, kcal: null },
+    })
+  })
+
+  /** `kcal: null` n'est pas « zéro calorie » : c'est « estime-le toi-même ». */
+  it('laisse l’application chiffrer quand aucun nombre n’est donné', () => {
+    const plan = planFor(brut('activite', { date: '2026-09-12', minutes: 60 }), ctxAct)
+    expect(plan).toMatchObject({ champs: { kcal: null, type: 'autre', heure: '12:00' } })
+  })
+
+  it('accepte un chiffre quand on en sait plus', () => {
+    const plan = planFor(brut('activite', { type: 'course', date: '2026-09-12', minutes: 45, kcal: 512 }), ctxAct)
+    expect(plan).toMatchObject({ champs: { kcal: 512 } })
+  })
+
+  it('refuse un ajout sans date ou sans durée', () => {
+    expect(planFor(brut('activite', { type: 'foot', minutes: 90 }), ctxAct)).toBeNull()
+    expect(planFor(brut('activite', { type: 'foot', date: '2026-09-12' }), ctxAct)).toBeNull()
+  })
+
+  it('refuse un type inventé plutôt que de le ranger en silence', () => {
+    // `normaliserActivite` sait retomber sur « autre » à la relecture d'un stockage ;
+    // une PROPOSITION, elle, doit être refusée : accepter « parapente » en le
+    // transformant en « autre » chiffrerait un vol à l'intensité d'un footing.
+    expect(planFor(brut('activite', { type: 'parapente', date: '2026-09-12', minutes: 60 }), ctxAct)).toBeNull()
+  })
+
+  it('refuse une heure qui n’est pas une heure', () => {
+    expect(planFor(brut('activite', { date: '2026-09-12', minutes: 60, heure: '18h30' }), ctxAct)).toBeNull()
+  })
+
+  it('modifie une activité qui existe, et seulement les champs envoyés', () => {
+    const plan = planFor(brut('activite', { op: 'modifier', id: 'act-1', minutes: 120 }), ctxAct)
+    expect(plan).toEqual({ kind: 'activite', op: 'modifier', id: 'act-1', champs: { minutes: 120 } })
+  })
+
+  it('redemande l’estimation avec un kcal explicitement nul', () => {
+    const plan = planFor(brut('activite', { op: 'modifier', id: 'act-1', kcal: null }), ctxAct)
+    expect(plan).toMatchObject({ champs: { kcal: null } })
+  })
+
+  /**
+   * Une activité effacée depuis le téléphone : la proposition doit être REFUSÉE, pas
+   * appliquée dans le vide. Un geste sans effet qui s'archive « appliqué » est le
+   * pire des trois états — on croit la correction faite.
+   */
+  it('refuse de toucher à une activité qui n’existe plus', () => {
+    expect(planFor(brut('activite', { op: 'modifier', id: 'act-9', minutes: 30 }), ctxAct)).toBeNull()
+    expect(planFor(brut('activite', { op: 'supprimer', id: 'act-9' }), ctxAct)).toBeNull()
+  })
+
+  it('supprime une activité par son identifiant', () => {
+    expect(planFor(brut('activite', { op: 'supprimer', id: 'act-1' }), ctxAct))
+      .toEqual({ kind: 'activite', op: 'supprimer', id: 'act-1' })
+  })
+
+  it('refuse une modification qui ne modifie rien', () => {
+    expect(planFor(brut('activite', { op: 'modifier', id: 'act-1' }), ctxAct)).toBeNull()
+  })
+
+  it('refuse un geste qui n’est pas l’un des trois', () => {
+    expect(planFor(brut('activite', { op: 'doubler', id: 'act-1', minutes: 30 }), ctxAct)).toBeNull()
+  })
+})
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Qui est à table, et combien de fois chacun mange ce plat.
+// ─────────────────────────────────────────────────────────────────────────────
+//
+// Ça s'écrivait déjà par le passe-partout — `/repasConvives/<date>/<créneau>/repas/moi`
+// — et ça ne se RELISAIT pas : la carte de validation affichait un chemin JSON et
+// deux nombres. On valide ce qu'on comprend ; un chemin, on l'approuve sans le lire,
+// ce qui est exactement ce que cette boîte sert à éviter.
+//
+// La forme typée est PARTIELLE par défaut, contrairement aux ingrédients d'une
+// recette : « double la portion de demain midi » ne devrait pas obliger à
+// ré-énumérer qui est à table, et une liste recopiée de mémoire à chaque fois finit
+// toujours par perdre quelqu'un.
+
+describe('les convives d’un repas', () => {
+  const EN_PLACE = { membres: ['moi', 'camille'], invites: [] }
+  const ctxConv = {
+    ...ctx,
+    membreKnown: (id: string) => ['moi', 'camille'].includes(id),
+    convivesAt: () => EN_PLACE,
+  }
+  const conv = (patch: Record<string, unknown>) =>
+    planFor(brut('convives', { date: '2026-09-17', creneau: 'dinner', ...patch }), ctxConv)
+
+  /** LE cas de la demande, en une phrase et trois champs. */
+  it('double la portion sans toucher à qui est à table', () => {
+    expect(conv({ repas: 2 })).toEqual({
+      kind: 'convives', date: '2026-09-17', creneau: 'dinner',
+      convives: { membres: ['moi', 'camille'], invites: [], repas: { moi: 2, camille: 2 } },
+    })
+  })
+
+  it('traite l’asymétrie, deux jours pour l’un et un seul pour l’autre', () => {
+    expect(conv({ repas: { moi: 2 } })).toMatchObject({
+      convives: { membres: ['moi', 'camille'], repas: { moi: 2 } },
+    })
+  })
+
+  /** Revenir à un seul repas doit EFFACER les comptes, pas écrire des 1 partout. */
+  it('revient à un seul repas pour tous', () => {
+    const plan = conv({ repas: null })
+    expect(plan!.convives!.repas).toBeUndefined()
+  })
+
+  it('change qui est à table sans toucher au nombre de repas', () => {
+    const avec = { membres: ['moi', 'camille'], invites: [], repas: { moi: 2 } }
+    const plan = planFor(brut('convives', { date: '2026-09-17', creneau: 'dinner', membres: ['moi'] }), {
+      ...ctxConv, convivesAt: () => avec,
+    })
+    expect(plan).toMatchObject({ convives: { membres: ['moi'], repas: { moi: 2 } } })
+  })
+
+  /**
+   * Un compte orphelin — Camille n'est plus à table — ferait réapparaître un ×2 le
+   * jour où on la recoche. `normaliserRepas` le jette, et la proposition passe par
+   * elle comme la saisie à la main : deux validateurs auraient divergé.
+   */
+  it('jette le compte de quelqu’un qu’on vient de retirer', () => {
+    const avec = { membres: ['moi', 'camille'], invites: [], repas: { moi: 2, camille: 3 } }
+    const plan = planFor(brut('convives', { date: '2026-09-17', creneau: 'dinner', membres: ['moi'] }), {
+      ...ctxConv, convivesAt: () => avec,
+    })
+    expect(plan!.convives!.repas).toEqual({ moi: 2 })
+  })
+
+  it('accepte des invités avec leur appétit', () => {
+    expect(conv({ invites: [{ nom: 'Léa', appetit: 0.8 }] })).toMatchObject({
+      convives: { invites: [{ nom: 'Léa', appetit: 0.8 }] },
+    })
+    // Sans nom, « Invité » : un dîner à quatre ne doit pas buter sur un prénom.
+    expect(conv({ invites: [{}] })).toMatchObject({ convives: { invites: [{ nom: 'Invité', appetit: 1 }] } })
+  })
+
+  /**
+   * Un identifiant inventé mettrait à table quelqu'un dont personne ne connaît
+   * l'appétit : le facteur de quantités serait faux, et rien ne le dirait.
+   */
+  it('refuse un membre qui n’est pas du foyer', () => {
+    expect(conv({ membres: ['moi', 'belle-soeur'] })).toBeNull()
+  })
+
+  it('refuse un créneau et une date qui n’en sont pas', () => {
+    expect(planFor(brut('convives', { date: '2026-09-17', creneau: 'gouter', repas: 2 }), ctxConv)).toBeNull()
+    expect(planFor(brut('convives', { date: '17/09/2026', creneau: 'dinner', repas: 2 }), ctxConv)).toBeNull()
+  })
+
+  it('refuse un nombre de repas hors bornes', () => {
+    expect(conv({ repas: 0 })).toBeNull()
+    expect(conv({ repas: 99 })).toBeNull()
+    expect(conv({ repas: { moi: 'deux' } })).toBeNull()
+  })
+
+  /** Une proposition qui ne propose rien s'archiverait « appliquée » sans que rien
+   *  n'ait changé — on la croirait faite. */
+  it('refuse une proposition qui ne change rien', () => {
+    expect(conv({})).toBeNull()
+  })
+
+  it('efface l’exception et rend le repas au foyer courant', () => {
+    expect(conv({ vers: null })).toEqual({ kind: 'convives', date: '2026-09-17', creneau: 'dinner', convives: null })
+  })
+
+  /** « Moi » est l'unité de compte : un repas dont il serait absent n'aurait ni
+   *  cible, ni macros, ni sens. Il est réinjecté, pas refusé. */
+  it('remet « Moi » à table quoi qu’il arrive', () => {
+    expect(conv({ membres: ['camille'] })!.convives!.membres).toContain('moi')
+  })
+})

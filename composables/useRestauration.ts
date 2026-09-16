@@ -1,5 +1,6 @@
 import { useFoyer } from '~/composables/useFoyer'
 import { useRepasConvives } from '~/composables/useRepasConvives'
+import { useActivites } from '~/composables/useActivites'
 import { useNutrition } from '~/composables/useNutrition'
 import { useProfile } from '~/composables/useProfile'
 import { useProgram } from '~/composables/useProgram'
@@ -50,6 +51,7 @@ export function useRestauration() {
   const workout = useWorkout()
   const foyer = useFoyer()
   const repasConvives = useRepasConvives()
+  const activites = useActivites()
   const profile = useProfile()
   const nutrition = useNutrition()
   const program = useProgram()
@@ -158,6 +160,7 @@ export function useRestauration() {
     // cuisine pour personne.
     foyer.restore(data.foyer)
     repasConvives.restore(data)
+    activites.restore(data)
   }
 
   /** Tout ce qu'une sauvegarde peut contenir, remis en place. */

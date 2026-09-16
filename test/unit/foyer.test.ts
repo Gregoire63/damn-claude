@@ -220,3 +220,129 @@ describe('le libellé d\'un repas', () => {
       .toBe('Moi + Camille + 1 invité')
   })
 })
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Cuisiner pour plusieurs repas.
+// ─────────────────────────────────────────────────────────────────────────────
+//
+// On prépare le dîner du soir ET la boîte du lendemain : la casserole double, pas
+// l'assiette. Et ça ne tombe pas toujours symétriquement — deux jours pour soi, un
+// seul pour l'autre, qui déjeune dehors demain. D'où un compte PAR PERSONNE.
+//
+// Le piège, et c'est le seul qui compte : monter l'appétit à 200 % donnerait les
+// mêmes grammages et tout le reste faux. « Appétit » dit ce qu'on mange ce soir, et
+// `partDeMoi` le suit — la fiche annoncerait alors une assiette double et le suivi
+// compterait un dîner de trop. Le nombre de repas multiplie ce qu'on PÈSE, rien
+// d'autre.
+
+describe('le nombre de repas par personne', () => {
+  const foyer = [MOI, camille]
+
+  it('vaut un repas quand rien n’est dit', async () => {
+    const { repasDe } = await import('../../lib/foyer')
+    expect(repasDe({ membres: ['moi'], invites: [] }, 'moi')).toBe(1)
+    expect(repasDe(null, 'moi')).toBe(1)
+  })
+
+  it('multiplie ce qu’on pèse', async () => {
+    const { facteurRepas } = await import('../../lib/foyer')
+    const seul = { membres: ['moi'], invites: [] }
+    expect(facteurRepas(seul, foyer)).toBe(1)
+    expect(facteurRepas({ ...seul, repas: { moi: 2 } }, foyer)).toBe(2)
+  })
+
+  /** LE cas de la demande : deux jours pour moi, un seul pour Camille. */
+  it('compte chacun séparément', async () => {
+    const { facteurRepas } = await import('../../lib/foyer')
+    // 1 × 2 + 0,6 × 1 = 2,6
+    expect(facteurRepas({ membres: ['moi', 'camille'], invites: [], repas: { moi: 2 } }, foyer)).toBe(2.6)
+    // 1 × 2 + 0,6 × 2 = 3,2
+    expect(facteurRepas({ membres: ['moi', 'camille'], invites: [], repas: { moi: 2, camille: 2 } }, foyer)).toBe(3.2)
+  })
+
+  /**
+   * LA règle. Cuisiner double ne fait pas manger double : l'assiette de ce soir
+   * reste une portion, et c'est elle que le suivi compte.
+   */
+  it('ne change PAS ce que je mets dans mon assiette ce soir', async () => {
+    const { partDeMoi } = await import('../../lib/foyer')
+    const seul = { membres: ['moi'], invites: [] }
+    expect(partDeMoi(seul, foyer)).toBe(1)
+    // Deux repas cuisinés : mon assiette est la moitié de la casserole, pas le tout.
+    expect(partDeMoi({ ...seul, repas: { moi: 2 } }, foyer)).toBe(0.5)
+    // Et elle ne double jamais — c'est ce qu'un appétit à 200 % aurait fait.
+    expect(partDeMoi({ ...seul, repas: { moi: 2 } }, foyer)).toBeLessThanOrEqual(1)
+  })
+
+  it('ne compte pas les invités deux fois', async () => {
+    const { facteurRepas } = await import('../../lib/foyer')
+    // Un invité est à table ce soir, un point c'est tout. Qui repart avec une boîte
+    // est un convive de plus, pas un convive multiplié.
+    const c = { membres: ['moi'], invites: [{ nom: 'Léa', appetit: 1 }], repas: { moi: 3 } }
+    expect(facteurRepas(c, foyer)).toBe(4) // 1 × 3 + 1
+  })
+
+  it('le dit dans le libellé', async () => {
+    const { libelleRepas } = await import('../../lib/foyer')
+    expect(libelleRepas({ membres: ['moi'], invites: [], repas: { moi: 2 } }, foyer)).toBe('Moi ×2')
+    expect(libelleRepas({ membres: ['moi', 'camille'], invites: [], repas: { moi: 2 } }, foyer)).toBe('Moi ×2 + Camille')
+  })
+})
+
+describe('poser et défaire un nombre de repas', () => {
+  it('n’écrit rien pour un repas : l’ordinaire ne se stocke pas', async () => {
+    const { avecRepas } = await import('../../lib/foyer')
+    const c = { membres: ['moi'], invites: [] }
+    expect(avecRepas(c, 'moi', 1).repas).toBeUndefined()
+    // Et revenir à 1 EFFACE, plutôt que d'écrire un 1 qui traînerait.
+    expect(avecRepas(avecRepas(c, 'moi', 3), 'moi', 1).repas).toBeUndefined()
+  })
+
+  it('borne aux extrêmes plutôt que de refuser', async () => {
+    const { avecRepas, REPAS_MAX } = await import('../../lib/foyer')
+    const c = { membres: ['moi'], invites: [] }
+    expect(avecRepas(c, 'moi', 99).repas!.moi).toBe(REPAS_MAX)
+    expect(avecRepas(c, 'moi', 0).repas).toBeUndefined()
+    expect(avecRepas(c, 'moi', Number.NaN).repas).toBeUndefined()
+  })
+
+  it('pose le même compte pour tout le monde d’un coup', async () => {
+    const { facteurRepas, repasPourTous } = await import('../../lib/foyer')
+    const c = repasPourTous({ membres: ['moi', 'camille'], invites: [] }, 2)
+    expect(facteurRepas(c, [MOI, camille])).toBe(3.2)
+    // Et le retour à 1 ne laisse rien derrière.
+    expect(repasPourTous(c, 1).repas).toBeUndefined()
+  })
+
+  it('sait dire si quelqu’un cuisine en avance', async () => {
+    const { aDesRepasEnPlus } = await import('../../lib/foyer')
+    expect(aDesRepasEnPlus({ membres: ['moi'], invites: [] })).toBe(false)
+    expect(aDesRepasEnPlus({ membres: ['moi'], invites: [], repas: { moi: 2 } })).toBe(true)
+    expect(aDesRepasEnPlus(null)).toBe(false)
+  })
+})
+
+describe('relire un repas venu du stockage', () => {
+  /** Une sauvegarde d'avant ce réglage doit passer sans migration ni surprise. */
+  it('encaisse un repas qui ne connaît pas ce champ', async () => {
+    const { normaliserRepas } = await import('../../lib/foyer')
+    const c = normaliserRepas({ membres: ['moi', 'camille'], invites: [] })!
+    expect(c.repas).toBeUndefined()
+  })
+
+  /**
+   * Une entrée orpheline — le membre a été décoché depuis — ferait réapparaître un
+   * ×2 le jour où on le recoche, sans que rien ne l'ait demandé.
+   */
+  it('jette le compte d’un membre qui n’est plus à table', async () => {
+    const { normaliserRepas } = await import('../../lib/foyer')
+    const c = normaliserRepas({ membres: ['moi'], invites: [], repas: { moi: 2, camille: 3 } })!
+    expect(c.repas).toEqual({ moi: 2 })
+  })
+
+  it('nettoie les valeurs impossibles', async () => {
+    const { normaliserRepas, REPAS_MAX } = await import('../../lib/foyer')
+    const c = normaliserRepas({ membres: ['moi', 'camille'], invites: [], repas: { moi: 'nawak', camille: 400 } })!
+    expect(c.repas).toEqual({ camille: REPAS_MAX })
+  })
+})

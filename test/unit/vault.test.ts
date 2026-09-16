@@ -371,9 +371,35 @@ const DATA = {
   sessions: [{ at: '2026-08-13T13:00', name: 'Jambes', durationMin: 50, entries: [] }],
   logs: { squat: [{ date: '2026-08-13', sets: [{ kg: 60, reps: 8 }], durationMin: 50 }] },
   profile: { heightCm: 179, sex: 'h', birthYear: 1997 },
+  // Un repas qui sort de l'ordinaire, avec un nombre de repas posé dessus : c'est la
+  // forme exacte que la note du connecteur donne en exemple.
+  repasConvives: { '2026-09-17': { dinner: { membres: ['moi', 'camille'], invites: [], repas: { moi: 2 } } } },
 }
 const refuse = (detail: Record<string, unknown>, motif: RegExp) =>
   expect(() => checkFieldFix(detail, DATA)).toThrow(motif)
+
+/**
+ * Le nombre de repas par convive n'a pas de cible TYPÉE : il s'écrit par le
+ * passe-partout. Encore faut-il que le passe-partout l'atteigne — sinon la note du
+ * connecteur donne un chemin qui ne mène nulle part, et c'est pire que le silence.
+ */
+describe('le nombre de repas par convive, par le passe-partout', () => {
+  it('se corrige d\'un chiffre', () => {
+    expect(() => checkFieldFix({ chemin: '/repasConvives/2026-09-17/dinner/repas/moi', de: 2, vers: 3 }, DATA)).not.toThrow()
+  })
+
+  it('se pose sur un repas qui n\'en avait pas', () => {
+    expect(() => checkFieldFix({
+      op: 'creer',
+      chemin: '/repasConvives/2026-09-18',
+      vers: { dinner: { membres: ['moi'], invites: [], repas: { moi: 2 } } },
+    }, DATA)).not.toThrow()
+  })
+
+  it('refuse une valeur qui n\'est pas celle en place', () => {
+    expect(() => checkFieldFix({ chemin: '/repasConvives/2026-09-17/dinner/repas/moi', de: 1, vers: 3 }, DATA)).toThrow()
+  })
+})
 
 describe('vérification au dépôt d\'une correction de champ', () => {
   it('laisse passer une correction cohérente', () => {

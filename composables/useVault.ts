@@ -1,6 +1,9 @@
 import { messageErreur } from '~/lib/erreurs'
 import { useFoyer } from '~/composables/useFoyer'
 import { useRepasConvives } from '~/composables/useRepasConvives'
+import { useActivites } from '~/composables/useActivites'
+import { useEnergy } from '~/composables/useEnergy'
+import { estimerKcal } from '~/lib/activites'
 import { computed, ref, watch } from 'vue'
 import { startAuthentication, startRegistration } from '@simplewebauthn/browser'
 import type { RawProposal } from '~/lib/proposals'
@@ -165,6 +168,8 @@ export function useVault() {
   const fractionne = useFractionne()
   const foyer = useFoyer()
   const repasConvives = useRepasConvives()
+  const activites = useActivites()
+  const { bmrOn } = useEnergy()
   const mesures = useMesures()
   const { buildSnapshot } = useSnapshot()
 
@@ -189,6 +194,14 @@ export function useVault() {
     // distingue « déjà retiré » de « inconnu », et qui valide un réordonnancement.
     exercisesOf: (sessionId: string) => program.sessionById(sessionId)?.exercises.map(e => e.id) ?? [],
     exerciseAt: program.exerciseAt,
+    // Modifier ou supprimer une activité déjà effacée depuis le téléphone doit être
+    // un refus, pas un geste sans effet qui s'archiverait « appliqué ».
+    activiteKnown: (id: string) => activites.activites.value.some(a => a.id === id),
+    membreKnown: (id: string) => foyer.convives.value.some(c => c.id === id),
+    // Ce qui est EN PLACE pour ce repas : c'est lui qui rend une proposition
+    // partielle possible — « double la portion de demain midi » sans ré-énumérer
+    // qui est à table.
+    convivesAt: (date: string, creneau: string) => repasConvives.pour(date, creneau),
   }
 
   async function hydrate() {
@@ -346,6 +359,9 @@ export function useVault() {
     // complète, et le composable revalide ce qu'on lui rend.
     foyer.restore(snap.foyer)
     repasConvives.restore(snap)
+    // Même chemin pour le sport hors séance : c'est lui qui rend une activité
+    // corrigeable par une proposition, sans action dédiée à inventer.
+    activites.restore(snap)
   }
 
   /**
@@ -379,6 +395,52 @@ export function useVault() {
       }
     }
     else if (plan.kind === 'seance') { training.assign(plan.date, plan.sessionId) }
+    /**
+     * Qui est à table, et combien de repas on lui cuisine.
+     *
+     * Même porte que la fiche de recette : `definir` repasse par `normaliserRepas`,
+     * donc une proposition ne peut pas écrire ce qu'un tap ne saurait pas écrire.
+     * `null` efface l'exception plutôt que d'en figer une copie de l'ordinaire —
+     * sans quoi changer le foyer plus tard ne toucherait plus ce repas-là.
+     */
+    else if (plan.kind === 'convives') {
+      if (plan.convives) repasConvives.definir(plan.date, plan.creneau, plan.convives)
+      else repasConvives.oublier(plan.date, plan.creneau)
+    }
+    /**
+     * Le sport hors séance. Même porte que l'écran, et un calcul en plus.
+     *
+     * `kcal: null` veut dire « estime-le » — c'est le cas courant quand la
+     * proposition vient d'une phrase dictée. On le chiffre ICI et pas dans le
+     * validateur, parce que c'est ici qu'on a le poids et le métabolisme DE CE
+     * JOUR-LÀ ; le validateur, lui, ne connaît pas le corps. Faute de pesée, on pose
+     * zéro plutôt qu'un chiffre inventé : l'activité existe, sa dépense se corrige à
+     * la main depuis la journée.
+     */
+    else if (plan.kind === 'activite') {
+      if (plan.op === 'supprimer') {
+        if (!plan.id || !activites.retirer(plan.id)) {
+          error.value = 'Cette activité n\'existe plus.'
+          return false
+        }
+      }
+      else {
+        const champs = { ...(plan.champs ?? {}) } as Record<string, unknown>
+        if (champs.kcal === null) {
+          const ref = plan.id ? activites.activites.value.find(a => a.id === plan.id) : null
+          const date = (champs.date as string) ?? ref?.date ?? ''
+          const type = (champs.type as never) ?? ref?.type ?? 'autre'
+          const minutes = (champs.minutes as number) ?? ref?.minutes ?? 0
+          champs.kcal = estimerKcal(type, minutes, workout.bodyWeightAt(date), bmrOn(date)) ?? 0
+          champs.estime = true
+        }
+        else if (champs.kcal !== undefined) champs.estime = false
+        const ok = plan.op === 'modifier' && plan.id
+          ? activites.modifier(plan.id, champs as never)
+          : !!activites.ajouter(champs as never)
+        if (!ok) { error.value = 'Cette activité n\'a pas pu être enregistrée.'; return false }
+      }
+    }
     else if (plan.kind === 'aliment') {
       // Même porte que l'écran d'édition : `addFood` crée, `patchFood` fusionne. Un
       // aliment livré n'est jamais réécrit, il reçoit un patch — c'est ce qui permet

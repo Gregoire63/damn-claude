@@ -3,7 +3,7 @@ import { computed, ref } from 'vue'
 import { useFoyer } from '~/composables/useFoyer'
 import { useNutrition } from '~/composables/useNutrition'
 import type { ConvivesRepas } from '~/lib/foyer'
-import { APPETIT_MAX, APPETIT_MIN, borner, convivesParDefaut, facteurRepas, libelleRepas, partDeMoi, pourConvives } from '~/lib/foyer'
+import { APPETIT_MAX, APPETIT_MIN, aDesRepasEnPlus, avecRepas, borner, convivesParDefaut, facteurRepas, libelleRepas, partDeMoi, pourConvives, repasDe, repasPourTous } from '~/lib/foyer'
 import { useRepasConvives } from '~/composables/useRepasConvives'
 import { FAT_STEPS, expandItems, keepsOf, macrosOf, rebalanceDairy, roundMacros, splitIngredients } from '~/lib/nutritionStats'
 import { cookedWeight } from '~/lib/cooked'
@@ -76,9 +76,18 @@ const repasConvives = useRepasConvives()
 
 /** Le repas préparé, quand on vient d'une journée. Sinon : pas de repas, pas d'enregistrement. */
 const ancre = computed(() => (props.date && props.slot ? { date: props.date, slot: props.slot } : null))
+/**
+ * Le repas bricolé sur place, quand la fiche n'est ancrée à aucune journée.
+ *
+ * Décocher quelqu'un depuis le catalogue règle le FOYER — c'est un état qui dure, et
+ * c'est ce que faisait déjà la fiche. Un nombre de repas, lui, n'a nulle part où
+ * aller : « je cuisine pour deux jours » est une décision de ce soir, pas une
+ * propriété du foyer. Il vit donc le temps de la fiche, et repart avec elle.
+ */
+const repasLocal = ref<ConvivesRepas | null>(null)
 const convives = computed<ConvivesRepas>(() => (ancre.value
   ? repasConvives.pour(ancre.value.date, ancre.value.slot)
-  : convivesParDefaut(foyer.convives.value)))
+  : repasLocal.value ?? convivesParDefaut(foyer.convives.value)))
 
 const facteur = computed(() => facteurRepas(convives.value, foyer.convives.value))
 const pese = (g: number) => pourConvives(g, facteur.value)
@@ -95,6 +104,7 @@ function majConvives(c: ConvivesRepas) {
    * nulle part où aller — son bouton ne s'affiche donc pas dans ce cas, plutôt que
    * d'accepter un geste sans effet.
    */
+  repasLocal.value = c
   for (const m of foyer.convives.value) {
     if (m.id === 'moi') continue
     foyer.modifier(m.id, { actif: c.membres.includes(m.id) })
@@ -108,6 +118,32 @@ function basculerMembre(id: string) {
     ? { ...c, membres: c.membres.filter(m => m !== id) }
     : { ...c, membres: [...c.membres, id] })
 }
+
+// ─── Combien de repas ────────────────────────────────────────────────────────
+//
+// Cuisiner pour le lendemain double la casserole, pas l'assiette. Le compteur
+// multiplie donc les grammages à peser et laisse « ta part » à une portion — voir
+// lib/foyer.ts, c'est toute la raison d'être de ce champ.
+
+/**
+ * La borne du CYCLE, pas celle du modèle (`REPAS_MAX` vaut 9).
+ *
+ * On tape sur la pastille pour avancer, et l'on revient à 1 après quatre : trois
+ * touches au pire pour défaire, contre huit si le cycle allait jusqu'au bout du
+ * modèle. Au-delà de quatre jours d'avance, ce n'est plus un plat qu'on double,
+ * c'est un batch — et il a son propre écran.
+ */
+const REPAS_CYCLE = 4
+
+const nbRepas = (id: string) => repasDe(convives.value, id)
+const cyclerRepas = (id: string) => majConvives(avecRepas(convives.value, id, (nbRepas(id) % REPAS_CYCLE) + 1))
+
+/** Le geste courant, en un tap : « je cuisine pour demain aussi », et son retour. */
+const enPlus = computed(() => aDesRepasEnPlus(convives.value))
+const basculerTous = () => majConvives(repasPourTous(convives.value, enPlus.value ? 1 : 2))
+
+/** Le nombre total de portions dans la casserole, pour le dire en clair. */
+const portions = computed(() => facteur.value)
 
 /** Un invité de ce soir : un appétit, un nom facultatif, et rien dans le foyer. */
 const nouvelInvite = ref({ nom: '', appetit: 1 })
@@ -257,15 +293,29 @@ const openFat = ref<string | null>(null)
           cuisine seul, cette notion n'existe pas et n'a pas à occuper une ligne.
         -->
         <div class="rs-convives">
-          <button
+          <!-- La pastille porte DEUX gestes, et c'est délibéré : le nom décide qui est
+               à table, le ×N combien de fois cette personne mange ce plat. Fondre les
+               deux — monter l'appétit — dirait que quelqu'un mange le double ce soir,
+               et le suivi compterait un dîner de trop. -->
+          <span
             v-for="c in foyer.convives.value" :key="c.id"
             class="rs-conv" :class="{ on: convives.membres.includes(c.id), fige: c.id === 'moi' }"
-            :disabled="c.id === 'moi'"
-            :aria-pressed="convives.membres.includes(c.id)"
-            @click="basculerMembre(c.id)"
           >
-            {{ c.nom }}<span v-if="c.id !== 'moi'" class="mono rs-conv-p">{{ Math.round(c.appetit * 100) }}%</span>
-          </button>
+            <button
+              class="rs-conv-nom"
+              :disabled="c.id === 'moi'"
+              :aria-pressed="convives.membres.includes(c.id)"
+              @click="basculerMembre(c.id)"
+            >
+              {{ c.nom }}<span v-if="c.id !== 'moi'" class="mono rs-conv-p">{{ Math.round(c.appetit * 100) }}%</span>
+            </button>
+            <button
+              v-if="convives.membres.includes(c.id)"
+              class="rs-conv-n mono"
+              :aria-label="`Repas cuisinés pour ${c.nom} : ${nbRepas(c.id)}`"
+              @click="cyclerRepas(c.id)"
+            >×{{ nbRepas(c.id) }}</button>
+          </span>
           <!-- Un invité ne rentre pas dans le foyer pour un dîner : on l'ajoute ici,
                il repart avec le repas. Le bouton n'apparaît que si l'on prépare un
                repas identifié — sinon il n'y aurait nulle part où le ranger. -->
@@ -277,6 +327,21 @@ const openFat = ref<string | null>(null)
           </button>
           <button v-if="ancre && !ajoutInvite" class="rs-conv rs-plus" @click="ajoutInvite = true">+ invité</button>
           <span v-if="facteur !== 1" class="mono rs-facteur">×{{ facteur.toFixed(2).replace(/[.,]?0+$/, '').replace('.', ',') }}</span>
+        </div>
+
+        <!-- Le raccourci du cas courant. Il existe parce que « cuisiner pour demain »
+             se décide d'un bloc, pour tout le monde, et qu'aller taper sur trois
+             pastilles pour ça serait trois fois le même geste. Le cas asymétrique —
+             deux jours pour moi, un seul pour l'autre qui déjeune dehors — reste sur
+             les pastilles, et c'est lui qui a demandé ce réglage. -->
+        <div class="rs-repas-ligne">
+          <button class="rs-repas-tous" :class="{ on: enPlus }" @click="basculerTous()">
+            {{ enPlus ? '↺ Un seul repas' : '🍱 Cuisiner pour demain aussi' }}
+          </button>
+          <span v-if="enPlus" class="muted rs-repas-dit">
+            {{ portions.toFixed(2).replace(/[.,]?0+$/, '').replace('.', ',') }} portions dans la casserole ·
+            <b>ton assiette de ce soir en reste une</b>.
+          </span>
         </div>
 
         <div v-if="ajoutInvite" class="rs-ajout">

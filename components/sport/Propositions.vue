@@ -338,6 +338,7 @@ const SECTIONS: Record<string, string> = {
   profile: 'Profil', weekPlan: 'Semaine type', planDays: 'Exceptions de planning',
   nutrition: 'Nutrition', withingsBody: 'Pesées Withings', restTimer: 'Minuteur de repos',
   programme: 'Programme', foyer: 'Foyer', repasConvives: 'Convives par repas',
+  activites: 'Autres activités',
 }
 const GESTES_CHAMP: Record<string, string> = {
   remplacer: 'Remplacer', creer: 'Ajouter', ajouter: 'Ajouter à la liste', supprimer: 'Supprimer',

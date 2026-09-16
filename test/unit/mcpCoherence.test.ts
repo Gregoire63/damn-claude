@@ -107,6 +107,65 @@ describe('le programme annoncé est celui de l’application', () => {
   })
 
   /**
+   * Le sport hors séance doit être ANNONÇABLE et LISIBLE, les deux.
+   *
+   * Annonçable seulement : les activités s'accumuleraient sans que Claude puisse les
+   * relire pour en corriger une — et sans identifiant, la seule façon de rectifier
+   * une durée serait de supprimer puis recréer, donc de perdre ce qu'on n'aurait pas
+   * pensé à recopier. Lisible seulement : il les verrait sans pouvoir les noter.
+   */
+  it('expose la cible « activite » à l’écriture, et les identifiants à la lecture', () => {
+    expect(MCP).toMatch(/enum: \[[^\]]*'activite'/)
+    expect(MCP).toContain("cible === 'activite'")
+    expect(MCP).toContain('autres_activites')
+    expect(MCP).toMatch(/autres_activites: activitesDuJour\.map/)
+  })
+
+  /**
+   * Un champ ÉCRIVABLE que la note ne mentionne pas est un champ mort.
+   *
+   * `repas` — combien de fois chacun mange ce plat — part dans le miroir tout seul,
+   * puisque `repasConvives` y est rendu brut. Il se lit donc sans rien faire… et ne
+   * se propose jamais, parce que rien ne dit qu'il existe ni comment l'écrire. Le
+   * même oubli que « une op annoncée que le code refuse », dans l'autre sens.
+   */
+  it('dit que le nombre de repas par convive existe, et comment l’écrire', () => {
+    expect(MCP).toMatch(/repas: \{ moi: 2 \}/)
+    expect(MCP).toContain('/repasConvives/2026-09-17/dinner/repas/moi')
+    // Et il dit la faute à ne pas faire, celle qui donne les mêmes grammages et un
+    // dîner compté double.
+    // L'apostrophe est échappée dans la source (`n\\'est`) : on cherche le motif, pas
+    // la chaîne exacte, sinon le test tombe sur un détail de citation.
+    expect(MCP).toMatch(/Ce n.{0,2}est PAS un appétit/)
+  })
+
+  /**
+   * La cible TYPÉE, et le chemin qui la nourrit.
+   *
+   * Le passe-partout y arrivait déjà ; il ne se RELISAIT pas — une carte de
+   * validation qui montre un pointeur JSON se valide sans être lue. `convivesAt`
+   * n'est pas décoratif non plus : sans lui, une proposition partielle est
+   * impossible et « double la portion de demain midi » devrait ré-énumérer qui est
+   * à table.
+   */
+  it('expose la cible « convives », et sait lire ce qui est déjà en place', () => {
+    expect(MCP).toMatch(/enum: \[[^\]]*'convives'/)
+    expect(MCP).toContain("cible === 'convives'")
+    expect(MCP).toMatch(/convivesAt: \(date: string, creneau: string\)/)
+    // La même normalisation que la saisie à la main, pas une copie.
+    expect(MCP).toContain('normaliserRepas(')
+  })
+
+  /**
+   * Et la dépense du connecteur doit compter les activités, sinon il annonce une
+   * cible plus basse que celle de l'écran — le défaut dont tout ce fichier parle.
+   */
+  it('compte les activités dans la dépense qu’il annonce', () => {
+    expect(MCP).toMatch(/activitesKcal: kcalActivites/)
+    expect(MCP).toContain('autres_activites_kcal')
+  })
+
+  /**
    * Un geste que le code accepte mais que la description ne mentionne pas est INVISIBLE.
    *
    * C'est le seul endroit où Claude lit ce que le connecteur accepte. Un handler qui

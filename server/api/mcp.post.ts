@@ -1,12 +1,14 @@
 import { addProposal, readMirror, readProposals, verifyToken } from '../utils/vault'
 import { classerErreur, noteCall, noteOutcome } from '../utils/trace'
+import { TYPES_ACTIVITE, normaliserActivite } from '~/lib/activites'
 import { DAY_NAMES, KIND_GROUP_LABELS, bmrMifflin, builtinWeeks, dayEnergy, dowIndex, expandItems, isDayPlayed, keepsOf, macrosOf, mergeRecipes, mergeFoods, mondayOf, normalizeWeek, proteinPlan, recipeForSlot, resolveDay, roundMacros } from '~/lib/nutritionStats'
 import { cookedWeight } from '~/lib/cooked'
 import { dayBudget, fitInto } from '~/lib/dayBudget'
 import type { SlotState } from '~/lib/dayBudget'
 import { SLOTS_GYM, SLOTS_REST } from '~/data/nutritionProgram'
 import { getAt } from '~/lib/pointer'
-import { checkFieldFix, foodFor, planFor, programFor, recipeFor, twinPath } from '~/lib/proposals'
+import { SLOTS, checkFieldFix, foodFor, planFor, programFor, recipeFor, twinPath } from '~/lib/proposals'
+import { normaliserRepas } from '~/lib/foyer'
 import { weightTrend } from '~/lib/bilan'
 import { carriedComp } from '~/lib/mesures'
 import { weightOn } from '~/lib/weight'
@@ -297,13 +299,13 @@ const TOOLS = [
         resume: { type: 'string', description: 'Une phrase lisible, ex. « Vendredi midi : Boîte B → Saumon patate douce »' },
         cible: {
           type: 'string',
-          enum: ['semaine', 'semaine-type', 'plat', 'planning-seance', 'recette', 'aliment', 'repas-libre', 'programme', 'correction', 'autre'],
+          enum: ['semaine', 'semaine-type', 'plat', 'planning-seance', 'recette', 'aliment', 'repas-libre', 'convives', 'activite', 'programme', 'correction', 'autre'],
           description: 'Ce qui est touché',
         },
         detail: {
           type: 'object',
           description: [
-            'Le détail exploitable, dont la forme dépend de « cible ». Les neuf formes ci-dessous s\'appliquent d\'un tap ; toute autre (« autre ») s\'affiche mais devra être faite à la main.',
+            'Le détail exploitable, dont la forme dépend de « cible ». Les onze formes ci-dessous s\'appliquent d\'un tap ; toute autre (« autre ») s\'affiche mais devra être faite à la main.',
             '• plat : { date: "AAAA-MM-JJ", slot: "lunch"|"dinner"|"pdj"|"snack"|"night"|"pre"|"creatine", vers: "<id de plat>" ou null pour revenir au plat prévu }',
             '• planning-seance : { date: "AAAA-MM-JJ", vers: "s1".."s4" ou "repos" }',
             '• repas-libre : { date: "AAAA-MM-JJ", slot: "lunch", vers: { label: "Kebab galette + frites", kcal: 1050, p: 45, g: 95, l: 50 } } — un repas qu\'il n\'a pas cuisiné, qui REMPLACE le plat prévu de ce créneau et porte ses propres macros. « vers: null » le retire et rend le créneau au plat prévu. C\'est la seule forme où tu fournis des chiffres estimés : donne les quatre, les protéines surtout, et dis dans le résumé sur quoi tu t\'es basé. DÈS QUE TU CONNAIS LE CONTENU, ajoute « items: [{ food, g }] » (vérifie-les d\'abord avec « composer ») et, si c\'est la variante d\'un plat du catalogue, « base: "<id du plat>" ». Ce n\'est pas un détail de forme : sans items l\'application ne peut afficher qu\'un nombre et l\'étiquette « du dehors », et il perd les grammages au moment précis où il en a besoin, devant sa balance. Avec eux, elle affiche « modifié », la composition ligne par ligne, et un lien vers la recette d\'origine — sans avoir à te redemander.',
@@ -313,6 +315,16 @@ const TOOLS = [
             '    · steps : la préparation adaptée, seulement si elle diffère de celle du catalogue.',
             '  Ça ne modifie JAMAIS le plat du catalogue : la variante ne vaut que pour ce repas et ce jour. Donne toujours kcal/p/g/l même avec « items » — l\'application calcule les macros des ingrédients listés et te les compare, elle ne les remplace pas. Un écart de plus de 10 % s\'affiche comme un avertissement à la validation, pas comme un refus.',
             '  Pour relire une composition déjà déposée, appelle « recette » avec { date, slot } au lieu d\'un id — plus fiable que de la recalculer de mémoire.',
+            '• convives : qui mange UN repas donné, et combien de fois chacun mange ce plat. { date: "AAAA-MM-JJ", creneau: "lunch"|"dinner"|"pdj"|"snack"|"night"|"pre"|"creatine", membres?: ["moi","camille"], invites?: [{ nom: "Léa", appetit: 1 }], repas?: 2 ou { moi: 2 } }',
+            '  Chaque champ ABSENT garde ce qui est en place : « double la portion de demain midi » s\'écrit { date, creneau, repas: 2 } et ne touche pas à qui est à table. C\'est l\'inverse de la règle « la liste remplace » des recettes, et c\'est voulu — une liste de convives recopiée de mémoire à chaque fois finit par perdre quelqu\'un.',
+            '  « repas » dit combien de FOIS chacun mange ce plat : le dîner du soir ET la boîte du lendemain. Un NOMBRE l\'applique à tout le monde, un objet traite l\'asymétrie — deux jours pour lui, un seul pour qui déjeune dehors demain. « repas: null » revient à un seul repas pour tous.',
+            '  Ce n\'est PAS un appétit, et les confondre est la faute à ne pas faire : un appétit à 200 % donnerait exactement les mêmes grammages et ferait compter un dîner double dans son suivi. Le nombre de repas multiplie ce qu\'on PÈSE ; son assiette du soir reste une portion.',
+            '  « membres » ne prend que des identifiants du foyer (outil « profil »). Quelqu\'un qui vient dîner une fois est un INVITÉ — il n\'a pas à entrer dans le foyer puis à en être retiré. « appetit » est relatif à sa part : 1 = autant que lui, 0,6 = les deux tiers. « vers: null » efface l\'exception et rend le repas au foyer courant.',
+            '• activite : le sport qui n\'est PAS une séance de musculation — foot, rando, vélo, natation. { op?: "ajouter"|"modifier"|"supprimer", id?: "<id rendu par « journee »>", type: "marche"|"rando"|"course"|"velo"|"vtt"|"natation"|"foot"|"tennis"|"basket"|"corde"|"escalade"|"boxe"|"rameur"|"elliptique"|"autre", nom?: "Match du samedi", date: "AAAA-MM-JJ", heure?: "18:30", minutes: 90, kcal?: 620 }',
+            '  Elle s\'ajoute à la DÉPENSE de la journée, donc la cible monte. Elle ne fait PAS de la journée un jour de salle : les féculents ne sont pas modulés et les créneaux de repas ne changent pas — ce sont des réglages liés à sa séance de musculation, pas à l\'effort en général.',
+            '  « kcal » est FACULTATIF, et l\'omettre est souvent le bon choix : l\'application chiffre alors la dépense elle-même, sur le poids de CE jour-là et l\'intensité moyenne du type choisi, avec la même formule que les séances (coût net, métabolisme de repos déduit). Ne donne un chiffre que si tu en sais plus que ça — une sortie inhabituellement dure, un cardio relevé par une montre. « kcal: null » sur un « modifier » redemande explicitement l\'estimation.',
+            '  « op: "ajouter" » est le défaut ; il veut au minimum « date » et « minutes ». « modifier » et « supprimer » exigent un « id » qui existe ENCORE — appelle « journee » sur la date pour les lire. Une modification ne change que les champs envoyés.',
+            '  N\'utilise PAS cette cible pour de la musculation : une séance a déjà sa dépense, calculée sur ce qui a vraiment été fait. L\'ajouter ici donnerait deux dépenses pour la même heure.',
             '• semaine : { lundi: "AAAA-MM-JJ", nom: "…", jours: [ { lunch: "<id>", dinner: "<id>", off?: true }, … 7 entrées, lundi en premier ] }',
             '• semaine-type : { seances?: ["s1","s2",null,"s3","s4",null,null], salle?: [7 booléens], teletravail?: [7 booléens] } — lundi en premier, les trois axes sont indépendants',
             '• recette : { id?: "<id existant pour modifier>", nom, kind: "pdj"|"boite"|"diner"|"collation"|"sauce", batch?: true, steps?: "…", sauce?: "<id de sauce>", keeps?: 4, items: [ { food: "<id d\'aliment>", g: 120 } ] } — « items » REMPLACE la liste, envoie-la complète. Lis d\'abord la recette avec l\'outil « recette » : sans ça tu effaces des ingrédients sans le savoir. « steps » est la marche à suivre du batch cooking, « keeps » la conservation en jours — c\'est elle qui décide dans quelle session de cuisine le plat tombe.',
@@ -360,6 +372,8 @@ const TOOLS = [
 interface RefusCtx {
   foodKnown: (id: string) => boolean
   recipeKnown: (id: string) => boolean
+  activiteKnown: (id: string) => boolean
+  membreKnown: (id: string) => boolean
   sessionKnown?: (id: string) => boolean
   /** Les séances qui EXISTENT, pour pouvoir les nommer dans un refus plutôt que
    *  d'écrire « s1 à s4 » — ce qui est faux dès qu'une séance a été créée, et
@@ -495,6 +509,32 @@ function refusMessage(cible: string, d: Record<string, unknown>, ctx: RefusCtx):
     }
     return 'Modification refusée : donne au moins un champ valide — series (1 à 12), reps (texte), repos_s (20 à 900 s), nom, mesure ("reps" ou "temps"), machine, optionnel, muscles ou machines_de_remplacement.'
   }
+  if (cible === 'convives') {
+    const creneau = String(d.creneau ?? d.slot ?? '')
+    if (creneau && !(SLOTS as readonly string[]).includes(creneau)) {
+      return `Créneau inconnu : ${creneau}. Les créneaux sont ${SLOTS.join(', ')}.`
+    }
+    const membres = asArray((d.membres ?? d.qui) ?? []).map(String)
+    const inconnus = membres.filter(id => !ctx.membreKnown(id))
+    if (inconnus.length) {
+      return `Ces personnes ne sont pas dans son foyer : ${inconnus.join(', ')}. Appelle « profil » pour les identifiants. Quelqu'un qui vient dîner une fois est un INVITÉ ({ nom, appetit }), pas un membre.`
+    }
+    return 'Convives refusés : il faut « date » (AAAA-MM-JJ), « creneau », et au moins un champ à changer — « membres », « invites » ou « repas ». « repas » prend un nombre (tout le monde) ou un objet ({ moi: 2 }), entre 1 et 9.'
+  }
+  if (cible === 'activite') {
+    const op = String(d.op ?? d.geste ?? 'ajouter')
+    const id = String(d.id ?? d.activite ?? '')
+    if (op === 'modifier' || op === 'supprimer') {
+      if (!id) return `« ${op} » exige un « id ». Appelle « journee » sur la date : chaque activité y porte le sien.`
+      if (!ctx.activiteKnown(id)) return `L'activité « ${id} » n'existe plus. Relis « journee » sur la date concernée — elle a pu être supprimée depuis le téléphone.`
+      if (op === 'modifier') return 'Modification refusée : donne au moins un champ valide — type, nom, date, heure (HH:MM), minutes (1 à 720) ou kcal (0 à 10000, ou null pour réestimer).'
+    }
+    const type = String(d.type ?? d.sport ?? '')
+    if (type && !TYPES_ACTIVITE.some(t => t.id === type)) {
+      return `Type d'activité inconnu : ${type}. Choisis parmi ${TYPES_ACTIVITE.map(t => t.id).join(', ')} — « autre » accepte n'importe quel nom.`
+    }
+    return 'Activité refusée : un ajout veut au minimum « date » (AAAA-MM-JJ) et « minutes » (1 à 720). « heure » est au format HH:MM, « kcal » est facultatif — omis, l\'application l\'estime sur le poids de ce jour-là.'
+  }
   if (cible === 'repas-libre') {
     const vers = ((d.vers ?? d.repas) ?? {}) as Record<string, unknown>
     const items = asArray(vers.items ?? vers.ingredients ?? vers.composition)
@@ -580,7 +620,7 @@ async function callTool(name: string, args: Record<string, unknown>): Promise<un
       && !!versLibre && typeof versLibre === 'object'
       && !!(versLibre.items ?? versLibre.ingredients ?? versLibre.composition ?? versLibre.base)
 
-    if (cible === 'aliment' || cible === 'recette' || cible === 'programme' || libreAvecItems) {
+    if (cible === 'aliment' || cible === 'recette' || cible === 'programme' || cible === 'activite' || cible === 'convives' || libreAvecItems) {
       const m = await readMirror()
       const data = (m?.data ?? {}) as Record<string, unknown>
       const nut = (data.nutrition ?? {}) as Record<string, unknown>
@@ -625,6 +665,27 @@ async function callTool(name: string, args: Record<string, unknown>): Promise<un
             if (ex) return { seance: s.id, seanceNom: s.name, actif: !off.has(id), ex }
           }
           return null
+        },
+        // Modifier ou supprimer une activité effacée depuis le téléphone est un
+        // REFUS : la proposition s'afficherait sinon, se validerait, et ne ferait
+        // rien — le pire des trois états.
+        activiteKnown: (id: string) => asArray(data.activites).some(a => (a as { id?: string })?.id === id),
+        membreKnown: (id: string) => id === 'moi' || asArray(data.foyer).some(c => (c as { id?: string })?.id === id),
+        /**
+         * Ce qui est en place pour ce repas, lu dans le miroir : l'exception si elle
+         * existe, le foyer sinon. C'est lui qui autorise une proposition PARTIELLE —
+         * sans lui, « double la portion de demain midi » devrait ré-énumérer qui est
+         * à table, et une liste recopiée de mémoire finit par perdre quelqu'un.
+         */
+        convivesAt: (date: string, creneau: string) => {
+          const table = (data.repasConvives ?? {}) as Record<string, Record<string, unknown>>
+          const exception = normaliserRepas(table[date]?.[creneau])
+          if (exception) return exception
+          const actifs = asArray(data.foyer)
+            .filter(c => (c as { actif?: boolean })?.actif !== false)
+            .map(c => String((c as { id?: string })?.id ?? ''))
+            .filter(Boolean)
+          return { membres: actifs.includes('moi') ? actifs : ['moi', ...actifs], invites: [] }
         },
       }
       const brut = { id: '', at: '', action: cible, summary: resume, patch: detail, status: 'pending' as const }
@@ -1023,7 +1084,12 @@ async function callTool(name: string, args: Record<string, unknown>): Promise<un
          */
         convives_par_repas: {
           exceptions: d.repasConvives ?? {},
-          note: 'Rangé par date puis par créneau. « membres » liste des identifiants du foyer, « invites » des convives ponctuels ({ nom, appetit }) qui n\'entrent pas dans le foyer. Un repas absent d\'ici se cuisine pour le foyer courant. Pour prévoir un repas à quatre, propose une écriture sur /repasConvives/<date>/<créneau> avec l\'outil « champ ».',
+          note: [
+            'Rangé par date puis par créneau : { membres: ["moi","camille"], invites: [{ nom, appetit }], repas: { moi: 2 } }.',
+            '« membres » liste des identifiants du foyer, « invites » des convives ponctuels qui n\'entrent pas dans le foyer. Un repas absent d\'ici se cuisine pour le foyer courant.',
+            '« repas » dit combien de FOIS chacun mange ce plat — le dîner du soir et la boîte du lendemain. Absent, ou 1 : une fois. Ce n\'est PAS un appétit, et les confondre est la faute à ne pas faire : un appétit à 200 % donnerait les mêmes grammages et ferait compter un dîner double dans son suivi. Le nombre de repas multiplie ce qu\'on PÈSE ; son assiette du soir reste une portion. Il se règle par personne, parce que c\'est comme ça que ça tombe — deux jours pour lui, un seul pour qui déjeune dehors demain.',
+            'Écriture par l\'outil « champ » : { quoi: "champ", op: "creer", chemin: "/repasConvives/2026-09-17/dinner", vers: { membres: ["moi","camille"], invites: [], repas: { moi: 2 } } } pose le repas entier ; { op: "remplacer", chemin: "/repasConvives/2026-09-17/dinner/repas/moi", de: 2, vers: 3 } n\'en change qu\'un chiffre. Lis d\'abord le chemin avec « champ ».',
+          ].join(' '),
         },
       }
     }
@@ -1118,8 +1184,16 @@ async function callTool(name: string, args: Record<string, unknown>): Promise<un
         gymPlanned: resolu.gym,
         played: isDayPlayed(jour, aujourdhuiParis(), heureParis()),
       })
+      // Le sport hors séance de ce jour-là. Même source que l'écran — la liste du
+      // miroir — et même poste à part dans la dépense : les confondre avec la séance
+      // ferait hériter l'activité de la règle « prévue mais pas faite ».
+      const activitesDuJour = asArray(d.activites)
+        .map(normaliserActivite)
+        .filter((a): a is NonNullable<typeof a> => !!a && a.date === jour)
+        .sort((x, y) => x.heure.localeCompare(y.heure))
+      const kcalActivites = activitesDuJour.reduce((n, a) => n + a.kcal, 0)
       const energie = (bmr !== null && kg)
-        ? dayEnergy({ bmr, kg, tt: resolu.tt, steps: resolu.steps, sessionKcal: brule })
+        ? dayEnergy({ bmr, kg, tt: resolu.tt, steps: resolu.steps, sessionKcal: brule, activitesKcal: kcalActivites })
         : null
 
       // ─── Les créneaux du jour ─────────────────────────────────────────────
@@ -1241,6 +1315,10 @@ async function callTool(name: string, args: Record<string, unknown>): Promise<un
               pas_kcal: energie.stepsKcal,
               seance_kcal: energie.sessionKcal,
               seance_estimee: !seancesDuJour.length && resolu.gym,
+              // Poste à part : une activité est toujours du RÉEL — notée après coup —
+              // là où la séance peut n'être qu'un forfait tant que le jour n'est pas
+              // fini. Les additionner ferait perdre cette distinction.
+              autres_activites_kcal: energie.activitesKcal,
             }
           : null,
         cible_kcal: sansCible ? null : budget.cible,
@@ -1256,6 +1334,23 @@ async function callTool(name: string, args: Record<string, unknown>): Promise<un
           plat: sl.plat, hors_plan: sl.libre, mange: sl.mange, macros: sl.macros,
         })),
         extras_notes: extras.length,
+        /**
+         * Le sport hors séance, avec son identifiant.
+         *
+         * L'identifiant n'est pas décoratif : c'est lui qu'on renvoie dans
+         * « cible: activite, op: modifier » pour corriger une durée ou une dépense.
+         * Sans lui, la seule façon de rectifier serait de supprimer et recréer, donc
+         * de perdre ce qu'on n'aurait pas pensé à recopier.
+         */
+        autres_activites: activitesDuJour.map(a => ({
+          id: a.id,
+          type: a.type,
+          nom: a.nom || null,
+          heure: a.heure,
+          minutes: a.minutes,
+          kcal: a.kcal,
+          estimee_par_l_app: a.estime,
+        })),
         rappel: energie
           ? 'Pour composer un repas qui tombe juste : « composer » avec la liste d\'ingrédients, il calcule et confronte à ce reste. Ne calcule pas de tête.'
           : 'CIBLE INDISPONIBLE — ne conclus rien sur les calories. Il manque une pesée à cette date, la taille ou l\'année de naissance dans le profil. Les macros des repas ci-dessous restent exactes : c\'est la cible qui manque, pas le contenu des assiettes.',

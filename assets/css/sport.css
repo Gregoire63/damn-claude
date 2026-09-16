@@ -99,13 +99,35 @@
 /* Qui mange, sur la fiche de recette. Des pastilles et non des cases à cocher :
    c'est un état qu'on lit d'un coup d'œil avant de peser, pas un formulaire. */
 .rs-convives { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-bottom: 10px; }
-.rs-conv { display: inline-flex; align-items: center; gap: 5px; background: var(--bg-secondary); border: 1px solid var(--bg-accent); color: var(--text-secondary); border-radius: 999px; padding: 5px 11px; font-family: inherit; font-size: 13px; cursor: pointer; }
+/* La pastille est une ENVELOPPE et non un bouton : elle en contient deux — le nom,
+   qui décide qui est à table, et le ×N, qui dit combien de repas on lui cuisine. Un
+   bouton ne peut pas en contenir un autre. */
+.rs-conv { display: inline-flex; align-items: stretch; background: var(--bg-secondary); border: 1px solid var(--bg-accent); color: var(--text-secondary); border-radius: 999px; font-family: inherit; font-size: 13px; overflow: hidden; }
 .rs-conv.on { background: var(--accent-primary); border-color: var(--accent-primary); color: var(--bg-primary); }
+.rs-conv-nom { display: inline-flex; align-items: center; gap: 5px; padding: 5px 11px; background: none; border: none; color: inherit; font: inherit; cursor: pointer; }
+/* Le compteur : collé au nom, séparé d'un filet, et une cible d'au moins 30 px —
+   on tape dessus la casserole à la main. */
+.rs-conv-n {
+  padding: 5px 10px; min-width: 32px; background: rgba(0, 0, 0, 0.09);
+  border: none; border-left: 1px solid rgba(0, 0, 0, 0.12);
+  color: inherit; font: inherit; font-size: 12px; font-weight: 700; cursor: pointer;
+}
+.rs-conv.on .rs-conv-n { background: rgba(255, 255, 255, 0.18); border-left-color: rgba(255, 255, 255, 0.3); }
 /* « Moi » ne se décoche pas : c'est l'unité de compte, et un bouton qui ne fait rien
-   doit avoir l'air de ne rien faire. */
-.rs-conv.fige { cursor: default; opacity: 0.9; }
+   doit avoir l'air de ne rien faire. Son ×N, lui, reste bien actif — c'est même le
+   cas le plus courant : cuisiner deux jours pour soi. */
+.rs-conv.fige .rs-conv-nom { cursor: default; opacity: 0.9; }
 .rs-conv-p { font-size: 11px; opacity: 0.8; }
 .rs-facteur { margin-left: auto; font-size: 13px; font-weight: 700; color: var(--accent-primary); }
+/* Le raccourci « pour demain aussi » et ce qu'il annonce. */
+.rs-repas-ligne { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 10px; }
+.rs-repas-tous {
+  flex: 0 0 auto; background: var(--bg-primary); border: 1px dashed var(--bg-accent);
+  color: var(--text-secondary); border-radius: 999px; padding: 6px 13px;
+  font: inherit; font-size: 12.5px; cursor: pointer;
+}
+.rs-repas-tous.on { border-style: solid; border-color: var(--accent-secondary); color: var(--accent-primary); }
+.rs-repas-dit { flex: 1 1 200px; font-size: 12px; line-height: 1.45; }
 
 /* Une validation déjà défaite : elle reste lisible — c'est l'historique — mais elle
    ne se propose plus, et ça doit se voir sans lire le bouton. */
@@ -848,6 +870,35 @@ button.conn-row { cursor: pointer; }
 
 .ds-section { font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-muted); display: flex; justify-content: space-between; align-items: baseline; margin-top: 4px; }
 .ds-section-n { font-size: 10px; }
+/* Le sport hors séance, dans la feuille d'une journée. Même grain que les cartes de
+   séance au-dessus : c'est la même question — qu'est-ce qui a été fait ce jour-là. */
+.ds-acts { display: flex; flex-direction: column; gap: 6px; }
+.ds-act {
+  display: flex; align-items: center; gap: 10px; width: 100%; text-align: left;
+  background: var(--bg-primary); border: 1px solid var(--bg-accent); border-radius: 12px;
+  padding: 10px 12px; font: inherit; color: inherit; cursor: pointer;
+}
+.ds-act:hover { border-color: var(--accent-secondary); }
+.ds-act-i { font-size: 18px; line-height: 1; flex: 0 0 auto; }
+.ds-act-m { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.ds-act-n { font-weight: 600; font-size: 14px; }
+.ds-act-m .mono { font-size: 11px; }
+.ds-act-k { flex: 0 0 auto; font-size: 13px; font-weight: 700; color: var(--accent-primary); }
+/* « est. » : le chiffre vient de l'application, pas de la main. Discret, mais présent
+   — c'est ce qui dit qu'on peut le corriger sans rien casser. */
+.ds-act-e { font-weight: 400; opacity: 0.6; }
+.ds-act-add { align-self: flex-start; }
+
+/* La fenêtre de saisie d'une activité. */
+.act-types { display: flex; flex-wrap: wrap; gap: 6px; }
+.act-type {
+  background: var(--bg-secondary); border: 1px solid var(--bg-accent); color: var(--text-secondary);
+  border-radius: 999px; padding: 6px 11px; font: inherit; font-size: 12.5px; cursor: pointer;
+}
+.act-type.on { background: var(--accent-primary); border-color: var(--accent-primary); color: var(--bg-primary); }
+.act-quand { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.act-dit { font-size: 12px; line-height: 1.5; }
+.popup.act-popup .popup-body { gap: 12px; }
 .ds-empty { font-size: 12.5px; }
 /* Ce qui est prévu, quand rien n'a encore été enregistré */
 .ds-plan { display: flex; flex-direction: column; gap: 7px; background: var(--bg-secondary); border-left: 3px solid var(--c, var(--bg-accent)); border-radius: 10px; padding: 11px 12px; }

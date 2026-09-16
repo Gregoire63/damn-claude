@@ -4,7 +4,7 @@
 
 <p align="center">
   <a href="https://github.com/Gregoire63/damn-claude/actions/workflows/ci.yml"><img src="https://github.com/Gregoire63/damn-claude/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
-  <img src="https://img.shields.io/badge/tests-1370-3f7a4f" alt="1370 tests">
+  <img src="https://img.shields.io/badge/tests-1448-3f7a4f" alt="1448 tests">
   <img src="https://img.shields.io/badge/Nuxt-4-00DC82" alt="Nuxt 4">
   <a href="LICENSE"><img src="https://img.shields.io/badge/licence-AGPL--3.0-8b6f5c" alt="AGPL-3.0"></a>
   <img src="https://img.shields.io/badge/data-on%20your%20phone-6b6560" alt="Local data">
@@ -119,7 +119,7 @@ waits.
 |---|---|
 | `npm run dev` | Development server |
 | `npm run build` | Production build (**never** `nuxt generate`) |
-| `npm test` | 1370 tests, 81 files, two Vitest projects |
+| `npm test` | 1448 tests, 84 files, two Vitest projects |
 | `npm run check` | Three guards: duplicate CSS selectors, duplicate data keys, invalid Vue markup |
 | `npm run exemple` | Regenerates `public/exemple.json` from `data/exemple/` |
 
@@ -133,8 +133,8 @@ error.vue                404 and server errors
 lib/onglets.ts           the five tabs: path, label, title
 components/sport/        training screens
 components/nutrition/    nutrition screens
-composables/             state, persisted in localStorage (32 files, no Pinia)
-lib/                     pure logic — no DOM, no storage, tested (25 files)
+composables/             state, persisted in localStorage (33 files, no Pinia)
+lib/                     pure logic — no DOM, no storage, tested (26 files)
 data/                    types and reference tables — the contents are empty
 data/exemple/            the example pack, converted into public/exemple.json
 server/api/              the MCP connector, OAuth, passkey, scales (28 routes)
