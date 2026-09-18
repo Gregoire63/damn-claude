@@ -110,15 +110,18 @@ const todayRecord = computed(() => {
       <LazyNutritionHero :today-iso="todayISO">
         <template #session>
         <section v-if="todaySession" class="today card" :style="{ '--c': todaySession.color }">
-          <div class="today-eyebrow"><span class="today-dot"></span> {{ todayEntry!.dow }}</div>
+          <!-- « Voir » dans l'angle, à hauteur du jour : c'est un geste de LECTURE,
+               il n'a rien à faire sur la ligne des gestes d'action, où il se lisait
+               comme une troisième façon de démarrer la séance. -->
+          <div class="today-eyebrow">
+            <span class="today-dot"></span> {{ todayEntry!.dow }}
+            <button class="btn today-voir" @click="apercuSession(todaySession!)">👁 Voir</button>
+          </div>
           <h2 class="today-name">{{ todaySession.name }}</h2>
           <div v-if="doneToday.length" class="done-badge">✓ Déjà fait aujourd'hui : {{ doneToday.map(s => s.name).join(', ') }}</div>
           <div class="sc-muscles"><span v-for="m in sessionMuscles(todaySession)" :key="m" class="sc-chip">{{ m }}</span></div>
           <div class="today-foot">
             <span class="muted">{{ combienDExercices(todaySession) }} exercices</span>
-            <!-- Lire avant de s'engager. Le geste principal ne change pas de place :
-                 celui-ci se pose à côté, en second. -->
-            <button class="btn today-go" @click="apercuSession(todaySession)">👁 Voir</button>
             <button v-if="activeSession" class="btn-primary today-go" :style="{ background: todaySession.color }" @click="startSession(todaySession)">{{ activeSession.id === todaySession.id ? 'Reprendre →' : 'Aperçu' }}</button>
             <button v-else-if="todayRecord" class="btn-primary today-go" :style="{ background: todaySession.color }" @click="editSession(todayRecord!)">✏️ Modifier la séance →</button>
             <button v-else class="btn-primary today-go" :style="{ background: todaySession.color }" @click="startSession(todaySession)">Démarrer la séance →</button>

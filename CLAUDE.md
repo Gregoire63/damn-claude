@@ -122,6 +122,19 @@ navigateur connaît l'API — Chrome Android ne la connaît pas, d'où les point
 qui eux ne dépendent de rien. Le bip, lui, doit couvrir la musique : c'est le seul son qui ait le
 droit de s'imposer, et seulement une seconde.
 
+**Le lest ne s'invente pas, et sa référence se fige.** Deux règles, deux bugs.
+
+La première : un lest ne se reconstitue QUE sur une pesée du jour même. `weightOn` se
+rabat sur la pesée connue la plus proche et son drapeau `exact` ne dit pas ce qu'il
+laisse croire — il vaut `true` dès qu'UNE pesée précède la date, fût-elle vieille de
+trois semaines. Soustraire ce poids-là du total enregistré transformait huit cents
+grammes de balance en ceinture qu'on n'a jamais mise, et elle revenait à chaque
+séance : « il marque du lest alors que je n'en mets pas ». Sans pesée du jour même on
+ne reconstitue donc rien, la ligne repart du poids d'aujourd'hui, champ vide — et
+sous le demi-kilo (`LEST_MINI`) c'est la balance, pas une décision. `weighingOn`
+(lib/weight.ts) rend la date de la pesée retenue, et l'écran l'annonce dès qu'elle
+n'est pas celle du jour : un chiffre sans provenance ne se conteste pas.
+
 **Le lest est une DIFFÉRENCE, donc sa référence se fige.** Le stockage garde le TOTAL
 (poids de corps + lest) ; le champ montre le lest, calculé en retirant le poids du
 jour. Tant que ce poids bouge, tous les lests affichés bougent — et il bouge : la
@@ -445,7 +458,7 @@ Deux invariants tenus par des tests :
 
 ## Les tests
 
-1472 tests, 86 fichiers, deux projets. La plupart tournent sur le **pack d'exemple**,
+1487 tests, 88 fichiers, deux projets. La plupart tournent sur le **pack d'exemple**,
 déclaré fichier par fichier (`vi.mock('../../data/nutritionProgram', …)`, voir
 `test/exemple.ts`) : vérifier que la modulation des féculents ne touche pas aux
 protéines demande des aliments aux vraies macros, pas trois objets fabriqués.

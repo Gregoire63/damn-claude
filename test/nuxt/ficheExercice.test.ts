@@ -134,9 +134,10 @@ describe('la carte d’exercice', () => {
    * divergeraient au premier ajout.
    */
   it('ouvre la fiche depuis les deux écrans, avec une seule fenêtre', () => {
-    // L'aperçu : le « i » seul. La séance : l'engrenage, et lui seul.
+    // L'aperçu : le « i » seul. La séance : l'engrenage, sur un mouvement comme sur
+    // le sprint — deux cartes, deux engrenages, une seule forme.
     expect(coque.match(/class="ex-info-btn"/g)).toHaveLength(1)
-    expect(coque.match(/ex-info-btn ex-opt-btn/g)).toHaveLength(1)
+    expect(coque.match(/ex-info-btn ex-opt-btn/g)).toHaveLength(2)
     expect(coque).not.toContain('ex-note-btn')
     expect(coque.match(/LazySportExerciseInfo/g)).toHaveLength(1)
   })

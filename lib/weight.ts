@@ -62,3 +62,25 @@ export function weightOn(entries: Weighing[], iso: string): { kg: number, exact:
   if (avant.length) return { kg: avant.at(-1)!.kg, exact: true }
   return { kg: kept[0].kg, exact: false }
 }
+
+/**
+ * La pesée employée pour une date, AVEC sa date à elle.
+ *
+ * `weightOn` rend un poids et un drapeau `exact` qui ne dit pas ce qu'on croit : il
+ * vaut `true` dès qu'une pesée existe avant la date demandée, fût-elle vieille de
+ * trois semaines. C'est le bon comportement pour AFFICHER un ordre de grandeur, et
+ * c'est précisément ce qui a fabriqué du lest tout seul : reconstituer un lest en
+ * soustrayant le poids « de ce jour-là » revient à soustraire le poids d'un AUTRE
+ * jour, et l'écart entre les deux pesées devient une ceinture qu'on n'a jamais mise.
+ *
+ * Cette fonction rend donc la date de la pesée retenue. À l'appelant de décider ce
+ * qu'il en fait : l'écran l'annonce (« pesée du 16 »), le calcul de lest, lui, exige
+ * le même jour.
+ */
+export function weighingOn(entries: Weighing[], iso: string): { kg: number, date: string, memeJour: boolean } | null {
+  const kept = chronologique(entries.filter(e => typeof e?.kg === 'number' && e.kg > 0 && typeof e?.date === 'string'))
+  if (!kept.length) return null
+  const avant = kept.filter(e => e.date <= iso)
+  const p = avant.length ? avant.at(-1)! : kept[0]
+  return { kg: p.kg, date: p.date, memeJour: p.date === iso }
+}

@@ -11,7 +11,7 @@ import { exercicesDuJour, groupeDe } from '~/lib/rotation'
 import { setText } from '~/lib/setText'
 import { WARMUP_REST, restFor } from '~/lib/rest'
 import { warmupLoad, isEffort } from '~/utils/sportStats'
-import { weightOn } from '~/lib/weight'
+import { weighingOn, weightOn } from '~/lib/weight'
 import type { Effort, PrKind } from '~/utils/sportStats'
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -308,28 +308,44 @@ function creer() {
    * inventé.
    */
   /**
-   * Le poids de corps RÉELLEMENT mesuré à cette date ou avant.
+   * Le poids de corps pesé CE JOUR-LÀ, et pas un autre.
    *
-   * `bodyWeightAt` se rabat sur la toute première pesée du carnet quand la date la
-   * précède — c'est le bon choix là où il sert (afficher un ordre de grandeur vaut
-   * mieux qu'un tiret), et une faute ICI. On soustrairait un poids que ce jour-là n'a
-   * jamais vu, et le lest reconstitué serait faux d'autant : un « −1 kg » sur des
-   * dips faits sans ceinture, qu'on croit corriger en tapant 0 et qui revient la
-   * séance suivante.
+   * `weightOn` se rabat sur la pesée connue la plus proche, et son drapeau `exact` ne
+   * dit pas ce qu'il laisse croire : il vaut `true` dès qu'UNE pesée précède la date,
+   * fût-elle vieille de trois semaines. C'était le bon choix pour afficher un ordre de
+   * grandeur, et c'est ce qui fabriquait du lest tout seul — symptôme rapporté tel
+   * quel : « il marque du lest alors que je n'en mets pas ». Reconstituer un lest en
+   * soustrayant le poids d'un autre jour transforme huit cents grammes de balance en
+   * ceinture qu'on n'a jamais mise, et elle revient à chaque séance.
+   *
+   * Sans pesée du jour même, on ne reconstitue donc RIEN : le champ reste vide, et
+   * c'est lui qui décide s'il met du lest.
    */
   function poidsMesureA(iso: string): number | null {
-    const w = weightOn(bodyWeight.value, iso)
-    return w?.exact ? w.kg : null
+    const p = weighingOn(bodyWeight.value, iso)
+    return p?.memeJour ? p.kg : null
   }
+
+  /**
+   * Le lest, c'est une DÉCISION ; en dessous d'un demi-kilo, c'est la balance.
+   *
+   * Reprendre un « +0,3 kg » reconstitué à partir de deux pesées voisines remettrait
+   * un chiffre dans un champ qu'on veut vide — et un champ rempli tout seul, on le
+   * croit.
+   */
+  const LEST_MINI = 0.5
 
   function rebase(e: Exercise, valeur: number | null | undefined, dateSeance: string): string {
     if (valeur == null) return ''
     if (!e.bodyweight) return String(valeur)
-    const alors = poidsMesureA(dateSeance)
     const maintenant = seanceWeight.value
-    if (alors === null || maintenant === null) return String(valeur)
-    const lest = valeur - alors
-    return String(Math.round((maintenant + lest) * 10) / 10)
+    if (maintenant === null) return String(valeur)
+    const alors = poidsMesureA(dateSeance)
+    // Pas de pesée ce jour-là : on ne sait pas s'il y avait du lest, donc on n'en
+    // invente pas. On repart du poids d'aujourd'hui, champ de lest vide.
+    const lest = alors === null ? 0 : valeur - alors
+    const garde = Math.abs(lest) >= LEST_MINI ? lest : 0
+    return String(Math.round((maintenant + garde) * 10) / 10)
   }
 
   function prefillRows(e: Exercise, variant?: string): DraftRow[] {
@@ -726,6 +742,24 @@ function creer() {
   const seanceWeight = computed(() => poidsFige.value ?? poidsDuJour.value)
 
   /**
+   * D'OÙ vient le poids employé — et ce n'est pas un détail.
+   *
+   * « Il ne se base pas forcément sur la pesée du matin » : c'est vrai, et c'est
+   * assumé — sans pesée aujourd'hui, mieux vaut celle d'avant-hier qu'un champ vide.
+   * Ce qui ne l'était pas, c'est de le taire. L'écran annonce donc la date de la
+   * pesée retenue dès qu'elle n'est pas celle du jour.
+   */
+  const poidsSource = computed(() => {
+    const iso = seanceIso.value
+    // Sans date de séance — avant l'hydratation, le temps d'un rendu — on prend la
+    // pesée la plus récente, comme `poidsDuJour` : un poids daté vaut mieux qu'un
+    // tiret, et c'est justement ce que la phrase va dire.
+    const p = weighingOn(bodyWeight.value, iso ?? '9999-12-31')
+    if (!p) return null
+    return { kg: poidsFige.value ?? p.kg, date: p.date, memeJour: !!iso && p.date === iso }
+  })
+
+  /**
    * Le LEST, c'est-à-dire la seule part de la charge qui soit une décision.
    *
    * L'écran demandait le TOTAL : à 91,5 kg de poids de corps, ajouter dix kilos aux
@@ -755,7 +789,10 @@ function creer() {
   /** Le total réellement enregistré, affiché sous le champ : c'est lui qui fera foi. */
   function totalOf(w: string): string {
     const n = Number(w)
-    return Number.isFinite(n) && n > 0 ? `${Math.round(n * 10) / 10} kg` : ''
+    if (!Number.isFinite(n) || n <= 0) return ''
+    // Virgule décimale : le reste de l'application compte en français, et « 91.5 kg »
+    // au milieu de « 91,5 kg » se lit comme une valeur venue d'ailleurs.
+    return `${(Math.round(n * 10) / 10).toLocaleString('fr-FR')} kg`
   }
 
   /**
@@ -877,7 +914,7 @@ function creer() {
     doneCount, workCount, isExDone, requiredEx, finishedCount, finishReady, finishSession,
     setEffort, toggleSwap, addSet, addWarmup, removeSet, setLabel, toggleSet, warmupFor,
     // lecture
-    deloadAdvised, overloadHint, isDumbbell, latestWeight, seanceIso, seanceWeight,
+    deloadAdvised, overloadHint, isDumbbell, latestWeight, seanceIso, seanceWeight, poidsSource,
     lestOf, setLest, totalOf, derniere, rebase,
     // repris des autres magasins, pour que la feuille n'ait qu'un seul interlocuteur
     ratioFor, restLeft, restFmt, addRest, stopRest,

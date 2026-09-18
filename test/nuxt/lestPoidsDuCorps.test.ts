@@ -59,24 +59,38 @@ describe('le lest reconstitué d’une séance à l’autre', () => {
   /**
    * PREMIÈRE CAUSE — un poids de corps deviné.
    *
-   * `bodyWeightAt` se rabat sur la toute PREMIÈRE pesée du carnet quand la date
-   * demandée la précède. C'est le bon choix là où il sert : dans une fiche de séance,
-   * un ordre de grandeur vaut mieux qu'un tiret. Ici c'est une faute — on soustrait
-   * un poids que ce jour-là n'a jamais vu, et l'écart devient du lest fantôme.
+   * La recherche de pesée se rabat sur la plus proche connue quand la date demandée
+   * n'en a pas. C'est le bon choix là où elle sert : dans une fiche de séance, un
+   * ordre de grandeur vaut mieux qu'un tiret. Ici c'est une faute — on soustrait un
+   * poids que ce jour-là n'a jamais vu, et l'écart devient du lest fantôme.
    *
-   * Le cas arrive à quiconque a commencé à s'entraîner avant de commencer à se peser.
+   * Sans pesée du jour même, on ne reconstitue donc RIEN : la ligne repart du poids
+   * d'aujourd'hui, champ de lest vide. Symptôme rapporté tel quel : « il marque du
+   * lest alors que je n'en mets pas ».
    */
-  it('ne devine pas le poids d’une séance antérieure à la première pesée', async () => {
+  it('ne devine pas de lest pour une séance sans pesée ce jour-là', async () => {
     // Séance il y a 20 jours ; la première pesée du carnet date d'il y a 5 jours.
     poser([{ date: ilYa(5), kg: 77.5 }, { date: AUJ, kg: 76 }], [{ w: 77, r: 10 }], ilYa(20))
     const s = await charger()
     s.startSession(SEANCE)
     const r = premiereLigne(s)
-    // Faute de savoir, on propose la valeur d'origine — visiblement à corriger —
-    // plutôt qu'un chiffre calculé sur un poids inventé.
-    expect(r.w).toBe('77')
-    // Et surtout : pas de « −0,5 » sorti de nulle part.
-    expect(s.lestOf(r.w)).not.toBe('-0.5')
+    // Le total repart du poids du jour, et le champ de lest est VIDE : c'est à lui
+    // de dire s'il met une ceinture, pas à l'application de la deviner.
+    expect(r.w).toBe('76')
+    expect(s.lestOf(r.w)).toBe('')
+  })
+
+  /**
+   * Et un demi-kilo d'écart entre deux pesées n'est pas une ceinture.
+   *
+   * Deux séances pesées à un jour d'intervalle suffisent à fabriquer un « +0,3 kg »
+   * qu'on croit avoir mis, parce qu'un champ rempli tout seul, on le croit.
+   */
+  it('ne prend pas le bruit de la balance pour du lest', async () => {
+    poser([{ date: ilYa(3), kg: 76.3 }, { date: AUJ, kg: 76 }], [{ w: 76.3, r: 10 }], ilYa(3))
+    const s = await charger()
+    s.startSession(SEANCE)
+    expect(s.lestOf(premiereLigne(s).w)).toBe('')
   })
 })
 
@@ -138,5 +152,44 @@ describe('le poids de référence pendant la séance', () => {
     s2.restoreDraft()
     expect(s2.seanceWeight.value).toBe(77)
     expect(s2.lestOf(premiereLigne(s2).w)).toBe('')
+  })
+})
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Ce que l'écran doit DIRE du poids employé.
+// ─────────────────────────────────────────────────────────────────────────────
+//
+// « Il ne se base pas forcément sur la pesée du matin » : c'est vrai, et c'est
+// assumé — sans pesée aujourd'hui, mieux vaut celle d'avant-hier qu'un champ vide.
+// Ce qui ne l'était pas, c'est de le taire : le total affiché sous le champ venait
+// d'une pesée dont rien ne donnait la date, et un chiffre sans provenance ne se
+// conteste pas.
+
+describe('la provenance du poids', () => {
+  it('nomme la date de la pesée quand ce n’est pas celle du jour', async () => {
+    poser([{ date: ilYa(3), kg: 76 }], [], AUJ)
+    const s = await charger()
+    s.startSession(SEANCE)
+    expect(s.poidsSource.value).toMatchObject({ kg: 76, memeJour: false })
+    expect(s.poidsSource.value!.date).toBe(ilYa(3))
+  })
+
+  it('dit « aujourd’hui » quand la pesée est du jour', async () => {
+    poser([{ date: ilYa(3), kg: 76.4 }, { date: AUJ, kg: 76 }], [], AUJ)
+    // La date du jour n'existe qu'une fois la coque montée : sans elle, la séance
+    // n'a pas de date et la pesée ne peut pas être « celle du jour ».
+    const { useJour } = await import('../../composables/useJour')
+    useJour().hydrateJour()
+    const s = await charger()
+    s.startSession(SEANCE)
+    expect(s.poidsSource.value).toMatchObject({ kg: 76, date: AUJ, memeJour: true })
+  })
+
+  /** Le total s'écrit en français : « 91,5 kg » et non « 91.5 kg ». */
+  it('affiche le total à la française', async () => {
+    poser([{ date: AUJ, kg: 91.5 }], [], AUJ)
+    const s = await charger()
+    s.startSession(SEANCE)
+    expect(s.totalOf('91.5')).toBe('91,5 kg')
   })
 })

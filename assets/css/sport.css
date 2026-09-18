@@ -364,6 +364,9 @@ input.fo-pct::-webkit-outer-spin-button, input.fo-pct::-webkit-inner-spin-button
 .rest-txt { font-size: 14px; line-height: 1.5; }
 .today-foot { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; }
 .today-go { flex-shrink: 0; }
+/* Poussé à droite de la ligne du jour, et remonté pour s'aligner sur elle : la
+   pastille de jour est en petites capitales, le bouton en corps de texte. */
+.today-voir { margin-left: auto; padding: 5px 12px; font-size: 12.5px; }
 .switch-link { align-self: flex-start; background: none; border: none; cursor: pointer; color: var(--text-secondary); font-family: var(--font-mono); font-size: 12px; text-decoration: underline; text-underline-offset: 3px; padding: 0; }
 .switch-row { display: flex; flex-wrap: wrap; gap: 8px; }
 .chip-btn { background: var(--bg-secondary); border: 1px solid var(--bg-accent); border-left: 3px solid var(--c); color: var(--text-primary); border-radius: 9px; padding: 8px 12px; font-size: 13px; cursor: pointer; }
@@ -483,8 +486,6 @@ input.fo-pct::-webkit-outer-spin-button, input.fo-pct::-webkit-inner-spin-button
 .hint-pill { border-radius: 10px; padding: 10px 12px; font-size: 13px; }
 .hint-pill.progress { background: #e7f0e2; border: 1px solid #bcd8ae; color: #3f7a4f; }
 .hint-pill.stall { background: #f6ece1; border: 1px solid #e6c3b0; color: #b5502f; font-weight: 600; }
-.hint-pill.bw { background: #eef1f5; border: 1px solid #cdd8e4; color: #4a6fa5; }
-.hint-pill.db { background: #eef1f5; border: 1px solid #cdd8e4; color: #4a6fa5; }
 .cues { display: flex; flex-direction: column; gap: 3px; }
 .cue { display: flex; gap: 8px; font-size: 13px; color: var(--text-secondary); line-height: 1.5; }
 .cue-arrow { color: var(--c, var(--accent-primary)); font-weight: 700; }
@@ -513,6 +514,25 @@ input.fo-pct::-webkit-outer-spin-button, input.fo-pct::-webkit-inner-spin-button
 .setrow:has(.lest-cell) { margin-bottom: 11px; }
 .setrow-head .times { visibility: hidden; }
 .col-head { width: 68px; text-align: center; font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-muted); }
+/* Le « i » de colonne : posé EN ABSOLU sur le titre, il ne prend aucune place dans
+   la grille des séries. Ajouté en flux, il aurait décalé la colonne des kilos d'une
+   demi-largeur et désaligné l'en-tête de ses champs — la gouttière de `.setrow` est
+   fixe (68 px) précisément pour que les deux se superposent. */
+.col-aide { position: relative; }
+.col-info {
+  position: absolute; top: 50%; right: -4px; transform: translateY(-50%);
+  width: 15px; height: 15px; padding: 0; border-radius: 50%;
+  border: 1px solid var(--bg-accent); background: var(--bg-primary); color: var(--text-muted);
+  font-family: var(--font-display); font-size: 10px; font-weight: 700; font-style: italic;
+  line-height: 1; cursor: pointer;
+}
+.col-info.on, .col-info:hover { border-color: var(--accent-secondary); color: var(--accent-primary); }
+/* La bulle s'ouvre dans le flux, sous l'en-tête : en absolu elle recouvrirait la
+   première série, c'est-à-dire ce qu'on est en train de lire. */
+.col-bulle { margin: 4px 0 2px; }
+/* La pastille « attention, il manque quelque chose » — bleu froid plutôt qu'ambre :
+   ce n'est pas une alerte, c'est une explication. */
+.hint-pill.bw { background: #eef1f5; border: 1px solid #cdd8e4; color: #4a6fa5; }
 .setrow.done .set-label { color: #3f7a4f; }
 .setrow.warm input { background: #f9f2e3; border-color: #e6d3a8; }
 .set-label { flex-shrink: 0; min-width: 34px; padding: 6px 4px; background: none; border: 1px solid transparent; border-radius: 7px; color: var(--text-muted); font-size: 12px; font-weight: 700; cursor: pointer; transition: all 0.15s; }
@@ -1494,7 +1514,7 @@ button.conn-row { cursor: pointer; }
 
 /* ─── Aperçu lecture seule d'une séance (quand une autre est en cours) ─── */
 .preview-overlay { position: fixed; inset: 0; z-index: 60; display: flex; align-items: flex-end; justify-content: center; background: rgba(20, 14, 10, 0.42); backdrop-filter: blur(2px); }
-.preview-sheet { width: 100%; max-width: 560px; max-height: 84vh; overflow-y: auto; background: var(--bg-primary); border-radius: 20px 20px 0 0; padding: 16px 18px calc(20px + env(safe-area-inset-bottom, 0px)); box-shadow: 0 -12px 40px rgba(0, 0, 0, 0.25); display: flex; flex-direction: column; gap: 12px; }
+.preview-sheet { width: 100%; max-width: 560px; max-height: 84vh; overflow: hidden; background: var(--bg-primary); border-radius: 20px 20px 0 0; padding: 16px 18px calc(20px + env(safe-area-inset-bottom, 0px)); box-shadow: 0 -12px 40px rgba(0, 0, 0, 0.25); display: flex; flex-direction: column; gap: 12px; }
 /* L'aperçu reprend le VOCABULAIRE de la feuille de séance — `.ssh-title`,
    `.exercise`, `.exhead`, `.set-counter`, le « i » — au lieu d'avoir le sien.
    Il avait ses propres `.preview-ex-name` / `.preview-ex-sets`, à peine différents :
@@ -1503,6 +1523,13 @@ button.conn-row { cursor: pointer; }
 .preview-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
 .preview-sub { font-size: 11px; margin-top: 2px; }
 .preview-note { background: #fbf1e6; border: 1px solid #ecd9c2; color: #8a5a2b; border-radius: 12px; padding: 10px 12px; font-size: 13px; }
+/* Le corps défile DANS le retrait de la feuille, pas jusqu'à son bord : la barre se
+   dessine alors à dix-huit pixels de l'arrondi, à l'intérieur, au lieu de courir
+   par-dessus le coin et de sembler dépasser. C'est aussi ce qui garde l'en-tête et
+   le bouton du bas en place quand on fait défiler.
+   `overscroll-behavior` évite qu'un défilement arrivé en bout n'entraîne la page
+   derrière la feuille. */
+.preview-corps { flex: 1 1 auto; min-height: 0; overflow-y: auto; overscroll-behavior: contain; display: flex; flex-direction: column; gap: 12px; }
 .preview-list { display: flex; flex-direction: column; gap: 10px; }
 /* Le filet de couleur à gauche : c'est lui qui rattache la carte à la séance, et il
    n'existe pas dans la feuille — là-bas, la couleur est déjà partout autour. */

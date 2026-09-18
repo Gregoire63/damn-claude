@@ -21,23 +21,13 @@ const emit = defineEmits<{ termine: [{ sprints: number, sprintS: number, echauff
 
 const f = useFractionne()
 const {
-  reglage, definir, segment, phase, position, fraction, suivant,
+  reglage, segment, phase, position, fraction, suivant,
   enCours, enPause, resteS, totalResteS, bilan, viderBilan,
   lancer, arreter, basculerPause, passer,
 } = f
 
 /** Le calque plein écran. Se réduit sans arrêter le bloc — le chrono continue derrière. */
 const affiche = ref(false)
-/** Les cinq nombres, repliés par défaut : on les règle une fois, pas à chaque séance. */
-/**
- * Ouverts par défaut, et repliables.
- *
- * Ils existaient déjà, derrière un bouton « Régler » : on ne les voyait donc pas, et
- * la carte ressemblait à un chrono figé sur des valeurs qu'on n'avait pas choisies.
- * Un réglage qu'on doit chercher n'est pas un réglage — surtout celui-là, qu'on
- * ajuste d'une séance à l'autre selon la forme du jour.
- */
-const reglagesOuverts = ref(true)
 
 const total = computed(() => dureeTotale(reglage.value))
 const resume = computed(() => {
@@ -48,25 +38,6 @@ const resume = computed(() => {
   bouts.push(`repos ${fmtDuree(r.reposS)}`)
   return bouts.join(' · ')
 })
-
-const champs = [
-  { cle: 'echauffementS' as const, label: 'Course tranquille', unite: 'min', pas: 30 },
-  { cle: 'reposApresS' as const, label: 'Repos avant les sprints', unite: 'min', pas: 15 },
-  { cle: 'sprintS' as const, label: 'Sprint', unite: 's', pas: 5 },
-  { cle: 'reposS' as const, label: 'Repos entre sprints', unite: 'min', pas: 15 },
-  { cle: 'retourAuCalmeS' as const, label: 'Retour au calme', unite: 'min', pas: 30 },
-]
-
-/** Les durées se saisissent en secondes, mais s'affichent en minutes là où c'est naturel. */
-function valeurAffichee(cle: keyof typeof reglage.value, unite: string) {
-  const v = reglage.value[cle]
-  return unite === 'min' ? Math.round((v / 60) * 10) / 10 : v
-}
-function poser(cle: keyof typeof reglage.value, unite: string, brut: string) {
-  const n = Number(String(brut).replace(',', '.'))
-  if (!Number.isFinite(n)) return
-  definir({ [cle]: unite === 'min' ? Math.round(n * 60) : Math.round(n) })
-}
 
 function demarrer() {
   affiche.value = true
@@ -106,36 +77,7 @@ const dash = computed(() => `${(1 - fraction.value) * CIRC} ${CIRC}`)
 
 <template>
   <div class="fr-bloc">
-    <div class="fr-head">
-      <div class="sprint-block-title">⏱️ Chrono fractionné</div>
-      <button class="fr-lien" @click="reglagesOuverts = !reglagesOuverts">
-        {{ reglagesOuverts ? 'Masquer' : 'Régler' }}
-      </button>
-    </div>
-
-    <div v-if="reglagesOuverts" class="fr-reglages">
-      <label v-for="c in champs" :key="c.cle" class="fr-champ">
-        <span class="fr-lab">{{ c.label }}</span>
-        <span class="fr-saisie">
-          <input
-            :value="valeurAffichee(c.cle, c.unite)" type="number" inputmode="decimal"
-            :step="c.unite === 'min' ? 0.5 : c.pas" min="0"
-            @change="poser(c.cle, c.unite, ($event.target as HTMLInputElement).value)"
-          >
-          <span class="fr-unite">{{ c.unite }}</span>
-        </span>
-      </label>
-      <label class="fr-champ">
-        <span class="fr-lab">Nombre de sprints</span>
-        <span class="fr-saisie">
-          <input
-            :value="reglage.sprints" type="number" inputmode="numeric" step="1" min="1"
-            @change="definir({ sprints: Number(($event.target as HTMLInputElement).value) })"
-          >
-          <span class="fr-unite">×</span>
-        </span>
-      </label>
-    </div>
+    <div class="sprint-block-title">⏱️ Chrono fractionné</div>
 
     <!-- Bloc en cours, calque réduit : la bande reste vivante dans la carte -->
     <button v-if="enCours && !affiche" class="fr-bande" :class="couleur" @click="affiche = true">
@@ -187,14 +129,6 @@ const dash = computed(() => `${(1 - fraction.value) * CIRC} ${CIRC}`)
 
 <style scoped>
 .fr-bloc { display: flex; flex-direction: column; gap: 10px; border-top: 1px dashed var(--bg-accent); padding-top: 12px; }
-.fr-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
-.fr-lien { background: none; border: none; cursor: pointer; font-family: var(--font-mono); font-size: 12px; color: var(--accent-primary); padding: 2px 0; }
-.fr-reglages { display: flex; flex-direction: column; gap: 8px; background: var(--bg-secondary); border: 1px solid var(--bg-accent); border-radius: 12px; padding: 12px; }
-.fr-champ { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
-.fr-lab { font-size: 13px; color: var(--text-secondary); }
-.fr-saisie { display: inline-flex; align-items: center; gap: 6px; }
-.fr-saisie input { width: 72px; background: var(--bg-primary); border: 1px solid var(--bg-accent); color: var(--text-primary); border-radius: 8px; padding: 8px; font-size: 15px; text-align: center; }
-.fr-unite { font-family: var(--font-mono); font-size: 12px; color: var(--text-muted); width: 26px; }
 .fr-go { background: #b5502f; border: none; color: #fff; border-radius: 12px; padding: 14px; font-family: var(--font-body); font-size: 15px; font-weight: 700; cursor: pointer; }
 .fr-go:active { transform: scale(0.99); }
 .fr-resume { font-size: 12px; line-height: 1.5; }

@@ -72,6 +72,15 @@ const { flash, flashTon, flashAction, showFlash, lancerAction } = useFlash()
  * n'a pas démarrée, et ces deux listes ne vivent pas au même endroit.
  */
 const infoEx = ref<Exercise | null>(null)
+/**
+ * L'exercice dont la bulle d'aide de colonne est ouverte — un seul à la fois.
+ *
+ * Une par carte ouverte en même temps ferait trois bulles à refermer ; et deux cartes
+ * ouvertes ne posent de toute façon pas la question en même temps.
+ */
+const aideCol = ref<string | null>(null)
+/** « 16 septembre » : une date de pesée se lit, elle ne se décode pas. */
+const jourDit = (iso: string) => new Date(`${iso}T00:00:00`).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long' })
 /** L'exercice dont le menu d'options est ouvert — même raisonnement que `infoEx`. */
 const optionsEx = ref<Exercise | null>(null)
 const maj = useMaj()
@@ -102,7 +111,7 @@ const {
   pickVariant, toggleSwap, startSession, demarrerApercu, restoreDraft,
   doneCount, workCount, isExDone, requiredEx, finishedCount, finishReady, finishSession,
   setEffort, addSet, addWarmup, removeSet, setLabel, toggleSet, warmupFor,
-  overloadHint, isDumbbell, seanceWeight, lestOf, setLest, totalOf, derniere,
+  overloadHint, isDumbbell, seanceWeight, poidsSource, lestOf, setLest, totalOf, derniere,
   ratioFor, restLeft, restFmt, addRest, stopRest,
 } = s
 
@@ -645,15 +654,8 @@ onUnmounted(() => {
                  le mouvement ressemble. Ils sont derrière le « i » de l'en-tête :
                  voir components/sport/ExerciseInfo.vue. Ce qui reste ici est ce qui
                  change d'une série à l'autre. -->
-            <div v-if="e.bodyweight" class="hint-pill bw">
-              🧍 Saisis uniquement le <strong>lest</strong> ; laisse vide sans lest.
-              <template v-if="seanceWeight">Ton poids du jour ({{ seanceWeight }} kg) est ajouté automatiquement&nbsp;;</template>
-              <template v-else>Aucune pesée pour ce jour : le total sera ce que tu tapes&nbsp;;</template>
-              le total enregistré s'affiche sous le champ.
-            </div>
             <div v-if="overloadHint(e)" class="hint-pill" :class="overloadHint(e)!.cls">{{ overloadHint(e)!.text }}</div>
             <div v-if="previousNote(e.id)" class="hint-pill note">💬 La dernière fois : {{ previousNote(e.id) }}</div>
-            <div v-if="isDumbbell(e)" class="hint-pill db">🏋️ Saisis le poids <strong>total des deux haltères</strong> (2 × 20 kg → 40 kg).</div>
             <!-- Le nom de la machine et son coefficient : un bouton allumé dit qu'on
                  a changé, pas POUR QUOI ni de combien. Le second est celui qui
                  explique les kilos préremplis. -->
@@ -698,11 +700,38 @@ onUnmounted(() => {
               </template>
               <!-- Exercice classique -->
               <template v-else>
-                <div class="setrow setrow-head" aria-hidden="true">
-                  <span class="set-label"></span>
-                  <span class="col-head mono">{{ e.bodyweight ? 'lest' : 'kg' }}</span>
-                  <span class="times">{{ isTimed(e) ? '·' : '×' }}</span>
-                  <span class="col-head mono">{{ isTimed(e) ? 'sec' : 'reps' }}</span>
+                <!-- L'aide de saisie tient dans un « i » posé SUR le titre de la
+                     colonne, et non dans une bandeau au-dessus des séries.
+                     « Saisis uniquement le lest » et « le total des deux haltères »
+                     s'affichaient en permanence : deux lignes lues une fois, relues
+                     jamais, traversées à chaque série pendant des mois. La question
+                     qu'elles répondent — « ce champ attend quoi ? » — se pose devant
+                     la colonne, donc l'aide y vit. -->
+                <div class="setrow setrow-head">
+                  <span class="set-label" aria-hidden="true"></span>
+                  <span class="col-head mono col-aide">
+                    {{ e.bodyweight ? 'lest' : 'kg' }}
+                    <button
+                      v-if="e.bodyweight || isDumbbell(e)"
+                      class="col-info" :class="{ on: aideCol === e.id }"
+                      :aria-label="`Ce que demande la colonne ${e.bodyweight ? 'lest' : 'kg'}`"
+                      :aria-expanded="aideCol === e.id"
+                      @click="aideCol = aideCol === e.id ? null : e.id"
+                    >i</button>
+                  </span>
+                  <span class="times" aria-hidden="true">{{ isTimed(e) ? '·' : '×' }}</span>
+                  <span class="col-head mono" aria-hidden="true">{{ isTimed(e) ? 'sec' : 'reps' }}</span>
+                </div>
+                <div v-if="aideCol === e.id" class="hint-pill col-bulle">
+                  <template v-if="e.bodyweight">
+                    🧍 Saisis le <strong>lest</strong> seulement — laisse vide si tu n'en mets pas.
+                    Le total enregistré (poids du corps + lest) s'affiche sous le champ.
+                    <template v-if="poidsSource">
+                      <br>Poids retenu : <b>{{ poidsSource.kg }} kg</b><template v-if="!poidsSource.memeJour"> — pesée du {{ jourDit(poidsSource.date) }}, faute d'une d'aujourd'hui</template>.
+                    </template>
+                    <template v-else><br>Aucune pesée connue : le total sera ce que tu tapes.</template>
+                  </template>
+                  <template v-else>🏋️ Le poids <strong>total des deux haltères</strong> (2 × 20 kg → 40 kg).</template>
                 </div>
                 <div v-for="(s, i) in draft[e.id]" :key="i" class="setrow" :class="{ done: s.done, warm: s.warm }">
                   <button class="set-label mono" :class="{ warm: s.warm }" :title="s.warm ? 'Échauffement (non compté) — clic pour repasser en série' : 'Clic pour marquer en échauffement'" @click="s.warm = !s.warm">{{ setLabel(draft[e.id], i) }}</button>
@@ -711,7 +740,7 @@ onUnmounted(() => {
                        une surprise au moment de valider. -->
                   <span v-if="e.bodyweight" class="lest-cell">
                     <input
-                      :value="lestOf(s.w)" type="number" inputmode="decimal" placeholder="0"
+                      :value="lestOf(s.w)" type="number" inputmode="decimal" placeholder="lest"
                       @input="setLest(s, ($event.target as HTMLInputElement).value)"
                     >
                     <span v-if="totalOf(s.w)" class="lest-total mono">{{ totalOf(s.w) }}</span>
@@ -752,50 +781,24 @@ onUnmounted(() => {
           </div>
         </div>
         <div v-if="activeSession.sprint" class="card no-pad exercise sprint-exercise">
-          <button class="exhead" @click="sprintOpen = !sprintOpen">
-            <div>
-              <div class="ex-name">⚡ {{ activeSession.sprint.title }}</div>
-              <div class="muted mt-2">Optionnel · {{ activeSession.sprint.protocol[0].value }} × {{ activeSession.sprint.protocol[1].value }}</div>
-            </div>
-            <div class="set-counter mono chevron">{{ sprintOpen ? '▲' : '▼' }}</div>
-          </button>
-          <div v-if="sprintOpen" class="ex-body sprint-body">
-            <!-- Essentiel : le protocole, en un coup d'œil -->
-            <div class="sprint-protocol">
-              <div v-for="p in activeSession.sprint.protocol" :key="p.label" class="sp-stat">
-                <div class="sp-val mono">{{ p.value }}</div>
-                <div class="sp-lab">{{ p.label }}</div>
+          <!-- Le même en-tête qu'un mouvement : un engrenage, et rien d'autre. Ce qui
+               se règle et ce qui se lit sont dans la fenêtre ; la carte garde le chrono
+               et la saisie, c'est-à-dire ce qu'on touche essoufflé. -->
+          <div class="exhead-row">
+            <button class="exhead" @click="sprintOpen = !sprintOpen">
+              <div>
+                <div class="ex-name">⚡ {{ activeSession.sprint.title }}</div>
+                <div class="muted mt-2">Optionnel · {{ activeSession.sprint.protocol[0].value }} × {{ activeSession.sprint.protocol[1].value }}</div>
               </div>
-            </div>
-            <button class="sprint-info-btn" :class="{ open: sprintInfoOpen }" @click="sprintInfoOpen = !sprintInfoOpen">
-              <span class="i-mark">i</span>{{ sprintInfoOpen ? 'Masquer les détails' : 'Détails : échauffement, tapis, technique' }}
+              <div class="set-counter mono chevron">{{ sprintOpen ? '▲' : '▼' }}</div>
             </button>
-
-            <!-- Bulle info : tout le détail, masqué par défaut -->
-            <div v-if="sprintInfoOpen" class="sprint-info">
-              <div class="sprint-goal">{{ activeSession.sprint.goal }}</div>
-              <div class="sprint-block">
-                <div class="sprint-block-title">🔥 Échauffement</div>
-                <ul class="sprint-list"><li v-for="(w, i) in activeSession.sprint.warmup" :key="i">{{ w }}</li></ul>
-              </div>
-              <div class="sprint-block">
-                <div class="sprint-block-title">Où cours-tu ?</div>
-                <div class="sprint-toggle">
-                  <button :class="{ active: sprintMode === 'exterieur' }" @click="sprintMode = 'exterieur'">🏟️ Extérieur</button>
-                  <button :class="{ active: sprintMode === 'tapis' }" @click="sprintMode = 'tapis'">🏃 Tapis</button>
-                </div>
-                <ul class="sprint-list">
-                  <li v-for="(s, i) in (sprintMode === 'exterieur' ? activeSession.sprint.exterieur : activeSession.sprint.tapis)" :key="i">{{ s }}</li>
-                </ul>
-                <div v-if="sprintMode === 'tapis'" class="sprint-note">⚠️ {{ activeSession.sprint.tapisNote }}</div>
-              </div>
-              <div class="sprint-block">
-                <div class="sprint-block-title">Technique</div>
-                <ul class="sprint-list"><li v-for="(c, i) in activeSession.sprint.cues" :key="i">{{ c }}</li></ul>
-              </div>
-              <div class="sprint-cooldown">🧊 Retour au calme — {{ activeSession.sprint.cooldown }}</div>
-            </div>
-
+            <button
+              class="ex-info-btn ex-opt-btn"
+              aria-label="Réglages et protocole du sprint"
+              @click="sprintInfoOpen = true"
+            >⚙</button>
+          </div>
+          <div v-if="sprintOpen" class="ex-body sprint-body">
             <!-- Le chrono qui enchaîne les phases, annoncées à la voix -->
             <SportFractionne @termine="remplirSprint" />
 
@@ -858,6 +861,13 @@ onUnmounted(() => {
           </div>
           <button class="sheet-close" aria-label="Fermer" @click="previewSession = null">×</button>
         </div>
+        <!-- Ce qui défile est le MILIEU, pas la feuille entière.
+             La feuille portait `overflow-y: auto` avec ses coins arrondis : la barre
+             de défilement se dessinait au ras du bord, par-dessus l'arrondi, et
+             semblait dépasser de la feuille. Elle court maintenant à l'intérieur, le
+             long de la gouttière ; l'en-tête et le bouton du bas restent en place, ce
+             qui est de toute façon ce qu'on veut d'une feuille qu'on fait défiler. -->
+        <div class="preview-corps">
         <div v-if="activeSession" class="preview-note">🔒 Une séance est déjà en cours. Termine-la ou abandonne-la d'abord.</div>
 
         <!-- Les MÊMES cartes que dans la séance : `.exercise`, `.exhead`, `.ex-name`,
@@ -890,6 +900,7 @@ onUnmounted(() => {
               </div>
             </div>
           </div>
+        </div>
         </div>
         <button v-if="activeSession" class="btn-primary preview-resume" @click="previewSession = null; expandSession()">↩ Reprendre la séance en cours</button>
         <button v-else class="btn-primary preview-resume" :style="{ background: previewSession.color }" @click="demarrerApercu()">Démarrer cette séance →</button>
@@ -924,6 +935,16 @@ onUnmounted(() => {
          s'ouvre depuis la séance en cours et depuis l'aperçu d'une séance qu'on n'a
          pas démarrée. Deux copies auraient divergé au premier ajout. -->
     <LazySportExerciseInfo v-if="infoEx" :ex="infoEx" :repos="restFor(infoEx)" :alternatives="infoAlternatives" @close="infoEx = null" />
+
+    <!-- Réglages et protocole du sprint : la même fenêtre que pour un mouvement, au
+         même endroit, avec la même règle — elle n'ouvre rien d'autre. -->
+    <LazySportSprintOptions
+      v-if="sprintInfoOpen && activeSession?.sprint"
+      :sprint="activeSession.sprint"
+      :mode="sprintMode"
+      @update:mode="sprintMode = $event"
+      @close="sprintInfoOpen = false"
+    />
 
     <!-- Le menu d'options d'un mouvement. Il n'existe que pendant une séance : hors
          séance, aucun des trois gestes n'a de sens — il n'y a ni machine du jour, ni
