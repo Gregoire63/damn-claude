@@ -3,7 +3,7 @@ import type { Reglage, Segment } from '~/lib/fractionne'
 import {
   REGLAGE_DEFAUT, bilanPartiel, borner, bornesDe, dureeTotale, planDe, segmentA, texteAnnonce,
 } from '~/lib/fractionne'
-import { debloquerAudio, motifVibration, sonAutorise, sonner, veilleAudio } from '~/composables/useRestTimer'
+import { debloquerAudio, motifVibration, sonAutorise, sonner, veilleAudio, veilleProchainSon } from '~/composables/useRestTimer'
 
 /**
  * Le chrono de fractionné — la séance de sprint, pilotée à l'oreille.
@@ -176,7 +176,8 @@ function battre() {
   // minuteur par segment. Un onglet gelé trente secondes en arrière-plan rattrape
   // donc la bonne phase d'un coup, au lieu de dérouler la suite avec trente secondes
   // de retard jusqu'à la fin du bloc.
-  if (i !== dernierAnnonce) {
+  const change = i !== dernierAnnonce
+  if (change) {
     dernierAnnonce = i
     index.value = i
     dernierTic = -1
@@ -185,6 +186,12 @@ function battre() {
 
   resteS.value = Math.max(0, Math.ceil((b[i + 1] - ecoule) / 1000))
   totalResteS.value = Math.max(0, Math.ceil((b[b.length - 1] - ecoule) / 1000))
+
+  // Le prochain son du bloc, annoncé à la piste de veille : c'est le tic des trois
+  // dernières secondes, ou le changement de phase s'il n'y a pas de tic. Sans cette
+  // annonce, un bloc passé en arrière-plan attendait le filet des quatre minutes —
+  // soit un échauffement et deux sprints courus sans entendre un seul signal.
+  if (change) veilleProchainSon(Date.now() + Math.max(0, resteS.value - 3) * 1000)
 
   // Décompte des trois dernières secondes — sauf sur le dernier segment, où c'est
   // l'annonce de fin qui sonne.

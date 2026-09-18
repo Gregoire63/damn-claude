@@ -5,6 +5,7 @@ import { gearFor, variantName, variantsOf } from '~/data/exerciseVariants'
 import { isTimed } from '~/lib/program'
 import { setText } from '~/lib/setText'
 import { fmtRest, restFor } from '~/lib/rest'
+import { exercicesDuJour, groupeDe } from '~/lib/rotation'
 import { EFFORT_OPTIONS } from '~/utils/sportStats'
 import { exMuscles } from '~/lib/muscles'
 import type { Exercise } from '~/data/sportProgram'
@@ -71,6 +72,8 @@ const { flash, flashTon, flashAction, showFlash, lancerAction } = useFlash()
  * n'a pas démarrée, et ces deux listes ne vivent pas au même endroit.
  */
 const infoEx = ref<Exercise | null>(null)
+/** L'exercice dont le menu d'options est ouvert — même raisonnement que `infoEx`. */
+const optionsEx = ref<Exercise | null>(null)
 const maj = useMaj()
 
 // Les propositions de Claude : le badge de l'en-tête, et la feuille qu'il ouvre.
@@ -88,20 +91,49 @@ const { hydrate: hydrateProfile } = useProfile()
 // Toute la séance en cours vient de là. La coque n'en possède rien : elle l'affiche.
 const s = useSeance()
 const {
-  activeSession, editingRecord, previewSession, openEx, sessionNote,
+  activeSession, exercices, alternatives, choisirRotation, editingRecord, previewSession, openEx, sessionNote,
   draft, draftEffort, draftSwap, draftNote, draftVariant,
-  picking, pickingEx, noting, notingEx, notePopup, closeNote, clearNote, previousNote,
+  previousNote,
   sprintMode, sprintOpen, sprintInfoOpen, sprintDraft, addSprintRow, removeSprintRow,
   elapsed, fmtClock,
   sheetOpen, sheetClosing, sheetVisible, sheetStyle, scrimStyle,
   expandSession, collapseSession, requestCollapse, onDragStart, onDragMove, onDragEnd,
-  cancelPromptOpen, askCancel, confirmCancel, swapAsk, swapEx, confirmSwap,
-  pickVariant, startSession, demarrerApercu, restoreDraft,
+  cancelPromptOpen, askCancel, confirmCancel,
+  pickVariant, toggleSwap, startSession, demarrerApercu, restoreDraft,
   doneCount, workCount, isExDone, requiredEx, finishedCount, finishReady, finishSession,
   setEffort, addSet, addWarmup, removeSet, setLabel, toggleSet, warmupFor,
   overloadHint, isDumbbell, seanceWeight, lestOf, setLest, totalOf, derniere,
   ratioFor, restLeft, restFmt, addRest, stopRest,
 } = s
+
+/**
+ * L'aperçu montre la séance TELLE QU'ELLE SE FERA cette semaine.
+ *
+ * Sans ça, lire une séance avant de la démarrer y montrerait les deux membres d'un
+ * groupe d'alternance, et la feuille qui s'ouvre juste après n'en montrerait qu'un :
+ * on croirait avoir perdu un exercice entre les deux écrans.
+ */
+const previewExercices = computed(() => exercicesDuJour(previewSession.value?.exercises ?? [], todayISO.value ?? ''))
+
+/**
+ * Avec quoi le mouvement de la fiche alterne — séance en cours OU séance lue.
+ *
+ * La fiche s'ouvre depuis les deux, et c'est justement dans l'aperçu que la question
+ * se pose : on y voit un seul des deux mouvements, sans rien pour dire que l'autre
+ * existe et reviendra la semaine prochaine.
+ */
+/** Le menu d'options ne rend qu'un identifiant — la fiche, elle, veut le mouvement. */
+function ouvrirFiche(id: string) {
+  infoEx.value = exercices.value.find(e => e.id === id) ?? null
+}
+
+const infoAlternatives = computed(() => {
+  const ex = infoEx.value
+  if (!ex) return []
+  const enSeance = alternatives(ex.id)
+  if (enSeance.length) return enSeance
+  return groupeDe(previewSession.value?.exercises ?? [], ex.id).filter(a => a.id !== ex.id)
+})
 
 /**
  * Le fractionné fini, son journal s'écrit tout seul.
@@ -245,8 +277,6 @@ useBackGuard(computed(() => !!activeSession.value && sheetOpen.value), () => col
 // s'inscrit plus tard, donc se ferme d'abord.
 useBackGuard(cancelPromptOpen, () => { cancelPromptOpen.value = false })
 useBackGuard(computed(() => !!previewSession.value), () => { previewSession.value = null })
-
-useBackGuard(computed(() => !!swapEx.value), () => { swapAsk.value = null })
 
 /**
  * Chrono flottant : visible dès que le VRAI chrono ne l'est plus.
@@ -585,12 +615,15 @@ onUnmounted(() => {
       </aside>
 
       <div class="session-main">
-        <div v-for="(e, idx) in activeSession.exercises" :key="e.id" class="card no-pad exercise" :class="{ 'ex-opt': e.optionnel }">
-          <!-- L'icône vit dans l'en-tête, pas dans le corps : c'est là qu'on voit
-               d'un coup d'œil quels exercices portent déjà un commentaire, sans
-               déplier les six cartes une par une. Et elle ouvre une fenêtre au lieu
-               de déplier un champ tout en bas de la carte : commenter ne demande
-               plus d'ouvrir l'exercice ni de défiler jusqu'au bout. -->
+        <div v-for="(e, idx) in exercices" :key="e.id" class="card no-pad exercise" :class="{ 'ex-opt': e.optionnel }">
+          <!-- UN bouton dans l'en-tête, et un seul. Il y en a eu trois — le « i » de
+               la fiche, le 💬 du commentaire, l'engrenage des gestes du jour — soit
+               dix-huit pastilles de 26 pixels sur une séance de six mouvements, dans
+               la colonne où l'on vient taper des kilos. Tout ce qui ouvre quelque
+               chose passe maintenant par l'engrenage ; la carte garde ce qui se touche
+               entre deux séries. Il s'ALLUME quand il y a quelque chose à savoir —
+               commentaire écrit, machine changée, mouvement repris en main —, ce qui
+               est ce que le 💬 apportait vraiment. -->
           <div class="exhead-row">
             <button class="exhead" @click="openEx = openEx === e.id ? null : e.id">
               <div>
@@ -599,18 +632,12 @@ onUnmounted(() => {
               </div>
               <div class="set-counter mono" :class="{ complete: draft[e.id] && workCount(e.id) > 0 && doneCount(e.id) === workCount(e.id) }">{{ doneCount(e.id) }}/{{ workCount(e.id) || e.sets }}</div>
             </button>
-            <!-- Deux boutons, deux fréquences. Le « i » se touche une fois, la
-                 première fois ; le 💬 se relit entre deux séries. -->
             <button
-              class="ex-info-btn"
-              :aria-label="`Comment exécuter ${e.name}`"
-              @click="infoEx = e"
-            >i</button>
-            <button
-              class="ex-note-btn" :class="{ has: !!draftNote[e.id]?.trim() }"
-              :aria-label="`Commentaire sur ${e.name}`"
-              @click="noting = e.id"
-            >💬</button>
+              class="ex-info-btn ex-opt-btn"
+              :class="{ has: !!draftVariant[e.id] || !!draftSwap[e.id] || !!draftNote[e.id]?.trim() }"
+              :aria-label="`Fiche et options de ${e.name}`"
+              @click="optionsEx = e"
+            >⚙</button>
           </div>
           <div v-if="openEx === e.id" class="ex-body">
             <!-- Photos, schéma musculaire et consignes ouvraient cette carte, à
@@ -627,36 +654,6 @@ onUnmounted(() => {
             <div v-if="overloadHint(e)" class="hint-pill" :class="overloadHint(e)!.cls">{{ overloadHint(e)!.text }}</div>
             <div v-if="previousNote(e.id)" class="hint-pill note">💬 La dernière fois : {{ previousNote(e.id) }}</div>
             <div v-if="isDumbbell(e)" class="hint-pill db">🏋️ Saisis le poids <strong>total des deux haltères</strong> (2 × 20 kg → 40 kg).</div>
-            <!-- Les deux gestes « ça ne s'est pas passé comme prévu », côte à côte
-                 et sans texte. Ils occupaient dix lignes d'explication chacun, à deux
-                 endroits opposés de la carte, pour deux boutons qu'on touche une fois
-                 par mois. L'explication n'a pas disparu : elle est dans la carte qui
-                 s'ouvre, c'est-à-dire au moment où on en a besoin.
-                 Placés AVANT les séries parce que la machine change les kilos
-                 préremplis : on choisit, puis on remplit. -->
-            <div class="ex-acts">
-              <button
-                v-if="variantsOf(e.id).length"
-                class="ex-act" :class="{ sel: !!draftVariant[e.id] }"
-                :aria-label="`Changer de machine pour ${e.name}`"
-                :aria-pressed="!!draftVariant[e.id]"
-                @click="picking = e.id"
-              >
-                <span class="ex-act-i" aria-hidden="true">🔁</span>
-                <span class="ex-act-t">Autre machine</span>
-                <span v-if="draftVariant[e.id]" class="ex-act-ok" aria-hidden="true">✓</span>
-              </button>
-              <button
-                class="ex-act" :class="{ sel: draftSwap[e.id] }"
-                :aria-label="`Reprise en main sur ${e.name}`"
-                :aria-pressed="!!draftSwap[e.id]"
-                @click="swapAsk = e.id"
-              >
-                <span class="ex-act-i" aria-hidden="true">🔀</span>
-                <span class="ex-act-t">Repris en main</span>
-                <span v-if="draftSwap[e.id]" class="ex-act-ok" aria-hidden="true">✓</span>
-              </button>
-            </div>
             <!-- Le nom de la machine et son coefficient : un bouton allumé dit qu'on
                  a changé, pas POUR QUOI ni de combien. Le second est celui qui
                  explique les kilos préremplis. -->
@@ -665,12 +662,6 @@ onUnmounted(() => {
               équivalent {{ e.name }} ×{{ ratioFor(e.id, draftVariant[e.id]).ratio.toLocaleString('fr-FR') }}
             </p>
             <div class="sets">
-              <!-- Le repos prévu, annoncé AVANT de valider.
-                   Le minuteur partait tout seul avec une durée qu'on découvrait au
-                   moment où elle s'affichait : impossible de savoir, en attaquant
-                   l'exercice, si on partait sur une minute ou sur trois. Le dire ici
-                   n'ajoute pas un réglage, ça montre celui qui existe déjà. -->
-              <div class="sets-rest mono muted">⏱ Repos {{ fmtRest(restFor(e)) }}<template v-if="e.superset"> · après les deux mouvements</template></div>
               <!-- Superset : une charge par mouvement -->
               <template v-if="e.superset">
                 <!-- Les colonnes se nomment UNE fois, en tête du bloc.
@@ -749,12 +740,14 @@ onUnmounted(() => {
                 >{{ o.icon }} {{ o.label }}</button>
               </div>
             </div>
-            <!-- Le commentaire ne s'écrit plus ici : 💬 dans l'en-tête ouvre une
-                 fenêtre. Ce qui reste dans la carte, c'est ce qu'on LIT en
-                 soulevant — la note de la dernière fois, plus haut. -->
+            <!-- Le commentaire se RELIT ici et s'ÉCRIT dans le menu ⚙, où le champ est
+                 posé sous les deux gestes du jour. Un champ toujours déplié dans la
+                 carte ferait défiler dix lignes de plus entre deux séries pour quelque
+                 chose qu'on écrit une fois ; le relire, en revanche, ne doit coûter
+                 aucun tap. -->
             <div v-if="draftNote[e.id]?.trim()" class="ex-note-said">
               💬 {{ draftNote[e.id] }}
-              <button class="ex-note-edit" @click="noting = e.id">modifier</button>
+              <button class="ex-note-edit" @click="optionsEx = e">modifier</button>
             </div>
           </div>
         </div>
@@ -828,13 +821,6 @@ onUnmounted(() => {
             </div>
           </div>
         </div>
-        <SportVariantSheet
-          v-if="picking && pickingEx"
-          :ex="pickingEx"
-          :current="draftVariant[picking] ?? null"
-          @pick="pickVariant(picking, $event)"
-          @close="picking = null"
-        />
         <div class="card note-card">
           <div class="section-label mb-8">Note de séance <span class="muted">· facultatif</span></div>
           <textarea v-model="sessionNote" class="note-input" rows="2" placeholder="Douleur épaule, mal dormi, banc occupé…"></textarea>
@@ -866,7 +852,7 @@ onUnmounted(() => {
             <div>
               <div class="ssh-name">{{ previewSession.name }}</div>
               <div class="preview-sub mono muted">
-                {{ previewSession.tag }} · {{ previewSession.exercises.length }} exercices<template v-if="previewSession.sprint"> · ⚡ sprint</template>
+                {{ previewSession.tag }} · {{ previewExercices.length }} exercices<template v-if="previewSession.sprint"> · ⚡ sprint</template>
               </div>
             </div>
           </div>
@@ -878,7 +864,7 @@ onUnmounted(() => {
              le compteur à droite, le « i » de la fiche. Ce qui change est ce qu'il y
              a dedans — ici on lit, là on saisit — et rien d'autre. -->
         <div class="preview-list">
-          <div v-for="(e, idx) in previewSession.exercises" :key="e.id" class="card no-pad exercise preview-ex" :class="{ 'ex-opt': e.optionnel }">
+          <div v-for="(e, idx) in previewExercices" :key="e.id" class="card no-pad exercise preview-ex" :class="{ 'ex-opt': e.optionnel }">
             <div class="exhead-row">
               <div class="exhead">
                 <div>
@@ -925,40 +911,6 @@ onUnmounted(() => {
       </div>
     </transition>
 
-    <!-- Ce que « reprise en main » veut dire, au moment où on l'active. -->
-    <transition name="pop">
-      <div v-if="swapEx" class="confirm-overlay" @click.self="swapAsk = null">
-        <div class="confirm-box">
-          <div class="confirm-emoji" aria-hidden="true">🔀</div>
-          <div class="confirm-title">
-            {{ draftSwap[swapEx.id] ? 'Annuler la reprise en main ?' : 'J’ai repris le mouvement en main' }}
-          </div>
-          <div class="confirm-text">
-            <template v-if="draftSwap[swapEx.id]">
-              <b>{{ swapEx.name }}</b> redeviendra comparable aux séances précédentes :
-              records et progression reprennent leur fil.
-            </template>
-            <template v-else>
-              À cocher après une <b>baisse volontaire de charge</b> : reprise, douleur ou
-                            correction technique.
-              <br><br>
-              Sur <b>{{ swapEx.name }}</b>, records et progression <b>repartent de cette séance</b> :
-                            la baisse ne sera pas lue comme une régression.
-              <br><br>
-              Si la machine était simplement occupée, utilise 🔁 : la progression reste
-                              continue, convertie par le coefficient.
-            </template>
-          </div>
-          <div class="confirm-actions">
-            <button class="btn confirm-keep" @click="swapAsk = null">Annuler</button>
-            <button class="confirm-yes" @click="confirmSwap">
-              {{ draftSwap[swapEx.id] ? 'Retirer' : 'Oui, j’ai repris en main' }}
-            </button>
-          </div>
-        </div>
-      </div>
-    </transition>
-
     <!-- Le geste « retour » n'ouvre plus de carte : il replie la feuille, comme la
          poignée. La seule question qu'il pose encore est celle de l'abandon des
          modifications — et c'est la carte ci-dessus, celle qui existait déjà. -->
@@ -967,37 +919,30 @@ onUnmounted(() => {
          `persistent` : on est en train d'écrire. Une pression à côté du champ, sur
          un téléphone où le clavier occupe la moitié de l'écran, ne doit pas fermer
          la fenêtre. La croix et Échap restent, eux — ce sont des gestes voulus. -->
-    <Popup
-      v-if="notingEx"
-      ref="notePopup"
-      persistent
-      popup-class="note-popup"
-      :title="`💬 ${notingEx.name}`"
-      subtitle="Pourquoi ce mouvement-là a bougé"
-      @close="noting = null"
-    >
-      <p v-if="previousNote(notingEx.id)" class="hint-pill note">
-        La dernière fois : {{ previousNote(notingEx.id) }}
-      </p>
-      <textarea
-        v-model="draftNote[notingEx.id]"
-        class="note-input note-popup-input" rows="4"
-        placeholder="Machine occupée, épaule qui tire, prise changée…"
-      ></textarea>
-      <p class="muted">
-        Cette note s'affichera <b>à la prochaine séance</b>, en haut de cet exercice.
-      </p>
-      <div class="nav-row">
-        <button v-if="draftNote[notingEx.id]?.trim()" class="btn flex-1" @click="clearNote(notingEx.id)">Effacer</button>
-        <button class="btn-primary flex-1" @click="closeNote()">Terminé</button>
-      </div>
-    </Popup>
-
     <!-- La fiche d'un mouvement : photos, muscles, consignes, machine.
          Écrite ICI et non dans la carte de l'exercice, parce que la même fenêtre
          s'ouvre depuis la séance en cours et depuis l'aperçu d'une séance qu'on n'a
          pas démarrée. Deux copies auraient divergé au premier ajout. -->
-    <LazySportExerciseInfo v-if="infoEx" :ex="infoEx" @close="infoEx = null" />
+    <LazySportExerciseInfo v-if="infoEx" :ex="infoEx" :repos="restFor(infoEx)" :alternatives="infoAlternatives" @close="infoEx = null" />
+
+    <!-- Le menu d'options d'un mouvement. Il n'existe que pendant une séance : hors
+         séance, aucun des trois gestes n'a de sens — il n'y a ni machine du jour, ni
+         brouillon à recalculer, ni journée à faire tourner. -->
+    <LazySportExerciseOptions
+      v-if="optionsEx && activeSession"
+      :ex="optionsEx"
+      :repos="restFor(optionsEx)"
+      :note="draftNote[optionsEx.id] ?? ''"
+      :note-precedente="previousNote(optionsEx.id)"
+      :variant="draftVariant[optionsEx.id] ?? null"
+      :swap="!!draftSwap[optionsEx.id]"
+      :alternatives="alternatives(optionsEx.id)"
+      @update:note="draftNote[optionsEx!.id] = $event"
+      @pick-variant="pickVariant(optionsEx!.id, $event)"
+      @swap="toggleSwap($event)"
+      @alterner="choisirRotation($event)"
+      @close="optionsEx = null"
+    />
 
     <!-- Mini-feuille « séance en cours » : docké au-dessus de la barre d'onglets,
          affiche la durée en direct ; on tape dessus pour rouvrir la séance -->

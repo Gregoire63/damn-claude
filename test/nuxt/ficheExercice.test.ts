@@ -123,9 +123,21 @@ describe('la carte d’exercice', () => {
     expect(coque).not.toContain('class="cues"')
   })
 
-  it('porte le « i » qui ouvre la fiche, et une seule fenêtre pour les deux listes', () => {
-    // Deux points d'entrée — la séance en cours et l'aperçu — une seule fenêtre.
-    expect(coque.match(/class="ex-info-btn"/g)).toHaveLength(2)
+  /**
+   * Deux points d'entrée, une seule fenêtre — et deux formes, parce que les deux
+   * écrans ne proposent pas la même chose.
+   *
+   * L'aperçu est en lecture seule : il n'a ni machine du jour, ni commentaire, ni
+   * roulement à inverser, donc son bouton reste le « i » de la fiche. La séance, elle,
+   * a fusionné ses trois pastilles dans l'engrenage, qui ouvre la fiche parmi le
+   * reste. Ce qui ne doit JAMAIS revenir, c'est une deuxième fenêtre : deux copies
+   * divergeraient au premier ajout.
+   */
+  it('ouvre la fiche depuis les deux écrans, avec une seule fenêtre', () => {
+    // L'aperçu : le « i » seul. La séance : l'engrenage, et lui seul.
+    expect(coque.match(/class="ex-info-btn"/g)).toHaveLength(1)
+    expect(coque.match(/ex-info-btn ex-opt-btn/g)).toHaveLength(1)
+    expect(coque).not.toContain('ex-note-btn')
     expect(coque.match(/LazySportExerciseInfo/g)).toHaveLength(1)
   })
 })

@@ -91,22 +91,35 @@ seule la régénération des clés répare.
 **Une page qui joue du son PREND le focus audio du téléphone.** Spotify se fait
 interrompre ou baisser, et le seul moyen de le récupérer est d'aller le relancer à la
 main. La piste inaudible de veille — celle qui empêche Chrome de geler les minuteurs
-d'un onglet en arrière-plan — coûte donc cher, et il a fallu deux passes pour que le
+d'un onglet en arrière-plan — coûte donc cher, et il a fallu trois passes pour que le
 compte y soit :
 
 1. elle ne tourne QUE quand l'onglet est caché. Écran devant les yeux, il n'y a rien
    à empêcher ;
-2. elle ne démarre qu'au bout de QUATRE MINUTES de fond. Chrome serre la vis en deux
-   temps (« Heavy throttling of chained JS timers », Chrome 88) : sous cinq minutes,
-   les minuteurs sont regroupés à la seconde — largement assez pour un décompte qui
-   se recale sur `endAt` — et au-delà seulement, une fois par minute. Un repos entre
-   séries dure une à trois minutes : il n'a jamais eu besoin de cette piste. Sans ce
-   délai, quitter l'app pour lire un message faisait baisser la musique pour rien.
+2. elle démarre CINQ SECONDES avant le prochain son à faire entendre, et pas avant.
+   Chaque minuteur annonce son échéance (`veilleProchainSon`, et `startKeepAlive`
+   pour le repos) ; la piste s'arme sur la plus proche. Sur un repos de
+   quatre-vingt-dix secondes, la musique baisse sur les cinq dernières au lieu des
+   quatre-vingt-dix ;
+3. les QUATRE MINUTES restent, en filet, pour qui n'annonce rien ou vise plus loin.
+   Chrome serre la vis en deux temps (« Heavy throttling of chained JS timers »,
+   Chrome 88) : sous cinq minutes cachées, les minuteurs sont regroupés à la seconde,
+   et au-delà seulement, une fois par minute — là, même l'ordre d'armement arriverait
+   en retard. S'armer à quatre minutes protège un minuteur long avant le couperet.
+
+Le délai a d'abord été de quatre minutes POUR TOUT LE MONDE, en pariant qu'un repos
+d'une à trois minutes n'aurait jamais besoin de la piste puisque son décompte reste
+juste. Le pari portait sur la mauvaise chose : le décompte arrivait bien à zéro à
+l'heure, c'est le SON qui manquait — un onglet caché qui ne joue rien voit son
+`AudioContext` suspendu. Symptôme rapporté tel quel : « j'ai mis l'app en fond et le
+son du chrono ne s'est pas déclenché ». D'où aussi `jouerQuandPret`, qui attend la
+reprise du contexte avant de programmer les oscillateurs : sur un contexte suspendu,
+`currentTime` est figé et les sons partent en vrac à la reprise.
 
 L'application se déclare en plus `audioSession.type = 'ambient'` (se mélange) et passe
 en `'transient'` le temps d'un bip (baisse la musique, puis la rend), là où le
-navigateur connaît l'API — Chrome Android ne la connaît pas, d'où le point 2, qui lui
-ne dépend de rien. Le bip, lui, doit couvrir la musique : c'est le seul son qui ait le
+navigateur connaît l'API — Chrome Android ne la connaît pas, d'où les points 2 et 3,
+qui eux ne dépendent de rien. Le bip, lui, doit couvrir la musique : c'est le seul son qui ait le
 droit de s'imposer, et seulement une seconde.
 
 **Le lest est une DIFFÉRENCE, donc sa référence se fige.** Le stockage garde le TOTAL
@@ -144,6 +157,31 @@ encore utilisé. Ses ingrédients entrent dans les macros des plats qui la serve
 compris dans le passé ; la retirer de force les allégerait sans qu'aucune ligne ne
 bouge à l'écran. On refuse, et on nomme les fiches à corriger. Voir
 `lib/suppression.ts`.
+
+**Deux mouvements peuvent se partager UNE place.** `Exercise.groupe` range un
+exercice dans un groupe d'alternance ; les membres d'un même groupe occupent une seule
+ligne de la séance, et c'est la semaine du calendrier qui désigne celui du jour
+(`lib/rotation.ts`). Trois choix s'y tiennent, et chacun évite une panne silencieuse :
+
+- la semaine CALENDAIRE plutôt que le nombre de séances faites — sinon ce que le
+  planning annonce pour la semaine prochaine dépend de ce qui sera fait d'ici là, et
+  ne s'explique qu'en ouvrant l'historique ;
+- un numéro de semaine CONTINU depuis un lundi fixe, jamais le numéro ISO : celui-ci
+  repart à 1 après une année de 52 ou 53 semaines, donc une alternance fondée sur sa
+  parité se retourne au Nouvel An une année sur deux, sans que rien n'ait bougé ;
+- le rang dans le roulement est l'ORDRE des membres dans la séance, et non un champ
+  « semaine A / semaine B » : un champ de plus se désynchroniserait au premier
+  `reordonner`, et deux exercices se retrouveraient « semaine A » sans que rien ne le
+  signale.
+
+Corollaire qui pique : c'est `useSeance().exercices` — la séance DU JOUR — que lisent
+le brouillon, le seuil des 80 % et l'enregistrement, jamais `activeSession.exercises`.
+Préremplir les deux membres mettrait le mouvement hors tour au dénominateur des 80 %
+et l'écrirait au journal à zéro série, où la progression le lirait « fait, sans
+charge ». Et une séance passée se rouvre sur le mouvement que le JOURNAL porte, pas
+sur celui du calendrier — sinon la saisie faite sort de l'écran sans sortir du carnet.
+Le menu ⚙ d'un mouvement permet d'inverser le tour POUR LA JOURNÉE ; le choix meurt
+avec la séance, sinon le roulement se décalerait sans le dire.
 
 **Un nombre de repas n'est PAS un appétit.** Cuisiner pour le lendemain double la
 casserole, pas l'assiette. `ConvivesRepas.repas` multiplie donc ce qu'on PÈSE et rien
@@ -219,7 +257,7 @@ lib/onglets.ts           les cinq onglets : chemin, libellé, titre (AUCUN impor
 components/sport/        écrans du suivi d'entraînement
 components/nutrition/    écrans du module nutrition
 composables/             l'état, persisté dans localStorage (33 fichiers, pas de Pinia)
-lib/                     logique pure — aucun DOM, aucun stockage, testée (26 fichiers)
+lib/                     logique pure — aucun DOM, aucun stockage, testée (27 fichiers)
 utils/                   auto-importé par Nuxt : uniquement du vocabulaire spécifique
 data/                    types et tables de référence — les contenus sont VIDES
 data/exemple/            le pack d'exemple → public/exemple.json
@@ -407,7 +445,7 @@ Deux invariants tenus par des tests :
 
 ## Les tests
 
-1448 tests, 84 fichiers, deux projets. La plupart tournent sur le **pack d'exemple**,
+1472 tests, 86 fichiers, deux projets. La plupart tournent sur le **pack d'exemple**,
 déclaré fichier par fichier (`vi.mock('../../data/nutritionProgram', …)`, voir
 `test/exemple.ts`) : vérifier que la modulation des féculents ne touche pas aux
 protéines demande des aliments aux vraies macros, pas trois objets fabriqués.

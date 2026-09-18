@@ -22,10 +22,19 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 //
 // Or Chrome serre la vis en DEUX temps : sous cinq minutes de fond, les minuteurs
 // sont regroupés à la seconde, ce qui suffit à un décompte ; au-delà, une fois par
-// minute, et là le bip arrive en retard. Un repos dure une à trois minutes : il
-// n'atteint jamais le second palier. La piste est donc ARMÉE pour quatre minutes et
-// ne démarre que si l'onglet est toujours caché — un bloc de fractionné la
-// déclenche, un repos jamais.
+// minute, et là le bip arrive en retard. La piste a donc été ARMÉE pour quatre
+// minutes, en pariant qu'un repos d'une à trois minutes n'en aurait jamais besoin.
+//
+// Troisième symptôme, qui a montré que le pari portait sur la mauvaise chose :
+// « j'ai mis l'app en fond et le son du chrono ne s'est pas déclenché ». Le décompte
+// arrivait bien à zéro à l'heure — c'est le SON qui manquait, un onglet caché qui ne
+// joue rien voyant son contexte audio suspendu. Autrement dit la piste ne partait
+// jamais au seul moment où elle sert.
+//
+// D'où l'ÉCHÉANCE : chaque demandeur annonce quand son prochain son doit s'entendre,
+// et la piste part cinq secondes avant. Les quatre minutes restent en filet, pour
+// les minuteurs assez longs pour atteindre le second palier de Chrome. Ce fichier
+// fige les deux règles, et surtout leur articulation : on retient la plus proche.
 
 /**
  * Chaque instance porte son propre état, et on ne regarde que la DERNIÈRE créée.
@@ -219,5 +228,81 @@ describe('la session audio', () => {
 
     vi.advanceTimersByTime(700)
     expect(audioSession.type).toBe('ambient')
+  })
+})
+
+// ─────────────────────────────────────────────────────────────────────────────
+// L'échéance : cinq secondes de son, au bon moment.
+// ─────────────────────────────────────────────────────────────────────────────
+
+/** La marge d'avance, reprise du composable. */
+const MARGE = 5_000
+
+describe('l’échéance annoncée', () => {
+  /**
+   * Le test qui aurait attrapé le bug : un repos de quatre-vingt-dix secondes passé
+   * en arrière-plan n'atteignait jamais les quatre minutes d'armement, donc le bip
+   * tombait dans un contexte audio suspendu.
+   */
+  it('fait partir la piste cinq secondes avant le bip', async () => {
+    const { useRestTimer } = await charger()
+    const t = useRestTimer()
+    t.start(90)
+    cacher('hidden')
+
+    vi.advanceTimersByTime(90_000 - MARGE - 1_000)
+    expect(joue()).toBe(false) // la musique est encore tranquille
+    vi.advanceTimersByTime(2_000)
+    expect(joue()).toBe(true)  // ... et le bip a de quoi sortir
+  })
+
+  /**
+   * L'autre moitié de la règle. Une échéance lointaine ne doit PAS repousser le
+   * départ au-delà du filet : au bout de cinq minutes cachées, l'ordre d'armement
+   * lui-même arriverait en retard, et « cinq secondes avant » ne voudrait plus rien
+   * dire.
+   */
+  it('ne retarde jamais au-delà du filet des quatre minutes', async () => {
+    const { veilleAudio, veilleProchainSon } = await charger()
+    veilleAudio(true)
+    veilleProchainSon(Date.now() + 20 * 60_000)
+    cacher('hidden')
+    vi.advanceTimersByTime(DELAI + 10)
+    expect(joue()).toBe(true)
+  })
+
+  /** Rallonger le repos déplace le bip : la piste doit suivre, sinon elle part à
+   *  l'ancienne fin et baisse la musique pour rien. */
+  it('suit le repos rallongé', async () => {
+    const { useRestTimer } = await charger()
+    const t = useRestTimer()
+    t.start(60)
+    cacher('hidden')
+    vi.advanceTimersByTime(30_000)
+    t.addTime(60) // le bip est maintenant à 120 s
+
+    vi.advanceTimersByTime(26_000) // 56 s : l'ancienne échéance (55 s) est passée
+    expect(joue()).toBe(false)
+    vi.advanceTimersByTime(60_000) // 116 s : la nouvelle (115 s) est atteinte
+    expect(joue()).toBe(true)
+  })
+
+  /** Et la fin du repos rend la piste, échéance comprise : le repos suivant ne doit
+   *  pas hériter d'une échéance périmée. */
+  it('ne laisse pas traîner l’échéance d’un repos terminé', async () => {
+    const { useRestTimer, veilleAudio } = await charger()
+    const t = useRestTimer()
+    t.start(30)
+    vi.advanceTimersByTime(40_000) // le repos se termine, visible : rien ne joue
+    expect(joue()).toBe(false)
+
+    // Un fractionné démarre ensuite, sans annoncer d'échéance : il doit retrouver le
+    // filet des quatre minutes, pas une échéance de repos oubliée dans la carte.
+    veilleAudio(true)
+    cacher('hidden')
+    vi.advanceTimersByTime(DELAI - 1_000)
+    expect(joue()).toBe(false)
+    vi.advanceTimersByTime(2_000)
+    expect(joue()).toBe(true)
   })
 })

@@ -3,7 +3,7 @@ import { computed, ref } from 'vue'
 import { useFoyer } from '~/composables/useFoyer'
 import { useNutrition } from '~/composables/useNutrition'
 import type { ConvivesRepas } from '~/lib/foyer'
-import { APPETIT_MAX, APPETIT_MIN, aDesRepasEnPlus, avecRepas, borner, convivesParDefaut, facteurRepas, libelleRepas, partDeMoi, pourConvives, repasDe, repasPourTous } from '~/lib/foyer'
+import { APPETIT_MAX, APPETIT_MIN, avecRepas, borner, convivesParDefaut, facteurRepas, libelleRepas, partDeMoi, pourConvives, repasDe } from '~/lib/foyer'
 import { useRepasConvives } from '~/composables/useRepasConvives'
 import { FAT_STEPS, expandItems, keepsOf, macrosOf, rebalanceDairy, roundMacros, splitIngredients } from '~/lib/nutritionStats'
 import { cookedWeight } from '~/lib/cooked'
@@ -132,18 +132,17 @@ function basculerMembre(id: string) {
  * touches au pire pour défaire, contre huit si le cycle allait jusqu'au bout du
  * modèle. Au-delà de quatre jours d'avance, ce n'est plus un plat qu'on double,
  * c'est un batch — et il a son propre écran.
+ *
+ * C'est aussi le SEUL chemin, depuis qu'un raccourci « cuisiner pour demain aussi »
+ * occupait une ligne entière sous les pastilles pour faire ce que la pastille de
+ * chacun fait déjà, plus une phrase qui recomptait à voix haute ce que le ×N et le
+ * facteur affichaient à côté. Le cycle revient à 1 : le retour n'a pas besoin de son
+ * propre bouton.
  */
 const REPAS_CYCLE = 4
 
 const nbRepas = (id: string) => repasDe(convives.value, id)
 const cyclerRepas = (id: string) => majConvives(avecRepas(convives.value, id, (nbRepas(id) % REPAS_CYCLE) + 1))
-
-/** Le geste courant, en un tap : « je cuisine pour demain aussi », et son retour. */
-const enPlus = computed(() => aDesRepasEnPlus(convives.value))
-const basculerTous = () => majConvives(repasPourTous(convives.value, enPlus.value ? 1 : 2))
-
-/** Le nombre total de portions dans la casserole, pour le dire en clair. */
-const portions = computed(() => facteur.value)
 
 /** Un invité de ce soir : un appétit, un nom facultatif, et rien dans le foyer. */
 const nouvelInvite = ref({ nom: '', appetit: 1 })
@@ -327,21 +326,6 @@ const openFat = ref<string | null>(null)
           </button>
           <button v-if="ancre && !ajoutInvite" class="rs-conv rs-plus" @click="ajoutInvite = true">+ invité</button>
           <span v-if="facteur !== 1" class="mono rs-facteur">×{{ facteur.toFixed(2).replace(/[.,]?0+$/, '').replace('.', ',') }}</span>
-        </div>
-
-        <!-- Le raccourci du cas courant. Il existe parce que « cuisiner pour demain »
-             se décide d'un bloc, pour tout le monde, et qu'aller taper sur trois
-             pastilles pour ça serait trois fois le même geste. Le cas asymétrique —
-             deux jours pour moi, un seul pour l'autre qui déjeune dehors — reste sur
-             les pastilles, et c'est lui qui a demandé ce réglage. -->
-        <div class="rs-repas-ligne">
-          <button class="rs-repas-tous" :class="{ on: enPlus }" @click="basculerTous()">
-            {{ enPlus ? '↺ Un seul repas' : '🍱 Cuisiner pour demain aussi' }}
-          </button>
-          <span v-if="enPlus" class="muted rs-repas-dit">
-            {{ portions.toFixed(2).replace(/[.,]?0+$/, '').replace('.', ',') }} portions dans la casserole ·
-            <b>ton assiette de ce soir en reste une</b>.
-          </span>
         </div>
 
         <div v-if="ajoutInvite" class="rs-ajout">

@@ -17,6 +17,7 @@ import { PROGRAM } from '~/data/sportProgram'
 import type { Exercise, Session } from '~/data/sportProgram'
 import { mergeProgram, retiredExercises } from '~/lib/program'
 import { restFor } from '~/lib/rest'
+import { exercicesDuJour } from '~/lib/rotation'
 import { ownerName } from './auth/_auth'
 import { repsGap } from '~/lib/repsGap'
 import type { ProgramCustom } from '~/lib/program'
@@ -263,7 +264,7 @@ const TOOLS = [
   },
   {
     name: 'programme',
-    description: 'Le programme d\'entraînement TEL QU\'IL EST aujourd\'hui : séances (identifiant, nom, jour) et, pour chaque exercice, séries, reps, repos en secondes, mesure (reps ou temps), s\'il est actif, s\'il est facultatif, sa position dans la séance, et les machines de remplacement avec leur coefficient. À lire AVANT toute proposition « cible: programme » : les identifiants et les valeurs actuelles viennent d\'ici.',
+    description: 'Le programme d\'entraînement TEL QU\'IL EST aujourd\'hui : séances (identifiant, nom, jour) et, pour chaque exercice, séries, reps, repos en secondes, mesure (reps ou temps), s\'il est actif, s\'il est facultatif, sa position dans la séance, son groupe d\'alternance s\'il en a un (« alternance », avec « fait_cette_semaine » qui dit si c\'est son tour), et les machines de remplacement avec leur coefficient. À lire AVANT toute proposition « cible: programme » : les identifiants et les valeurs actuelles viennent d\'ici.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -330,12 +331,12 @@ const TOOLS = [
             '• recette : { id?: "<id existant pour modifier>", nom, kind: "pdj"|"boite"|"diner"|"collation"|"sauce", batch?: true, steps?: "…", sauce?: "<id de sauce>", keeps?: 4, items: [ { food: "<id d\'aliment>", g: 120 } ] } — « items » REMPLACE la liste, envoie-la complète. Lis d\'abord la recette avec l\'outil « recette » : sans ça tu effaces des ingrédients sans le savoir. « steps » est la marche à suivre du batch cooking, « keeps » la conservation en jours — c\'est elle qui décide dans quelle session de cuisine le plat tombe.',
             '• aliment : { id?: "<id existant pour corriger>", nom, cat: "viandes"|"poissons"|"oeufs"|"laitiers"|"feculents"|"legumes"|"fruits"|"grasses"|"aromates"|"complements"|"boissons", kcal, p, g, l, cook?: "6 min vapeur", buy?: "1 c. à café = 5 g", keeps?: 5 } — valeurs POUR 100 g, viandes et féculents crus. Les macros doivent expliquer les calories à 25 % près, sinon c\'est refusé : une étiquette mal recopiée ne fait rien planter, elle fausse les calories pour toujours.',
             '• programme : { seance: "<identifiant de séance>", op: "creer-seance"|"ajouter"|"modifier"|"retirer"|"reactiver"|"reordonner", … } — tout ce qu\'un coach fait sur un plan. LIS D\'ABORD l\'outil « programme » : il donne les identifiants de séances existants, les séries, les reps, le repos, la mesure, les positions et les machines de remplacement ACTUELS. Une seule op par proposition — il valide geste par geste, et un refus ne doit pas emporter les autres.',
-            '    · creer-seance : { op: "creer-seance", seance: "s5", nom: "Haut du corps", jour?: "Lundi · Push", couleur?: "#8b6f5c", exercices: [ { id?: "developpe-couche", nom: "Développé couché", series: 4, reps: "6-8", repos_s: 150, mesure?: "reps"|"temps", machine?: "Banc + barre", optionnel?: true, muscles?: [...], machines_de_remplacement?: [...] }, … 1 à 30 ] } — crée une séance ENTIÈRE. C\'est le seul geste qui exige un identifiant de séance encore LIBRE : tous les autres exigent l\'inverse. Sur une installation neuve le programme est VIDE — commence par là, il n\'y a aucune séance à laquelle rattacher un exercice tant qu\'aucune n\'est créée.',
+            '    · creer-seance : { op: "creer-seance", seance: "s5", nom: "Haut du corps", jour?: "Lundi · Push", couleur?: "#8b6f5c", exercices: [ { id?: "developpe-couche", nom: "Développé couché", series: 4, reps: "6-8", repos_s: 150, mesure?: "reps"|"temps", machine?: "Banc + barre", optionnel?: true, alternance?: "<nom de groupe>", muscles?: [...], machines_de_remplacement?: [...] }, … 1 à 30 ] } — crée une séance ENTIÈRE. C\'est le seul geste qui exige un identifiant de séance encore LIBRE : tous les autres exigent l\'inverse. Sur une installation neuve le programme est VIDE — commence par là, il n\'y a aucune séance à laquelle rattacher un exercice tant qu\'aucune n\'est créée.',
             '      Chaque exercice veut nom, series, reps et repos_s, mêmes règles que « ajouter » : sans eux la fiche s\'affiche vide et la séance n\'a rien à saisir. Les identifiants d\'exercices doivent être libres eux aussi, y compris vis-à-vis des mouvements RETIRÉS d\'une autre séance — l\'historique de charges est indexé sur l\'identifiant seul. Une séance vide (zéro exercice) est refusée : elle s\'ouvrirait sur un écran sans rien, et rien n\'indiquerait qu\'il reste à la remplir.',
             '      « jour » est l\'étiquette affichée au-dessus du nom sur la carte de séance — « Lundi · Push », « Mardi · Jambes ». Les muscles ne se déclarent PAS au niveau de la séance : ils sont déduits des exercices, et une liste saisie à la main s\'écarterait du contenu réel au premier mouvement retiré.',
-            '    · ajouter : { op: "ajouter", seance: "s2", id: "farmer-walk", nom: "Farmer\'s walk", series: 3, reps: "30-40 s", mesure: "temps", repos_s: 90, muscles: ["avant-bras","abdos"], machine: "Haltères lourds ou trap bar", optionnel?: true, apres?: "curl-marteau", machines_de_remplacement?: [{ id, nom, coefficient }] }',
+            '    · ajouter : { op: "ajouter", seance: "s2", id: "farmer-walk", nom: "Farmer\'s walk", series: 3, reps: "30-40 s", mesure: "temps", repos_s: 90, muscles: ["avant-bras","abdos"], machine: "Haltères lourds ou trap bar", optionnel?: true, alternance?: "<nom de groupe>", apres?: "curl-marteau", machines_de_remplacement?: [{ id, nom, coefficient }] }',
             '      « repos_s » est OBLIGATOIRE, en secondes (20 à 900) : il n\'y a pas de défaut, le déduire des reps donnerait 40 secondes sur « 30-40 s », c\'est-à-dire un repos calculé sur une durée d\'effort. « id » est déduit du nom si tu ne le donnes pas ; un identifiant DÉJÀ PRIS — même dans une autre séance, même sur un exercice retiré — est REFUSÉ : l\'historique de charges est indexé sur l\'identifiant seul, le réutiliser rangerait de vieux records sous un mouvement jamais fait. « apres » insère juste après cet exercice actif ; absent, l\'exercice va en fin de séance ; invalide, c\'est un refus et non un repli silencieux.',
-            '    · modifier : { op: "modifier", seance: "s1", exercice: "squat", series?: 3, de_series: 2, reps?: "6-8", de_reps: "8-10", repos_s?: 150, de_repos_s: 120, nom?, mesure?, machine?, optionnel?, muscles?: [...], machines_de_remplacement?: [...] } — ne change QUE les champs envoyés.',
+            '    · modifier : { op: "modifier", seance: "s1", exercice: "squat", series?: 3, de_series: 2, reps?: "6-8", de_reps: "8-10", repos_s?: 150, de_repos_s: 120, nom?, mesure?, machine?, optionnel?, alternance?, muscles?: [...], machines_de_remplacement?: [...] } — ne change QUE les champs envoyés.',
             '      « series », « reps » et « repos_s » exigent leur « de_… » : la valeur actuellement enregistrée, telle que « programme » la donne. Manquant ou faux = REFUS. C\'est ce qui empêche une proposition bâtie sur un miroir de trois heures d\'écraser un réglage changé depuis sur le téléphone — trois séries au lieu de quatre, ça ne se remarque pas en salle, on les fait, c\'est tout. Les autres champs (nom, machine, muscles, consignes) n\'en demandent pas.',
             '    · retirer : { op: "retirer", seance: "s2", exercice: "sdt-r" } — DÉSACTIVE, ne supprime PAS. Le mouvement sort de la séance du jour, son historique de charges reste intact et reste lisible par l\'outil « exercice ». Repris trois mois plus tard, il retrouve ses courbes au lieu de repartir de zéro. Le retirer deux fois est un refus, pas un geste sans effet.',
             '    · reactiver : { op: "reactiver", seance: "s2", exercice: "sdt-r", apres?: "squat" } — sans « apres », il reprend exactement la place qu\'il occupait. Appelle « programme » avec inclure_inactifs: true pour voir ce qui a été retiré.',
@@ -343,6 +344,8 @@ const TOOLS = [
             '  « muscles » et « machines_de_remplacement » REMPLACENT la liste, ils ne fusionnent pas — même règle que « items » sur une recette. Repars de la liste complète donnée par « programme », sinon tu effaces ce que tu n\'as pas recopié.',
             '  « mesure: "temps" » (défaut : "reps") sort l\'exercice de la progression automatique, de la détection de record et du 1RM estimé. Mets-le sur tout ce qui se compte en secondes — portés, suspensions, gainage : sinon « 30-40 s » se lit 40 répétitions, l\'app croit la cible atteinte et conseille de charger.',
             '  « optionnel: true » : le mouvement s\'affiche grisé en fin de séance et ne compte pas dans le seuil des 80 % qui autorise l\'enregistrement, mais compte normalement dans le volume et les records dès qu\'il est fait.',
+            '  « alternance: "adducteurs" » range le mouvement dans un GROUPE D\'ALTERNANCE : les exercices d\'un même groupe se partagent UNE place dans la séance, et c\'est la semaine du calendrier qui désigne celui qui s\'affiche — deux membres donnent une semaine sur deux, trois une semaine sur trois. Le rang dans le roulement est l\'ORDRE des membres dans la séance : pour le changer, c\'est « reordonner », il n\'y a pas de champ « semaine ». « alternance: "" » (chaîne vide) sort le mouvement de son groupe et le remet toutes les semaines — c\'est le seul champ qui sache se défaire, et sans lui un regroupement posé par erreur serait sans retour. Ne confonds pas avec « muscles » : « alternance » n\'est PAS un groupe musculaire.',
+            '  L\'outil « programme » rend « alternance » et « fait_cette_semaine » sur chaque exercice concerné : c\'est ce qui permet de répondre « cette semaine, c\'est l\'abducteur » sans recalculer, et de voir qu\'un mouvement absent de la séance du jour n\'est pas retiré mais simplement hors tour.',
             '• correction, série : { quoi: "serie", exercice: "<id>", date: "AAAA-MM-JJ", serie: 0, de: { w, r }, vers: { w, r } }',
             '• correction, pesée : { quoi: "pesee", date: "AAAA-MM-JJ", de: 77.4, vers: 76.9 } — « vers: null » supprime la pesée',
             '• correction, N\'IMPORTE OÙ dans la sauvegarde : { quoi: "champ", op: "remplacer"|"creer"|"ajouter"|"supprimer", chemin: "/sessions/12/durationMin", … }. C\'est le passe-partout : tout ce que l\'application sait écrire est atteignable par là. Lis le chemin d\'abord avec l\'outil « champ » — sans argument il rend la carte de la sauvegarde, avec un chemin il rend la valeur.',
@@ -507,7 +510,7 @@ function refusMessage(cible: string, d: Record<string, unknown>, ctx: RefusCtx):
         return `« machines_de_remplacement » : ${mauvais.length} ligne(s) invalide(s). Chacune veut { id, nom, coefficient }, coefficient entre 0,2 et 5 — au-delà ce n'est plus une conversion de charge, c'est une faute de frappe. Rappel : la liste REMPLACE, relis « programme » et repars de la liste complète.`
       }
     }
-    return 'Modification refusée : donne au moins un champ valide — series (1 à 12), reps (texte), repos_s (20 à 900 s), nom, mesure ("reps" ou "temps"), machine, optionnel, muscles ou machines_de_remplacement.'
+    return 'Modification refusée : donne au moins un champ valide — series (1 à 12), reps (texte), repos_s (20 à 900 s), nom, mesure ("reps" ou "temps"), machine, optionnel, alternance (nom de groupe, "" pour sortir du groupe), muscles ou machines_de_remplacement.'
   }
   if (cible === 'convives') {
     const creneau = String(d.creneau ?? d.slot ?? '')
@@ -763,6 +766,9 @@ async function callTool(name: string, args: Record<string, unknown>): Promise<un
     return {
       seances: sessions.filter(s => !seance || s.id === seance).map((s) => {
         let rang = 0
+        // La séance telle qu'elle se fait CETTE semaine : c'est ce qui distingue
+        // « l'exercice existe » de « l'exercice est au programme aujourd'hui ».
+        const duJour = exercicesDuJour(s.exercises.filter(e => !off.has(e.id)), aujourdhuiParis())
         return {
           id: s.id,
           nom: s.name,
@@ -785,6 +791,10 @@ async function callTool(name: string, args: Record<string, unknown>): Promise<un
               machine: e.machine,
               ...(e.superset ? { superset: e.superset } : {}),
               ...(e.bodyweight ? { poids_de_corps: true } : {}),
+              // Le groupe d'alternance et la semaine qu'il sert : sans le second, on
+              // ne peut pas répondre « et cette semaine, c'est lequel ? » sans
+              // refaire le calcul de tête.
+              ...(e.groupe ? { alternance: e.groupe, fait_cette_semaine: duJour.some(x => x.id === e.id) } : {}),
               machines_de_remplacement: (custom.variants?.[e.id] ?? VARIANTS[e.id] ?? []).map(v => ({
                 id: v.id,
                 nom: (v as { name: string }).name,

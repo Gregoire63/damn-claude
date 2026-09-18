@@ -43,6 +43,26 @@ export interface Exercise {
    * les records et l'historique dès qu'il est réellement fait : c'est du travail.
    */
   optionnel?: boolean
+  /**
+   * Le nom du GROUPE d'alternance, quand deux mouvements se partagent une place.
+   *
+   * Adducteurs et abducteurs : on veut l'un cette semaine, l'autre la suivante, et
+   * jamais les deux. Les membres d'un même groupe occupent donc une seule ligne dans
+   * la séance, et c'est la semaine du calendrier qui désigne celui qui s'affiche —
+   * voir `lib/rotation.ts`, qui porte le raisonnement complet.
+   *
+   * Un libellé libre et non un identifiant : il se lit dans la fiche du mouvement
+   * (« en alternance une semaine sur deux avec… ») et se tape depuis une conversation.
+   * Le RANG dans le roulement, lui, n'est pas un champ : c'est l'ordre des membres
+   * dans la séance. Un champ de plus se désynchroniserait au premier
+   * réordonnancement, et deux exercices se retrouveraient « semaine A » sans que rien
+   * ne le signale.
+   *
+   * Ce n'est pas `optionnel`, et la nuance est celle qui a fait créer ce champ : un
+   * facultatif se saute faute de temps, donc on finit par le sauter toujours. Un
+   * groupe ne saute rien — il fait tourner.
+   */
+  groupe?: string
 }
 
 // Plan de sprint détaillé, avec variante extérieur (piste) et tapis

@@ -827,6 +827,20 @@ function exerciseFields(raw: Record<string, unknown>): ExercisePatch {
   if (typeof opt === 'boolean') out.optionnel = opt
   const mes = pick(raw, ['mesure'])
   if (mes === 'reps' || mes === 'temps') out.mesure = mes
+  /**
+   * Le groupe d'alternance s'appelle `alternance` ici, et JAMAIS `groupe`.
+   *
+   * `groupes` (au pluriel) est déjà l'alias des muscles, deux lignes plus haut. Un
+   * « groupe: "quadris" » écrit depuis une conversation partirait donc dans le
+   * roulement au lieu des muscles travaillés — et ferait disparaître l'exercice une
+   * semaine sur deux, ce que personne ne relierait au mot employé.
+   *
+   * Il se VIDE comme `machine`, et pour une raison plus forte : sortir un mouvement
+   * d'un roulement posé par erreur est la seule façon de le faire réapparaître toutes
+   * les semaines. On teste donc le type, pas la troncature.
+   */
+  const groupe = pick(raw, ['alternance', 'groupe_alternance', 'rotation'])
+  if (typeof groupe === 'string') out.groupe = groupe.trim().slice(0, 32)
   const ss = pick(raw, ['superset'])
   if (Array.isArray(ss) && ss.length === 2) {
     const a = strOf(ss[0], 40), b = strOf(ss[1], 40)
@@ -1034,6 +1048,7 @@ export function programFor(p: RawProposal, ctx: PlanCtx): Extract<Plan, { kind: 
       ...(f.optionnel ? { optionnel: true } : {}),
       ...(f.bodyweight ? { bodyweight: true } : {}),
       ...(f.superset ? { superset: f.superset } : {}),
+      ...(f.groupe ? { groupe: f.groupe } : {}),
     }
     return {
       kind: 'programme', seance, op: 'ajouter', exercice: id, nouveau,

@@ -255,6 +255,9 @@ function programme(p: RawProposal) {
     ligne('Mesure', MESURES[actuel?.mesure ?? 'reps'], q.mesure ? MESURES[q.mesure] : undefined)
     ligne('Machine', actuel?.machine || '—', q.machine === '' ? '—' : q.machine)
     ligne('Facultatif', actuel?.optionnel ? 'oui' : 'non', q.optionnel === undefined ? undefined : (q.optionnel ? 'oui' : 'non'))
+    // Le groupe d'alternance décide de la PRÉSENCE du mouvement une semaine sur deux :
+    // le valider sans le voir écrit serait valider une disparition.
+    ligne('Alternance', actuel?.groupe || '—', q.groupe === '' ? '—' : q.groupe)
     ligne('Muscles', actuel?.muscles.join(', '), q.muscles?.join(', '))
     ligne('Consignes', actuel?.cues.length ? `${actuel.cues.length} ligne(s)` : '—', q.cues ? `${q.cues.length} ligne(s)` : undefined)
   }
@@ -266,6 +269,7 @@ function programme(p: RawProposal) {
     ligne('Repos', undefined, fmtRest(restFor(n)))
     if (n.mesure) ligne('Mesure', undefined, MESURES[n.mesure])
     if (n.optionnel) ligne('Facultatif', undefined, 'oui')
+    if (n.groupe) ligne('Alternance', undefined, n.groupe)
     if (n.machine) ligne('Machine', undefined, n.machine)
     if (n.muscles.length) ligne('Muscles', undefined, n.muscles.join(', '))
     if (plan.apres) ligne('Placé après', undefined, prog.exerciseName(plan.apres))
@@ -311,6 +315,7 @@ function programme(p: RawProposal) {
             `repos ${fmtRest(restFor(e))}`,
             ...(e.machine ? [e.machine] : []),
             ...(e.optionnel ? ['facultatif'] : []),
+            ...(e.groupe ? [`alterne (${e.groupe})`] : []),
           ].join(' · '),
         }))
       : null,

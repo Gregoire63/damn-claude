@@ -7,6 +7,7 @@ import { useProgram } from '~/composables/useProgram'
 import { useJour } from '~/composables/useJour'
 import { useFlash } from '~/composables/useFlash'
 import { isTimed } from '~/lib/program'
+import { exercicesDuJour, groupeDe } from '~/lib/rotation'
 import { setText } from '~/lib/setText'
 import { WARMUP_REST, restFor } from '~/lib/rest'
 import { warmupLoad, isEffort } from '~/utils/sportStats'
@@ -89,30 +90,62 @@ function creer() {
   // l'historique en deux le jour où le rack est pris, on déclare SUR QUOI on a
   // travaillé, et les comparaisons se font en équivalent référence.
   const draftVariant = reactive<Record<string, string>>({})
-  // L'exercice dont la feuille « choisir une machine » est ouverte.
-  const picking = ref<string | null>(null)
-  const pickingEx = computed(() => activeSession.value?.exercises.find(e => e.id === picking.value) ?? null)
   /**
-   * L'exercice dont le commentaire est en cours d'écriture.
+   * Le membre du groupe d'alternance retenu pour CETTE séance, par groupe.
    *
-   * Le champ était déplié DANS la carte, tout en bas, sous les séries et les
-   * sensations. Écrire trois mots demandait donc d'ouvrir la carte, de la faire
-   * défiler jusqu'au bout, puis d'écrire dans un écran qui bougeait sous le clavier
-   * — pour une phrase qu'on tape entre deux séries, une main sur la barre.
-   *
-   * En fenêtre, le geste tient en deux touches : 💬, on écrit, terminé. La carte
-   * n'a plus besoin d'être ouverte, et le champ est au milieu de l'écran, seul.
+   * Vide, c'est le calendrier qui tranche (voir `lib/rotation.ts`). Rempli, c'est
+   * « fais l'autre à la place » : la machine est prise, ou la semaine précédente a
+   * sauté. Le choix vaut pour la séance en cours et rien de plus — il part avec elle,
+   * et la semaine suivante repart du calendrier. Un choix qui se souviendrait
+   * déplacerait le roulement sans le dire, et deux semaines plus tard on ne saurait
+   * plus pourquoi c'est toujours le même mouvement qui tombe.
    */
-  const noting = ref<string | null>(null)
-  const notingEx = computed(() => activeSession.value?.exercises.find(e => e.id === noting.value) ?? null)
-  /** La fenêtre s'anime en se fermant : on passe par elle plutôt que de couper le `v-if`. */
-  const notePopup = ref<{ dismiss: () => void } | null>(null)
-  const closeNote = () => (notePopup.value ? notePopup.value.dismiss() : (noting.value = null))
-  function clearNote(id: string) {
-    delete draftNote[id]
-    closeNote()
+  const rotation = reactive<Record<string, string>>({})
+
+  /**
+   * La séance telle qu'elle se FAIT aujourd'hui : un seul membre par groupe.
+   *
+   * Tout ce qui saisit, compte et enregistre passe par ici, et pas par
+   * `activeSession.exercises` — sinon le mouvement hors tour recevrait une ligne de
+   * brouillon vide, compterait au dénominateur des 80 % et s'enregistrerait à zéro
+   * série. Le programme, lui, garde ses deux mouvements : c'est la séance du jour
+   * qui n'en montre qu'un.
+   */
+  const exercices = computed<Exercise[]>(() => exercicesDuJour(
+    activeSession.value?.exercises ?? [],
+    seanceIso.value ?? todayISO.value ?? '',
+    rotation,
+  ))
+
+  /** Les autres membres du groupe de cet exercice — vide s'il n'alterne avec rien. */
+  const alternatives = (exId: string): Exercise[] =>
+    groupeDe(activeSession.value?.exercises ?? [], exId).filter(e => e.id !== exId)
+
+  /**
+   * « Fais l'autre à la place », pour aujourd'hui seulement.
+   *
+   * Les lignes de saisie du remplaçant sont créées ICI et pas au démarrage : les
+   * préremplir toutes les deux mettrait dans le brouillon un mouvement qu'on ne fait
+   * pas, et c'est exactement ce que l'enregistrement relit.
+   */
+  function choisirRotation(exId: string) {
+    const exs = activeSession.value?.exercises ?? []
+    const ex = exs.find(e => e.id === exId)
+    const groupe = ex?.groupe
+    if (!ex || !groupe || !groupeDe(exs, exId).length) return
+    rotation[groupe] = exId
+    if (!draft[exId]) draft[exId] = prefillRows(ex)
+    openEx.value = exId
   }
-  /** Ce qui avait été noté la dernière fois sur cet exercice. */
+
+  /**
+   * Ce qui avait été noté la dernière fois sur cet exercice.
+   *
+   * C'est la moitié utile du commentaire : on l'écrit pour la relire en rechargeant
+   * la barre trois semaines plus tard. La carte l'affiche en haut, et le menu ⚙ la
+   * remet sous les yeux juste avant le champ — écrire « épaule encore raide » demande
+   * de savoir qu'on avait écrit « épaule raide ».
+   */
   const previousNote = (id: string) => lastPerf(id)?.note ?? null
   const sessionStart = ref(0)
   // Édition d'une séance déjà enregistrée (au lieu d'en démarrer une neuve)
@@ -242,22 +275,6 @@ function creer() {
   // ─────────── Popup « annuler la séance » (remplace le confirm() natif) ────────
   const cancelPromptOpen = ref(false)
   function askCancel() { cancelPromptOpen.value = true }
-
-  /**
-   * L'exercice dont on valide la « reprise en main ».
-   *
-   * Le bouton ne bascule plus directement. Ce réglage remet les records et la
-   * progression à zéro à partir de cette séance : c'est irréversible dans les
-   * courbes, et une icône seule ne peut pas porter ça. On explique dans la carte,
-   * au moment où la question se pose.
-   */
-  const swapAsk = ref<string | null>(null)
-  const swapEx = computed(() => activeSession.value?.exercises.find(e => e.id === swapAsk.value) ?? null)
-
-  function confirmSwap() {
-    if (swapAsk.value) toggleSwap(swapAsk.value)
-    swapAsk.value = null
-  }
   function confirmCancel() {
     cancelPromptOpen.value = false
     animateSheetDown(() => clearActive()) // la feuille glisse vers le bas puis se ferme
@@ -348,8 +365,7 @@ function creer() {
    * des séries sont déjà validées : on ne réécrit jamais ce qui a été fait.
    */
   function pickVariant(exId: string, id: string | null) {
-    const ex = activeSession.value?.exercises.find(e => e.id === exId)
-    picking.value = null
+    const ex = exercices.value.find(e => e.id === exId)
     if (!ex) return
     if (id) draftVariant[exId] = id
     else delete draftVariant[exId]
@@ -397,9 +413,12 @@ function creer() {
     for (const k of Object.keys(draftSwap)) delete draftSwap[k]
     for (const k of Object.keys(draftNote)) delete draftNote[k]
     for (const k of Object.keys(draftVariant)) delete draftVariant[k]
+    for (const k of Object.keys(rotation)) delete rotation[k]
     sessionNote.value = ''
-    for (const e of s.exercises) draft[e.id] = prefillRows(e)
-    openEx.value = s.exercises[0].id
+    // `exercices` est calculé : la remise à zéro du roulement AVANT la lecture n'est
+    // pas cosmétique, sinon on préremplit la séance choisie la fois d'avant.
+    for (const e of exercices.value) draft[e.id] = prefillRows(e)
+    openEx.value = exercices.value[0]?.id ?? s.exercises[0].id
     sprintOpen.value = false
     sprintInfoOpen.value = false
     sprintDraft.value = s.sprint ? newSprintRows() : []
@@ -422,8 +441,20 @@ function creer() {
     for (const k of Object.keys(draftNote)) delete draftNote[k]
     for (const k of Object.keys(draftVariant)) delete draftVariant[k]
     sessionNote.value = rec.note ?? ''
-    const bw = seanceWeight.value ?? 0
+    /**
+     * Le roulement se DÉDUIT de ce qui a été enregistré.
+     *
+     * Une séance de la semaine dernière rouverte aujourd'hui tomberait sinon sur
+     * l'exercice de CETTE semaine : on rouvrirait les adducteurs pour corriger une
+     * charge d'abducteur, et la saisie faite disparaîtrait de l'écran sans disparaître
+     * du journal. Ce qui porte une entrée l'emporte donc sur le calendrier.
+     */
+    for (const k of Object.keys(rotation)) delete rotation[k]
     for (const e of s.exercises) {
+      if (e.groupe && rec.entries.some(en => en.exId === e.id)) rotation[e.groupe] = e.id
+    }
+    const bw = seanceWeight.value ?? 0
+    for (const e of exercices.value) {
       const entry = rec.entries.find(en => en.exId === e.id)
       if (entry && isEffort(entry.effort)) draftEffort[e.id] = entry.effort
       if (entry?.swap) draftSwap[e.id] = true
@@ -444,7 +475,7 @@ function creer() {
         }))
       }
     }
-    openEx.value = s.exercises[0].id
+    openEx.value = exercices.value[0]?.id ?? s.exercises[0].id
     sprintOpen.value = false
     sprintInfoOpen.value = false
     sprintDraft.value = (rec.sprint && rec.sprint.length)
@@ -469,7 +500,7 @@ function creer() {
    * Fait, un facultatif compte NORMALEMENT partout ailleurs : volume, records,
    * historique. Ce n'est pas du travail au rabais, c'est du travail en plus.
    */
-  const requiredEx = computed(() => (activeSession.value?.exercises ?? []).filter(e => !e.optionnel))
+  const requiredEx = computed(() => exercices.value.filter(e => !e.optionnel))
   const finishedCount = computed(() => requiredEx.value.filter(e => isExDone(e.id)).length)
 
   const finishReady = computed(() => {
@@ -565,6 +596,7 @@ function creer() {
     for (const k of Object.keys(draftSwap)) delete draftSwap[k]
     for (const k of Object.keys(draftNote)) delete draftNote[k]
     for (const k of Object.keys(draftVariant)) delete draftVariant[k]
+    for (const k of Object.keys(rotation)) delete rotation[k]
     sessionNote.value = ''
     sprintDraft.value = []
     if (import.meta.client) { try { localStorage.removeItem(DRAFT_KEY) } catch { /* stockage indispo */ } }
@@ -573,7 +605,7 @@ function creer() {
     if (!activeSession.value || !finishReady.value) return
     const sess = activeSession.value
     const durationMin = Math.round((Date.now() - sessionStart.value) / 60000)
-    const entries = sess.exercises.map(e => ({
+    const entries = exercices.value.map(e => ({
       exId: e.id,
       sets: (draft[e.id] || []).filter(s => s.done && s.w !== '' && s.r !== '').map(s => ({
         w: parseFloat(s.w), r: parseInt(s.r, 10),
@@ -758,6 +790,7 @@ function creer() {
             draftSwap,
             draftNote,
             draftVariant,
+            rotation,
             note: sessionNote.value,
             sprintDraft: sprintDraft.value,
             sessionStart: sessionStart.value,
@@ -800,6 +833,12 @@ function creer() {
       if (s.draftVariant && typeof s.draftVariant === 'object') {
         for (const [k, v] of Object.entries(s.draftVariant)) if (typeof v === 'string' && v) draftVariant[k] = v
       }
+      // Sans lui, un rechargement en pleine séance rebasculerait sur l'exercice du
+      // calendrier — et la saisie déjà faite sur le remplaçant sortirait de l'écran.
+      for (const k of Object.keys(rotation)) delete rotation[k]
+      if (s.rotation && typeof s.rotation === 'object') {
+        for (const [k, v] of Object.entries(s.rotation)) if (typeof v === 'string' && v) rotation[k] = v
+      }
       if (s.draftNote && typeof s.draftNote === 'object') {
         for (const [k, v] of Object.entries(s.draftNote)) {
           if (typeof v === 'string' && v) draftNote[k] = v
@@ -822,9 +861,9 @@ function creer() {
 
   return {
     // état
-    activeSession, editingRecord, previewSession, openEx, sessionNote,
+    activeSession, exercices, alternatives, choisirRotation, editingRecord, previewSession, openEx, sessionNote,
     draft, draftEffort, draftSwap, draftNote, draftVariant,
-    picking, pickingEx, noting, notingEx, notePopup, closeNote, clearNote, previousNote,
+    previousNote,
     sprintMode, sprintOpen, sprintInfoOpen, sprintDraft, newSprintRows, addSprintRow, removeSprintRow,
     elapsed, fmtClock,
     // feuille
@@ -832,7 +871,7 @@ function creer() {
     expandSession, collapseSession, animateSheetDown, requestCollapse,
     onDragStart, onDragMove, onDragEnd,
     // cartes de confirmation
-    cancelPromptOpen, askCancel, confirmCancel, swapAsk, swapEx, confirmSwap,
+    cancelPromptOpen, askCancel, confirmCancel,
     // saisie
     prefillRows, pickVariant, startSession, apercuSession, demarrerApercu, editSession, restoreDraft, clearActive,
     doneCount, workCount, isExDone, requiredEx, finishedCount, finishReady, finishSession,

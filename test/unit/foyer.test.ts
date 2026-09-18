@@ -306,20 +306,6 @@ describe('poser et défaire un nombre de repas', () => {
     expect(avecRepas(c, 'moi', Number.NaN).repas).toBeUndefined()
   })
 
-  it('pose le même compte pour tout le monde d’un coup', async () => {
-    const { facteurRepas, repasPourTous } = await import('../../lib/foyer')
-    const c = repasPourTous({ membres: ['moi', 'camille'], invites: [] }, 2)
-    expect(facteurRepas(c, [MOI, camille])).toBe(3.2)
-    // Et le retour à 1 ne laisse rien derrière.
-    expect(repasPourTous(c, 1).repas).toBeUndefined()
-  })
-
-  it('sait dire si quelqu’un cuisine en avance', async () => {
-    const { aDesRepasEnPlus } = await import('../../lib/foyer')
-    expect(aDesRepasEnPlus({ membres: ['moi'], invites: [] })).toBe(false)
-    expect(aDesRepasEnPlus({ membres: ['moi'], invites: [], repas: { moi: 2 } })).toBe(true)
-    expect(aDesRepasEnPlus(null)).toBe(false)
-  })
 })
 
 describe('relire un repas venu du stockage', () => {

@@ -42,6 +42,15 @@ export interface ExercisePatch {
   superset?: [string, string]
   mesure?: 'reps' | 'temps'
   optionnel?: boolean
+  /**
+   * Le groupe d'alternance. Chaîne vide = on SORT l'exercice de son groupe.
+   *
+   * Le seul champ du patch qui sache défaire : les autres se corrigent en donnant
+   * une autre valeur, celui-ci n'aurait aucune valeur voulant dire « plus de
+   * groupe ». Sans ce cas, regrouper deux mouvements par erreur en ferait
+   * disparaître un de la séance une semaine sur deux, sans retour possible.
+   */
+  groupe?: string
 }
 
 /** Une machine de remplacement, telle qu'une proposition a le droit de la décrire. */
@@ -96,6 +105,11 @@ const patchOf = (e: Exercise, p?: ExercisePatch): Exercise => {
   if (Array.isArray(p.superset) && p.superset.length === 2) out.superset = [String(p.superset[0]), String(p.superset[1])]
   if (p.mesure === 'reps' || p.mesure === 'temps') out.mesure = p.mesure
   if (typeof p.optionnel === 'boolean') out.optionnel = p.optionnel
+  if (typeof p.groupe === 'string') {
+    const g = p.groupe.trim().slice(0, 32)
+    if (g) out.groupe = g
+    else delete out.groupe
+  }
   return out
 }
 

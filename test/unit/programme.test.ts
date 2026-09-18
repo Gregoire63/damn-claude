@@ -56,6 +56,21 @@ describe('la fusion du programme', () => {
     expect(s1.exercises[0].name).toBe('dc')
   })
 
+  /**
+   * Le seul champ du patch qui sache DÉFAIRE.
+   *
+   * Les autres se corrigent en donnant une autre valeur ; un groupe d'alternance,
+   * lui, n'a aucune valeur voulant dire « plus de groupe ». Sans la chaîne vide, un
+   * regroupement posé par erreur ferait disparaître un mouvement une semaine sur
+   * deux, définitivement.
+   */
+  it('pose et retire un groupe d’alternance', () => {
+    const [avec] = mergeProgram(LIVRE, { patches: { dc: { groupe: 'poussee' } } })
+    expect(avec.exercises[0].groupe).toBe('poussee')
+    const [vide] = mergeProgram(LIVRE, { patches: { dc: { groupe: '' } } })
+    expect(vide.exercises[0].groupe).toBeUndefined()
+  })
+
   it('ajoute un exercice à la bonne séance, et à elle seule', () => {
     const p = mergeProgram(LIVRE, { added: { s2: [ex('tirage')] } })
     expect(p[1].exercises.map(e => e.id)).toEqual(['traction', 'rowing', 'tirage'])
@@ -197,6 +212,23 @@ describe('modifier un exercice', () => {
     expect(programFor(prop({ op: 'modifier', seance: 's1', exercice: 'dips', patch: { mesure: 'temps', optionnel: true } }), ctx))
       .toMatchObject({ patch: { mesure: 'temps', optionnel: true } })
     expect(programFor(prop({ op: 'modifier', seance: 's1', exercice: 'dips', patch: { mesure: 'au feeling' } }), ctx)).toBeNull()
+  })
+
+  /**
+   * L'alternance s'écrit sous le mot `alternance`, et sûrement pas `groupe`.
+   *
+   * `groupes` est déjà l'alias des MUSCLES. Un « groupe: "quadris" » accepté comme
+   * roulement ferait disparaître l'exercice une semaine sur deux, et le mot employé
+   * n'orienterait vers rien. Le champ doit aussi savoir se VIDER : c'est la seule
+   * façon de défaire un regroupement posé par erreur.
+   */
+  it('range l’alternance, sait la défaire, et ignore le mot piégé', () => {
+    expect(programFor(prop({ op: 'modifier', seance: 's1', exercice: 'dips', patch: { alternance: 'poussee' } }), ctx))
+      .toMatchObject({ patch: { groupe: 'poussee' } })
+    expect(programFor(prop({ op: 'modifier', seance: 's1', exercice: 'dips', patch: { alternance: '' } }), ctx))
+      .toMatchObject({ patch: { groupe: '' } })
+    // « groupe » seul ne dit rien au roulement — et ne vaut pas non plus un patch.
+    expect(programFor(prop({ op: 'modifier', seance: 's1', exercice: 'dips', patch: { groupe: 'quadris' } }), ctx)).toBeNull()
   })
 
   it('refuse un patch vide, un exercice inconnu, une séance inconnue, un geste inventé', () => {

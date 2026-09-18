@@ -148,6 +148,25 @@ function playTones(ctx: AudioContext, vol: number, tones: ToneSpec[]) {
 }
 
 /**
+ * Jouer maintenant si le contexte tourne, sinon dès qu'il a repris.
+ *
+ * Un onglet resté caché retrouve son `AudioContext` en `suspended` : c'est l'autre
+ * moitié du bip qui ne sonnait pas en arrière-plan. La piste de veille rouvre le
+ * robinet (voir plus bas), mais elle démarre à quelques centaines de millisecondes
+ * du bip — assez pour que `playTones` tombe encore sur un contexte suspendu, où
+ * `currentTime` est FIGÉ : les oscillateurs sont programmés dans un temps qui
+ * n'avance pas, et ils partent à la reprise, en vrac.
+ *
+ * On attend donc la reprise. En cas d'échec — un navigateur peut refuser sans geste
+ * utilisateur récent — on joue quand même : ça ne peut pas être pire que se taire.
+ */
+function jouerQuandPret(ctx: AudioContext, vol: number, tones: ToneSpec[]) {
+  const lancer = () => { try { playTones(ctx, vol, tones) } catch { /* audio indisponible */ } }
+  if (ctx.state === 'running') { lancer(); return }
+  try { void Promise.resolve(ctx.resume()).then(lancer, lancer) } catch { lancer() }
+}
+
+/**
  * La chaîne audio est partagée avec le fractionné, et c'est délibéré.
  *
  * Ce qui rend ces bips audibles dans une salle n'est pas la fréquence, c'est la
@@ -167,7 +186,7 @@ export function sonner(tones: ToneSpec[], volume?: number) {
   // c'est l'inverse de couper la musique.
   const fin = Math.max(...tones.map(t => t.t + t.d), 0)
   baisserLeSonUnInstant(Math.round(fin * 1000) + 400)
-  try { playTones(ctx, volume ?? soundVolume.value, tones) } catch { /* audio indisponible */ }
+  jouerQuandPret(ctx, volume ?? soundVolume.value, tones)
 }
 
 /** Débloque l'audio depuis un tap (obligatoire sur iOS) — même geste que le repos. */
@@ -175,6 +194,16 @@ export function debloquerAudio() { unlockAudio() }
 
 /** Réserve (ou rend) la piste inaudible qui empêche Chrome Android de geler l'onglet. */
 export function veilleAudio(actif: boolean) { actif ? startKeepAlive() : stopKeepAlive() }
+
+/**
+ * « Mon prochain son doit s'entendre à cet instant-là. »
+ *
+ * Le fractionné change de phase toutes les quinze à soixante secondes et sonne à
+ * chaque changement : annoncer la frontière suivante fait partir la piste juste
+ * avant, au lieu d'attendre le filet des quatre minutes — c'est-à-dire au lieu de
+ * traverser tout un bloc de sprints en silence.
+ */
+export function veilleProchainSon(t: number) { noterEcheance('fractionne', t) }
 
 /** Le motif de vibration choisi dans les réglages, pour qui veut vibrer sans bip. */
 export function motifVibration(): number[] { return vibratePattern() }
@@ -205,7 +234,7 @@ function ensureKeepAlive(): HTMLAudioElement | null {
 let veilleurs = 0
 
 /**
- * La piste ne tourne QUE quand l'onglet est caché, et pas tout de suite.
+ * La piste ne tourne QUE quand l'onglet est caché, et le plus tard possible.
  *
  * ── D'abord : seulement caché ───────────────────────────────────────────────
  *
@@ -215,30 +244,72 @@ let veilleurs = 0
  * s'arrête, et il faut aller la relancer à la main sans savoir pourquoi elle s'est
  * tue. Valider une série coupait Spotify, pour rien.
  *
- * ── Ensuite : seulement au bout de quatre minutes ───────────────────────────
+ * ── Ensuite : cinq secondes avant le bip, et non quatre minutes après ───────
  *
- * La correction précédente déplaçait le problème sans le résoudre : la piste partait
- * dès qu'on quittait l'application, donc exactement quand on va lire un message
- * pendant son repos — et la musique baissait là au lieu de baisser ici.
+ * La correction précédente armait la piste pour quatre minutes de fond, en
+ * s'appuyant sur un fait vrai : sous cinq minutes cachées, Chrome se contente de
+ * regrouper les minuteurs à la SECONDE (« Heavy throttling of chained JS timers »,
+ * Chrome 88), ce qui suffit à un décompte qui se recale de toute façon sur `endAt`.
  *
- * Or Chrome ne serre la vis qu'en DEUX temps (voir « Heavy throttling of chained JS
- * timers », Chrome 88) :
+ * Vrai du DÉCOMPTE, faux du SON. Un onglet caché qui ne joue rien voit son contexte
+ * audio suspendu : le décompte arrive à zéro à l'heure, `beep()` s'exécute, et rien
+ * ne sort. Symptôme rapporté tel quel : « j'ai mis l'app en fond et le son du chrono
+ * ne s'est pas déclenché ». Un repos dure une à trois minutes, donc il n'atteignait
+ * jamais les quatre minutes d'armement — autrement dit la piste ne partait jamais
+ * quand c'était justement le seul moment où elle servait.
  *
- *   · onglet caché depuis moins de cinq minutes → les minuteurs sont regroupés à la
- *     SECONDE. Un `setInterval(250 ms)` tombe à 1 Hz, ce qui suffit très largement à
- *     un décompte qui se recale de toute façon sur `endAt` ;
- *   · au-delà de cinq minutes → une fois par MINUTE, et là le bip de fin arrive en
- *     retard. C'est le seul moment où la piste sert. Jouer du son exempte de ce
- *     second palier.
+ * Ce qu'il faut n'est pas du son PENDANT le repos, c'est du son AU MOMENT du bip.
+ * Chaque demandeur annonce donc son échéance — l'instant où son prochain son doit
+ * s'entendre — et la piste démarre cinq secondes avant : le temps que le système
+ * rende le focus audio et que le contexte reprenne. Sur un repos de quatre-vingt-dix
+ * secondes, la musique baisse sur les cinq dernières au lieu des quatre-vingt-dix.
  *
- * Un repos entre séries dure une à trois minutes : il n'atteint jamais le second
- * palier, et n'a donc jamais eu besoin de la piste. Elle est armée pour quatre
- * minutes — une minute de marge avant le couperet — et ne démarre que si l'onglet
- * est TOUJOURS caché et qu'un minuteur tourne encore. En pratique, un bloc de
- * fractionné la déclenche ; un repos, jamais.
+ * ── Et les quatre minutes restent, en FILET ─────────────────────────────────
+ *
+ * Au-delà de cinq minutes cachées, les minuteurs passent à un par MINUTE : l'ordre
+ * d'armement lui-même arriverait en retard, et viser « cinq secondes avant » ne
+ * voudrait plus rien dire. S'armer à quatre minutes — une minute avant le couperet —
+ * protège les minuteurs longs avant qu'il tombe. Les deux règles ne se contredisent
+ * pas : on retient la plus PROCHE des deux.
  */
 const DELAI_VEILLE_MS = 4 * 60 * 1000
+/** Ce qu'on laisse au système pour rendre le focus audio avant que le bip parte. */
+const MARGE_VEILLE_MS = 5 * 1000
 let armement: ReturnType<typeof setTimeout> | null = null
+
+/**
+ * Quand chaque demandeur attend son prochain son (horodatage ms).
+ *
+ * Nommé par demandeur, parce que le repos et le fractionné peuvent tourner ensemble :
+ * l'arrêt de l'un ne doit pas emporter l'échéance de l'autre — c'est la même raison
+ * qui a donné le compteur `veilleurs`. Une échéance DÉPASSÉE est ignorée plutôt que
+ * retirée : elle n'a plus rien à protéger, et la faire disparaître demanderait de
+ * savoir quand, ce que personne ici n'observe.
+ */
+const echeances = new Map<string, number>()
+
+function noterEcheance(qui: string, t: number) {
+  echeances.set(qui, t)
+  // Réarmer, sinon un délai calculé sur l'ancienne échéance reste en vol : rallonger
+  // un repos ferait partir la piste au moment de l'ancienne fin.
+  desarmerVeille()
+  appliquerVeille()
+}
+function oublierEcheance(qui: string) { echeances.delete(qui) }
+
+/** La plus proche des échéances encore à venir, ou 0 si personne n'en annonce. */
+function prochaineEcheance(): number {
+  const maintenant = Date.now()
+  let min = 0
+  for (const t of echeances.values()) if (t > maintenant && (!min || t < min)) min = t
+  return min
+}
+
+function delaiArmement(): number {
+  const t = prochaineEcheance()
+  if (!t) return DELAI_VEILLE_MS
+  return Math.max(0, Math.min(DELAI_VEILLE_MS, t - MARGE_VEILLE_MS - Date.now()))
+}
 
 function veilleSouhaitee(): boolean {
   return veilleurs > 0 && import.meta.client && document.visibilityState === 'hidden'
@@ -266,7 +337,7 @@ function appliquerVeille() {
     // pris le focus, et le mal est fait.
     partagerLeSon()
     try { a.currentTime = 0; const p = a.play(); if (p && typeof p.catch === 'function') p.catch(() => {}) } catch { /* ignore */ }
-  }, DELAI_VEILLE_MS)
+  }, delaiArmement())
 }
 
 let ecouteVisibilite = false
@@ -276,13 +347,15 @@ function ecouterVisibilite() {
   document.addEventListener('visibilitychange', appliquerVeille)
 }
 
-function startKeepAlive() {
+function startKeepAlive(qui = 'fractionne', echeance?: number) {
   veilleurs++
+  if (echeance) echeances.set(qui, echeance)
   ecouterVisibilite()
   appliquerVeille()
 }
-function stopKeepAlive() {
+function stopKeepAlive(qui = 'fractionne') {
   veilleurs = Math.max(0, veilleurs - 1)
+  oublierEcheance(qui)
   appliquerVeille()
 }
 
@@ -400,7 +473,7 @@ function beep() {
   if (!import.meta.client || !soundEnabled.value) return
   const ctx = getCtx()
   if (!ctx) return
-  try { playTones(ctx, soundVolume.value, SOUNDS[soundType.value] || SOUNDS.bip) } catch { /* audio indisponible */ }
+  jouerQuandPret(ctx, soundVolume.value, SOUNDS[soundType.value] || SOUNDS.bip)
 }
 
 /**
@@ -444,14 +517,14 @@ function tick() {
     finished = true
     clear()
     secondsLeft.value = 0
-    stopKeepAlive()
+    stopKeepAlive('repos')
     alertEnd()
   }
 }
 
 function stop() {
   clear()
-  stopKeepAlive()
+  stopKeepAlive('repos')
   finished = true
   secondsLeft.value = 0
   totalSeconds.value = 0
@@ -462,8 +535,10 @@ function start(sec: number) {
   finished = false
   unlockAudio()    // appelé depuis un tap → autorise le son de fin sur mobile
   prepareNotify()  // demande la permission de notifier (pour l'arrière-plan)
-  startKeepAlive() // garde l'onglet actif en arrière-plan
   endAt = Date.now() + sec * 1000
+  // L'échéance AVANT de réclamer la veille : c'est elle qui décide quand la piste
+  // part, et la poser après ferait armer sur le filet des quatre minutes.
+  startKeepAlive('repos', endAt)
   totalSeconds.value = sec
   secondsLeft.value = sec
   // tick fréquent : le décompte se recale sur endAt au retour de veille/arrière-plan
@@ -473,6 +548,9 @@ function start(sec: number) {
 function addTime(delta: number) {
   if (secondsLeft.value <= 0) return
   endAt += delta * 1000
+  // Le bip part plus tard : la piste de veille doit s'armer plus tard aussi, sinon
+  // elle démarrerait à l'ancienne fin et baisserait la musique pour rien.
+  noterEcheance('repos', endAt)
   const remain = Math.max(1, Math.ceil((endAt - Date.now()) / 1000))
   secondsLeft.value = remain
   if (remain > totalSeconds.value) totalSeconds.value = remain

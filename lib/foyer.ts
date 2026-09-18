@@ -164,10 +164,6 @@ export const bornerRepas = (n: unknown): number => {
 export const repasDe = (repas: ConvivesRepas | null, id: string): number =>
   bornerRepas(repas?.repas?.[id] ?? 1)
 
-/** Quelqu'un cuisine-t-il pour plus d'un repas ? Décide de ce que l'écran annonce. */
-export const aDesRepasEnPlus = (repas: ConvivesRepas | null): boolean =>
-  !!repas && repas.membres.some(id => repasDe(repas, id) > 1)
-
 /**
  * Repose le nombre de repas d'un membre. Un retour à 1 EFFACE l'entrée plutôt que
  * de l'écrire : c'est ce qui garde « ordinaire » indiscernable de « jamais touché »,
@@ -181,11 +177,6 @@ export function avecRepas(c: ConvivesRepas, id: string, n: number): ConvivesRepa
   const out: ConvivesRepas = { ...c, repas: suivant }
   if (!Object.keys(suivant).length) delete out.repas
   return out
-}
-
-/** Le même nombre pour tout le monde — le geste courant : « je cuisine pour demain ». */
-export function repasPourTous(c: ConvivesRepas, n: number): ConvivesRepas {
-  return c.membres.reduce((acc, id) => avecRepas(acc, id, n), c)
 }
 
 /** Par défaut, ceux du foyer qui sont au repas : le réglage courant, sans surprise. */

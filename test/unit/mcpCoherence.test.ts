@@ -122,6 +122,33 @@ describe('le programme annoncé est celui de l’application', () => {
   })
 
   /**
+   * L'alternance doit être LISIBLE et ÉCRIVABLE, comme les activités.
+   *
+   * Lisible seulement : Claude verrait deux exercices là où la séance du jour n'en
+   * montre qu'un, et conclurait qu'il en manque un à l'écran. Écrivable seulement :
+   * il poserait des groupes sans pouvoir répondre « et cette semaine, c'est lequel ? »
+   * sans refaire le calcul de tête — donc en se trompant une fois sur deux.
+   *
+   * Et le piège de NOM doit être écrit noir sur blanc : « groupes » est déjà l'alias
+   * des muscles. Un « groupe: "quadris" » partirait dans le roulement et ferait
+   * disparaître l'exercice une semaine sur deux, sans que le mot employé n'oriente
+   * vers quoi que ce soit.
+   */
+  it('expose l’alternance dans les deux sens, et nomme le piège', () => {
+    expect(MCP).toContain('alternance: "adducteurs"')
+    expect(MCP).toContain('fait_cette_semaine')
+    expect(MCP).toMatch(/exercicesDuJour\(/)
+    // La source ÉCHAPPE ses apostrophes (chaîne entre quotes simples) : on cherche
+    // donc « n_est », avec ce qu'il y a au milieu.
+    expect(MCP).toMatch(/n.{0,2}est PAS un groupe musculaire/)
+    // Le champ doit savoir se DÉFAIRE : sans ça, un regroupement posé par erreur
+    // est sans retour depuis une conversation.
+    expect(MCP).toContain('alternance: "" »')
+    // Et la lecture des champs doit refuser le mot piégé.
+    expect(PROPOSALS).toMatch(/pick\(raw, \['alternance', 'groupe_alternance', 'rotation'\]\)/)
+  })
+
+  /**
    * Un champ ÉCRIVABLE que la note ne mentionne pas est un champ mort.
    *
    * `repas` — combien de fois chacun mange ce plat — part dans le miroir tout seul,

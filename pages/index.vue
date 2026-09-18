@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { sessionMuscles } from '~/lib/muscles'
+import { exercicesDuJour } from '~/lib/rotation'
+import type { Session } from '~/data/sportProgram'
 import { shiftIso } from '~/utils/sportStats'
 import { useProgram } from '~/composables/useProgram'
 import { useProfile } from '~/composables/useProfile'
@@ -70,6 +72,15 @@ const nextSession = computed(() => {
   return null
 })
 const otherSessions = computed(() => { const id = todaySession.value?.id; return prog.value.filter(s => s.id !== id) })
+/**
+ * Le nombre d'exercices ANNONCÉ est celui de la semaine en cours.
+ *
+ * Une séance qui fait alterner adducteurs et abducteurs en contient sept et n'en fait
+ * que six : annoncer sept sur la carte, puis en afficher six dans la feuille, se lit
+ * comme un exercice perdu en route.
+ */
+const combienDExercices = (sess: Session) => exercicesDuJour(sess.exercises, todayISO.value ?? '').length
+
 const doneToday = computed(() => (todayISO.value ? sessionLog().filter(s => s.at.slice(0, 10) === todayISO.value) : []))
 // Séance du jour déjà enregistrée (→ bouton « Modifier » au lieu de « Démarrer »)
 const todayRecord = computed(() => {
@@ -104,7 +115,7 @@ const todayRecord = computed(() => {
           <div v-if="doneToday.length" class="done-badge">✓ Déjà fait aujourd'hui : {{ doneToday.map(s => s.name).join(', ') }}</div>
           <div class="sc-muscles"><span v-for="m in sessionMuscles(todaySession)" :key="m" class="sc-chip">{{ m }}</span></div>
           <div class="today-foot">
-            <span class="muted">{{ todaySession.exercises.length }} exercices</span>
+            <span class="muted">{{ combienDExercices(todaySession) }} exercices</span>
             <!-- Lire avant de s'engager. Le geste principal ne change pas de place :
                  celui-ci se pose à côté, en second. -->
             <button class="btn today-go" @click="apercuSession(todaySession)">👁 Voir</button>
@@ -151,7 +162,7 @@ const todayRecord = computed(() => {
           </div>
           <div class="sc-name">{{ s.name }}</div>
           <div class="sc-muscles"><span v-for="m in sessionMuscles(s)" :key="m" class="sc-chip">{{ m }}</span></div>
-          <div class="sc-foot"><span class="sc-count mono">{{ s.exercises.length }} exercices</span></div>
+          <div class="sc-foot"><span class="sc-count mono">{{ combienDExercices(s) }} exercices</span></div>
         </button>
         <button class="btn-primary sc-start" :style="{ background: s.color }" @click="startSession(s)">
           {{ activeSession ? (activeSession.id === s.id ? 'Reprendre →' : 'Aperçu') : 'Démarrer →' }}

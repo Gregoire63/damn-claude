@@ -518,7 +518,7 @@ emporter les autres.
               "ordre": ["squat", "sdt-r", "fentes", "leg-curl", "mollets", "releves"] } }
 ```
 
-#### Les sept choses à ne pas oublier
+#### Les huit choses à ne pas oublier
 
 **`creer-seance` veut un identifiant de séance LIBRE** — tous les autres gestes
 veulent l'inverse. Chaque exercice a besoin d'un nom, de séries, de reps et d'un
@@ -563,6 +563,26 @@ seul, le réutiliser rangerait de vieux records sous un exercice jamais fait. Po
 `optionnel: true` affiche le mouvement grisé en fin de séance et le sort du seuil des
 80 % qui autorise l'enregistrement ; il compte normalement dans le volume et les
 records dès qu'il est fait.
+
+**`alternance` fait TOURNER deux mouvements sur une même place.** Les exercices qui
+portent le même nom de groupe se partagent une ligne de la séance, et c'est la semaine
+du calendrier qui désigne celui du jour : deux membres donnent une semaine sur deux,
+trois une semaine sur trois. Le rang dans le roulement est l'ORDRE des membres dans la
+séance — pour l'inverser, c'est `reordonner`, il n'existe pas de champ « semaine ».
+
+```json
+{ "resume": "Adducteurs et abducteurs en alternance, une semaine sur deux",
+  "cible": "programme",
+  "detail": { "op": "modifier", "seance": "s3", "exercice": "adducteur",
+              "alternance": "adducteurs" } }
+```
+
+Ne confonds pas avec `muscles` : `alternance` n'est pas un groupe musculaire.
+`alternance: ""` sort le mouvement de son groupe et le remet toutes les semaines —
+c'est le seul champ qui sache se défaire, et sans lui un regroupement posé par erreur
+serait sans retour. L'outil `programme` rend `alternance` et `fait_cette_semaine` :
+un mouvement absent de la séance du jour n'est pas retiré, il est simplement hors
+tour.
 
 #### `ecart_reps` : quand la fiche et le carnet ne disent pas la même chose
 
