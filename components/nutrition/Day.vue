@@ -276,7 +276,7 @@ const foodName = (id: string) => library.value.foods[id]?.name ?? id
     <!-- L'ajustement -->
     <div v-if="adjustment" class="card nu-adjust" :class="{ up: adjustment.covered > 0 }">
       <div class="nu-adjust-head">
-        <span class="nu-adjust-delta mono">{{ adjustment.covered > 0 ? '+' : '' }}{{ adjustment.covered }} kcal</span>
+        <span class="nu-adjust-delta mono">{{ adjustment.covered > 0 ? '+' : '−' }}{{ Math.abs(adjustment.covered) }} kcal</span>
         <span class="nu-adjust-title">
           {{ adjustment.covered > 0 ? 'Tu peux manger un peu plus' : 'Allège les repas d\'aujourd\'hui' }}
         </span>

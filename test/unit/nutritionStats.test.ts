@@ -780,6 +780,60 @@ describe('ajustement du dîner', () => {
   })
 })
 
+// ─── Le dîner sans féculent ──────────────────────────────────────────────────
+// Un tajine, une salade composée, un plat du dehors : rien sur quoi agir en
+// grammes. La consigne se rabat sur une phrase — et c'est là que deux défauts
+// d'affichage se sont logés, tous les deux visibles sur la feuille des repas.
+describe('dîner sans féculent : la consigne reste lisible', () => {
+  const jour = buildDay(0, true)
+  const diner = jour.meals.find(m => m.slot === 'dinner')!
+  const sansFeculent = { ...diner, items: diner.items.filter(i => !isStarchy(FOOD_BY_ID[i.food])) }
+
+  // Régression : `applied` valait 0, et la carte affichait « 0 kcal » juste au-dessus
+  // de « Allège les repas d'aujourd'hui ». Le montant annoncé contredisait la consigne.
+  it('annonce le montant demandé, pas zéro', () => {
+    const a = dinnerAdjustment(2500, 2200, sansFeculent)!
+    expect(a.foodId).toBeNull()
+    expect(a.applied).toBe(-300)
+    expect(a.delta).toBe(-300)
+  })
+
+  // Régression : « Retire 244.42000000000002 kcal au dîner ». L'écart est une
+  // différence entre deux sommes de flottants ; sans arrondi à la source, elle
+  // ressortait telle quelle dans la phrase.
+  it('ne laisse jamais sortir une décimale dans la phrase', () => {
+    const a = dinnerAdjustment(2513.3300000000004, 2268.91, sansFeculent)!
+    expect(a.label).toMatch(/^Retire \d+ kcal au dîner/)
+    expect(Number.isInteger(a.applied)).toBe(true)
+    expect(Number.isInteger(a.delta)).toBe(true)
+  })
+
+  it('arrondit aussi le sens inverse', () => {
+    const a = dinnerAdjustment(1800.2222, 1950.777, sansFeculent)!
+    expect(a.label).toMatch(/^Ajoute \d+ kcal au dîner/)
+  })
+
+  // Rien n'est répercuté sur les compteurs faute d'aliment à réduire : proposer
+  // « Réduction appliquée » ferait croire le contraire. Signature vide = pas de bouton.
+  it('ne propose rien à confirmer', () => {
+    const plan = adjustPlanFor({ ...jour, meals: jour.meals.map(m => (m.slot === 'dinner' ? sansFeculent : m)) },
+      jour.total.kcal - 300, 'separate')!
+    expect(plan.portion!.foodId).toBeNull()
+    expect(plan.covered).toBe(plan.portion!.applied)
+    expect(adjustSignature(plan)).toBe('')
+    // Et le plan reste intact : la consigne est un conseil, pas une correction.
+    expect(applySteps(jour, plan)).toBe(jour)
+  })
+
+  // Un féculent au dîner : là, il y a un poids à peser, donc quelque chose à confirmer.
+  it('garde la confirmation quand il y a un féculent à repeser', () => {
+    const plan = adjustPlanFor(jour, jour.total.kcal - 300, 'separate')!
+    expect(plan.portion!.foodId).not.toBeNull()
+    expect(adjustSignature(plan)).not.toBe('')
+    expect(Number.isInteger(plan.delta)).toBe(true)
+  })
+})
+
 // ─── Repas cuisinés d'avance ─────────────────────────────────────────────────
 // Le week-end, tout est cuisiné d'un coup et les portions sont figées : « 165 g au
 // lieu de 255 g » devient inapplicable. La consigne doit devenir un retrait.

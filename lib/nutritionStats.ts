@@ -1301,15 +1301,24 @@ export function dinnerAdjustment(
   const delta = target - plannedKcal
   if (Math.abs(delta) < ADJUST_THRESHOLD || !dinner) return null
 
-  const capped = clamp(delta, -ADJUST_MAX, ADJUST_MAX)
+  // Les calories se comptent en entiers. `delta` est une différence entre deux
+  // sommes de flottants : 244.42000000000002 partait tel quel dans la consigne
+  // affichée. On arrondit ICI, à la source, plutôt que dans chaque gabarit qui la
+  // lit — un arrondi oublié quelque part suffit à faire ressortir le chiffre brut.
+  const capped = Math.round(clamp(delta, -ADJUST_MAX, ADJUST_MAX))
   // On agit sur le féculent le plus calorique du plat : c'est le levier le plus lisible.
   const starchy = dinner.items
     .filter(i => isStarchy(foods[i.food]))
     .sort((a, b) => (foods[b.food].kcal * b.g) - (foods[a.food].kcal * a.g))[0]
 
   if (!starchy) {
+    // `applied` porte ce que la consigne DEMANDE, même sans féculent sur quoi agir.
+    // À zéro, la carte annonçait « 0 kcal » juste au-dessus de « Allège les repas
+    // d'aujourd'hui » : deux informations qui se contredisent dans le même bloc.
+    // Rien n'est appliqué aux compteurs pour autant — `applyAdjustment` sort dès que
+    // `foodId` est nul, et `adjustSignature` ne propose alors aucune confirmation.
     return {
-      delta: capped, applied: 0, foodId: null, foodName: '',
+      delta: capped, applied: capped, foodId: null, foodName: '',
       fromG: 0, toG: 0,
       label: capped < 0
         ? `Retire ${Math.abs(capped)} kcal au dîner (une cuillère d'huile en moins, moins de pain).`
@@ -1408,7 +1417,10 @@ export interface AdjustPlan {
  */
 export function adjustSignature(plan: AdjustPlan | null): string {
   if (!plan) return ''
-  if (plan.portion) return `p:${plan.portion.foodId ?? plan.portion.foodName}:${plan.portion.toG}`
+  // Sans aliment sur lequel agir, la consigne reste un conseil que l'application ne
+  // sait pas répercuter : proposer « Réduction appliquée » laisserait croire que le
+  // compteur a bougé alors qu'il n'a pas de quoi bouger.
+  if (plan.portion) return plan.portion.foodId ? `p:${plan.portion.foodId}:${plan.portion.toG}` : ''
   if (!plan.steps.length) return ''
   return `s:${plan.steps.map(st => `${st.slot}:${st.kind}:${Math.round(st.kcal)}`).join('|')}`
 }
@@ -1509,7 +1521,7 @@ export function adjustPlanFor(
   mode: PrepMode,
   foods: Record<string, Food> = FOOD_BY_ID,
 ): AdjustPlan | null {
-  const delta = target - day.total.kcal
+  const delta = Math.round(target - day.total.kcal)
   if (Math.abs(delta) < ADJUST_THRESHOLD) return null
 
   if (mode === 'separate') {
