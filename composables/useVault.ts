@@ -17,6 +17,7 @@ import { useRestTimer } from '~/composables/useRestTimer'
 import { useFractionne } from '~/composables/useFractionne'
 import { useMesures } from '~/composables/useMesures'
 import { useSnapshot } from '~/composables/useSnapshot'
+import { useJournal } from '~/composables/useJournal'
 import { createAt, pushAt, removeAt, setAt as setPointer } from '~/lib/pointer'
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -72,6 +73,12 @@ const LAST_PUSH_KEY = 'gr-vault-push-v1'
 /** En dessous, on ne repousse pas : le miroir n'a pas à suivre chaque frappe. */
 const PUSH_MIN_INTERVAL_MS = 5 * 60 * 1000
 
+/** Le code HTTP, quand l'erreur en porte un. 401 et 503 ne se réparent pas pareil. */
+const statutDe = (e: unknown): number | undefined => {
+  const n = (e as { statusCode?: number, status?: number })?.statusCode ?? (e as { status?: number })?.status
+  return typeof n === 'number' ? n : undefined
+}
+
 /**
  * Relever la boîte de réception.
  *
@@ -79,14 +86,30 @@ const PUSH_MIN_INTERVAL_MS = 5 * 60 * 1000
  * par le composable : elle ne touche que des refs de module, il n'y avait rien à
  * capturer.
  */
+/**
+ * Le dernier relevé a-t-il échoué ?
+ *
+ * Il le faut, parce que `pending` ne sait pas répondre : vide après un relevé réussi
+ * et vide après un relevé raté, c'est la même liste. L'écran affichait donc « Rien
+ * en attente » pendant qu'il n'avait rien pu demander, et trois propositions ont
+ * passé la soirée dans le coffre sans que rien ne le laisse voir.
+ */
+const releveKo = ref(false)
+
 async function loadPending() {
   try {
     const r = await $fetch<{ mirrorAt: string | null, pending: RawProposal[], recent: RawProposal[] }>('/api/vault/pending')
     mirrorAt.value = r.mirrorAt
     pending.value = r.pending
     recent.value = r.recent
+    releveKo.value = false
+    // Le relevé repasse : ce qui a été noté pendant la panne a fait son office.
+    useJournal().oublier(['boite'], new Date().toISOString())
   }
-  catch { /* session expirée : `refresh` le dira */ }
+  catch (e) {
+    releveKo.value = true
+    useJournal().noter({ poste: 'boite', quoi: messageErreur(e), http: statutDe(e) })
+  }
 }
 
 // ─── La veille : voir arriver une proposition sans recharger la page ────────
@@ -172,6 +195,7 @@ export function useVault() {
   const { bmrOn } = useEnergy()
   const mesures = useMesures()
   const { buildSnapshot } = useSnapshot()
+  const journal = useJournal()
 
   /**
    * Ce que le validateur doit savoir du monde réel.
@@ -216,7 +240,12 @@ export function useVault() {
       state.value = await $fetch<VaultState>('/api/auth/me')
       if (state.value.connected) await loadPending()
     }
-    catch { /* hors ligne : le coffre est un confort, pas une dépendance */ }
+    catch (e) {
+      // Hors ligne, le coffre reste un confort : l'application n'en dépend pas. Mais
+      // l'absence de propositions qui s'ensuit n'est pas une absence de propositions,
+      // et c'est ce que le journal garde.
+      journal.noter({ poste: 'session', quoi: messageErreur(e), http: statutDe(e) })
+    }
   }
 
   /**
@@ -328,7 +357,11 @@ export function useVault() {
       localStorage.setItem(LAST_PUSH_KEY, String(Date.now()))
       return true
     }
-    catch (e) { error.value = message(e); return false }
+    catch (e) {
+      error.value = message(e)
+      journal.noter({ poste: 'miroir', quoi: messageErreur(e), http: statutDe(e) })
+      return false
+    }
     finally { busy.value = false }
   }
 
@@ -362,6 +395,11 @@ export function useVault() {
     // Même chemin pour le sport hors séance : c'est lui qui rend une activité
     // corrigeable par une proposition, sans action dédiée à inventer.
     activites.restore(snap)
+    // Et pour le journal : c'est ce qui permet à Claude de proposer d'effacer une
+    // ligne réglée, par le chemin générique, sans outil d'écriture de plus. Une
+    // proposition absente de l'instantané ne vide rien — `restoreAll` ne touche
+    // qu'aux sections présentes.
+    if (snap.erreurs !== undefined) journal.restore(snap.erreurs)
   }
 
   /**
@@ -543,7 +581,11 @@ export function useVault() {
       recent.value = [{ ...p, status, resolvedAt: new Date().toISOString() }, ...recent.value].slice(0, 10)
       return true
     }
-    catch (e) { error.value = message(e); return false }
+    catch (e) {
+      error.value = message(e)
+      journal.noter({ poste: 'proposition', quoi: messageErreur(e), http: statutDe(e), sujet: p.id })
+      return false
+    }
   }
 
   /** Applicable d'un tap ? Sert aussi à l'écran, pour ne pas promettre un bouton
@@ -553,7 +595,7 @@ export function useVault() {
   const pendingCount = computed(() => pending.value.length)
 
   return {
-    state, pending, recent, mirrorAt, busy, error, pendingCount, arrivees, vuArrivees,
+    state, pending, recent, mirrorAt, busy, error, pendingCount, arrivees, vuArrivees, releveKo,
     hydrate, refresh, register, ajouterSecours, revoquer, rename, login, logout, loadPending, relever, push, apply, resolve, applicable, ctx, restoreAll,
   }
 }

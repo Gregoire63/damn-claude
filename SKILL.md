@@ -128,7 +128,37 @@ sauvegarde : les sections, leur taille, un exemple de chemin. Avec un chemin
 modifiable. C'est le passage obligé avant toute correction de champ : il donne la
 valeur exacte à mettre dans `de`.
 
-**Proposer** — `proposer_modification`, `propositions` (l'historique des tiennes).
+**Proposer** — `proposer_modification`, `propositions` (l'historique des tiennes),
+**`annuler_proposition`** (en retirer une qui attend encore).
+
+> **Relis `propositions` avant d'en déposer une de plus.** Rien ne te confirme qu'une
+> proposition est arrivée sous ses yeux : il la validera plus tard, peut-être demain.
+> Redéposer parce qu'on ne voit rien venir est le réflexe exact qui a mis trois fois
+> la même tarte dans sa boîte un soir d'octobre. Si tu y trouves un doublon à toi, ou
+> une proposition devenue fausse depuis, retire-la — `annuler_proposition` n'écrit
+> rien dans ses données, il enlève une demande, donc il n'y a aucune validation à
+> attendre. Ce qu'il a déjà appliqué ou refusé ne se retire pas : sa décision lui
+> appartient.
+
+**Savoir ce qui a raté de son côté** — **`erreurs`**. Le journal que l'application
+tient de ses propres échecs : relevé de la boîte de réception, envoi du miroir,
+session, application d'une proposition, connecteur. À lire dès que quelque chose ne
+s'est pas passé comme prévu — une proposition restée sans réponse, un miroir qui ne
+rajeunit plus, une pesée qui n'arrive pas.
+
+> Une boîte de réception vide et une boîte injoignable donnent le MÊME écran. C'est
+> ici, et seulement ici, qu'on les distingue — ne conclus jamais « il n'a rien reçu »
+> sans l'avoir regardé.
+>
+> Deux pièges, et le second est sournois. Le journal voyage DANS le miroir : quand la
+> panne était le réseau, il arrive avec le premier envoi qui réussit, donc en retard —
+> c'est normal, et c'est ce qui le rend utile. Et s'il est vide alors que le miroir ne
+> rajeunit plus, ça ne veut pas dire que tout va bien : ça veut dire que rien ne part.
+> Regarde `miroir_du` avant de conclure.
+>
+> Une ligne réglée s'efface comme n'importe quelle donnée, par `correction / quoi:
+> champ`, op `supprimer`, chemin `/erreurs/<rang>` — en lisant d'abord le chemin avec
+> `champ`, parce que le rang bouge dès qu'une ligne part.
 
 > **N'invente jamais un identifiant.** Un plat plausible mais inexistant est refusé
 > par l'app, et une semaine entière tombe avec lui. Appelle `plats` avant de citer

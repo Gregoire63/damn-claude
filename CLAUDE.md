@@ -218,6 +218,39 @@ ferait hériter l'une de la règle de l'autre. Et une activité ne bascule PAS l
 en jour de salle : les féculents et les créneaux dépendent de la séance de
 musculation, pas de l'effort en général.
 
+**Un `catch` muet sur un appel au serveur fabrique un mensonge.** `loadPending`
+avalait son erreur au nom de « le coffre est un confort, pas une dépendance » — vrai
+pour l'application, faux pour celui qui la lit. `pending` restait sur sa dernière
+valeur, vide puisque tout venait d'être appliqué, et l'écran affichait « Rien en
+attente » alors qu'il n'avait rien pu demander. Trois propositions ont attendu une
+soirée. Un relevé raté est un ÉTAT (`releveKo`), pas un non-événement : l'écran le
+dit, et `lib/journal.ts` le garde.
+
+Le journal part dans le miroir, comme le foyer et les activités, pour la même raison :
+Claude le lit, donc il peut expliquer un silence au lieu de le redécouvrir, et proposer
+d'effacer ce qui est réglé par le chemin d'écriture générique. Trois choses s'y
+tiennent :
+
+- **ce qui n'y entre pas** : les refus de `localStorage` (quota, navigation privée).
+  Déjà rattrapés sur place, ils ne cassent rien, et trente lignes de bruit noieraient
+  les trois qui comptent. Seuls le serveur et les propositions sont notés — ce qui peut
+  mentir en silence ;
+- **le regroupement** : même poste, même message, même sujet = une ligne qui compte.
+  Une veille qui échoue toutes les minutes remplirait sinon les cinquante places en une
+  heure et pousserait dehors l'erreur unique qu'on cherchait ;
+- **le retard assumé** : quand la panne EST le réseau, le journal arrive par le premier
+  envoi qui réussit. Un journal qui aurait besoin du réseau pour noter une panne de
+  réseau ne noterait rien. Corollaire désagréable : un journal vide peut vouloir dire
+  que plus rien ne part — l'outil `erreurs` le dit lui-même, parce que « vide » se lit
+  spontanément « tout va bien ».
+
+**Une proposition déposée doit pouvoir être RETIRÉE par qui l'a déposée.** Déposer
+était le seul geste existant : sans accusé de réception, une conversation qui ne voit
+rien arriver redépose, et trois fois la même tarte se retrouvent dans la boîte.
+`annuler_proposition` n'écrit rien dans les données — il enlève une demande, il n'en
+applique aucune —, d'où l'absence de validation. Et il refuse tout ce qui n'est plus
+`pending` : une décision déjà prise appartient à l'utilisateur, pas à la conversation.
+
 **Un nombre calculé s'arrondit à sa SORTIE, jamais au milieu du calcul.**
 `lib/nombres.ts` → `arrondi(n)`, au centième. Deux causes fabriquent des nombres à
 rallonge, et la seconde surprend : la division qui ne tombe pas juste, et la
@@ -269,8 +302,8 @@ error.vue                404 et erreurs serveur
 lib/onglets.ts           les cinq onglets : chemin, libellé, titre (AUCUN import)
 components/sport/        écrans du suivi d'entraînement
 components/nutrition/    écrans du module nutrition
-composables/             l'état, persisté dans localStorage (33 fichiers, pas de Pinia)
-lib/                     logique pure — aucun DOM, aucun stockage, testée (27 fichiers)
+composables/             l'état, persisté dans localStorage (34 fichiers, pas de Pinia)
+lib/                     logique pure — aucun DOM, aucun stockage, testée (28 fichiers)
 utils/                   auto-importé par Nuxt : uniquement du vocabulaire spécifique
 data/                    types et tables de référence — les contenus sont VIDES
 data/exemple/            le pack d'exemple → public/exemple.json
@@ -458,7 +491,7 @@ Deux invariants tenus par des tests :
 
 ## Les tests
 
-1487 tests, 88 fichiers, deux projets. La plupart tournent sur le **pack d'exemple**,
+1512 tests, 89 fichiers, deux projets. La plupart tournent sur le **pack d'exemple**,
 déclaré fichier par fichier (`vi.mock('../../data/nutritionProgram', …)`, voir
 `test/exemple.ts`) : vérifier que la modulation des féculents ne touche pas aux
 protéines demande des aliments aux vraies macros, pas trois objets fabriqués.

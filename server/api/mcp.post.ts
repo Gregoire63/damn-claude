@@ -1,4 +1,4 @@
-import { addProposal, readMirror, readProposals, verifyToken } from '../utils/vault'
+import { addProposal, cancelProposal, readMirror, readProposals, verifyToken } from '../utils/vault'
 import { classerErreur, noteCall, noteOutcome } from '../utils/trace'
 import { TYPES_ACTIVITE, normaliserActivite } from '~/lib/activites'
 import { DAY_NAMES, KIND_GROUP_LABELS, bmrMifflin, builtinWeeks, dayEnergy, dowIndex, expandItems, isDayPlayed, keepsOf, macrosOf, mergeRecipes, mergeFoods, mondayOf, normalizeWeek, proteinPlan, recipeForSlot, resolveDay, roundMacros } from '~/lib/nutritionStats'
@@ -18,6 +18,7 @@ import type { Exercise, Session } from '~/data/sportProgram'
 import { mergeProgram, retiredExercises } from '~/lib/program'
 import { restFor } from '~/lib/rest'
 import { exercicesDuJour } from '~/lib/rotation'
+import { libellePoste, lireJournal } from '~/lib/journal'
 import { ownerName } from './auth/_auth'
 import { repsGap } from '~/lib/repsGap'
 import type { ProgramCustom } from '~/lib/program'
@@ -288,7 +289,21 @@ const TOOLS = [
   },
   {
     name: 'propositions',
-    description: 'Les modifications déjà proposées et leur sort (en attente, appliquée, refusée).',
+    description: 'Les modifications déjà proposées et leur sort (en attente, appliquée, refusée, retirée).',
+    inputSchema: { type: 'object', properties: {} },
+  },
+  {
+    name: 'annuler_proposition',
+    description: 'Retire une proposition ENCORE EN ATTENTE que tu as déposée. Rien n\'est écrit dans ses données : tu enlèves une demande, tu n\'en appliques aucune — donc pas de validation à attendre. À utiliser dès que tu vois un DOUBLON dans « propositions », ou qu\'une proposition est devenue fausse depuis (il a changé d\'avis, la donnée a bougé) : sa boîte de réception est un endroit où il doit pouvoir tout lire, pas une liste à trier. Une proposition déjà appliquée ou refusée ne se retire pas — sa décision lui appartient.',
+    inputSchema: {
+      type: 'object',
+      properties: { id: { type: 'string', description: 'L\'identifiant rendu par « propositions » ou par le dépôt.' } },
+      required: ['id'],
+    },
+  },
+  {
+    name: 'erreurs',
+    description: 'Ce que l\'APPLICATION n\'a pas réussi à faire : relevé de la boîte de réception, envoi du miroir, session, application d\'une proposition, connecteur. À lire quand quelque chose ne s\'est pas passé comme prévu de son côté — une proposition restée sans réponse, un miroir qui ne rajeunit plus, une pesée qui n\'arrive pas. Une boîte vide et une boîte injoignable donnent le même écran : c\'est ici, et seulement ici, qu\'on les distingue. Chaque ligne porte le nombre de fois et la période, parce qu\'une panne répétée est une ligne, pas quarante.',
     inputSchema: { type: 'object', properties: {} },
   },
   {
@@ -716,7 +731,62 @@ async function callTool(name: string, args: Record<string, unknown>): Promise<un
   }
   if (name === 'propositions') {
     const all = await readProposals()
-    return { total: all.length, propositions: all.slice(-20).reverse() }
+    const attente = all.filter(p => p.status === 'pending')
+    return {
+      total: all.length,
+      en_attente: attente.length,
+      // Le doublon est la panne la plus fréquente de cette boîte : sans accusé de
+      // réception, une conversation redépose. On le dit ici plutôt que d'attendre
+      // qu'on le remarque en lisant vingt lignes.
+      ...(attente.length > 1
+        ? { rappel: 'Plusieurs propositions attendent. Vérifie qu\'elles ne font pas deux fois la même chose — « annuler_proposition » retire un doublon sans rien lui demander.' }
+        : {}),
+      propositions: all.slice(-20).reverse(),
+    }
+  }
+  if (name === 'annuler_proposition') {
+    const id = typeof args.id === 'string' ? args.id : ''
+    if (!id) throw new Error('« id » est obligatoire : appelle « propositions » pour le lire.')
+    const ok = await cancelProposal(id, new Date().toISOString())
+    if (!ok) {
+      const p = (await readProposals()).find(x => x.id === id)
+      throw new Error(p
+        ? `Cette proposition n'est plus en attente (${p.status}) : sa décision lui appartient, on ne la retire pas.`
+        : `Aucune proposition « ${id} ». Appelle « propositions » pour lire les identifiants.`)
+    }
+    return { retiree: true, id, rappel: 'Elle a disparu de sa boîte de réception. Rien n\'a été écrit ni défait dans ses données.' }
+  }
+  /**
+   * Les échecs de l'application, tels qu'elle les a notés sur le téléphone.
+   *
+   * Ils arrivent par le miroir, donc EN RETARD quand la panne était le réseau :
+   * l'envoi qui les transporte est le premier qui réussit. C'est exactement ce qui
+   * les rend utiles — ils expliquent après coup un silence qu'on ne pouvait pas
+   * voir pendant.
+   */
+  if (name === 'erreurs') {
+    const m = await readMirror()
+    if (!m) throw new Error('Aucune donnée personnelle : le téléphone n\'a pas encore poussé son miroir.')
+    const d = m.data as Record<string, unknown>
+    const journal = lireJournal(d.erreurs)
+    if (!journal.length) {
+      return { miroir_du: m.at, erreurs: [], rappel: 'Rien de noté. Attention : le journal arrive PAR le miroir — si le miroir lui-même ne rajeunit plus, c\'est que rien ne part, et ça ne se verra pas ici.' }
+    }
+    return {
+      miroir_du: m.at,
+      total: journal.length,
+      erreurs: journal.slice().reverse().map(e => ({
+        poste: e.poste,
+        ou: libellePoste(e.poste),
+        quoi: e.quoi,
+        ...(e.http ? { http: e.http } : {}),
+        ...(e.sujet ? { sujet: e.sujet } : {}),
+        fois: e.fois,
+        depuis: e.at,
+        dernier: e.dernier,
+      })),
+      nettoyage: 'Une ligne réglée s\'efface par « correction / quoi: champ », op « supprimer », chemin /erreurs/<rang>. Lis d\'abord le chemin avec « champ » : le rang change dès qu\'une ligne part.',
+    }
   }
   /**
    * Le programme, tel qu'il est AUJOURD'HUI.

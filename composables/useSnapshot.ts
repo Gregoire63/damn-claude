@@ -8,6 +8,7 @@ import { useFoyer } from '~/composables/useFoyer'
 import { useProgram } from '~/composables/useProgram'
 import { useRepasConvives } from '~/composables/useRepasConvives'
 import { useActivites } from '~/composables/useActivites'
+import { useJournal } from '~/composables/useJournal'
 
 /**
  * L'instantané complet des données, en un seul endroit.
@@ -34,6 +35,7 @@ export function useSnapshot() {
   const foyer = useFoyer()
   const repasConvives = useRepasConvives()
   const activites = useActivites()
+  const journal = useJournal()
 
   function buildSnapshot(): Record<string, unknown> {
     return {
@@ -68,6 +70,20 @@ export function useSnapshot() {
        * pouvoir dicter plutôt que de saisir à la main.
        */
       ...activites.snapshot(),
+      /*
+       * Ce que l'application n'a pas réussi à faire.
+       *
+       * Il part dans le miroir pour la même raison que le foyer : Claude le LIT.
+       * Sans lui, un silence de la boîte de réception ne se diagnostique que si
+       * quelqu'un pense à regarder la console du téléphone au bon moment — c'est-à-
+       * dire jamais. Avec lui, « rien n'attendait » et « je n'ai pas pu demander »
+       * se distinguent après coup, et le nettoyage se propose comme le reste.
+       *
+       * Il arrive forcément EN RETARD quand la panne est le réseau : l'envoi qui le
+       * transporte est le premier qui réussit. C'est voulu — un journal qui aurait
+       * besoin du réseau pour noter une panne de réseau ne noterait rien.
+       */
+      ...journal.snapshot(),
     }
   }
 

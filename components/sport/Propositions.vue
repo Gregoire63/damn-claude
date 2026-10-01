@@ -72,6 +72,9 @@ const aToutAppliquer = ref(false)
 const enLot = ref(false)
 const applicables = computed(() => v.pending.value.filter(p => v.applicable(p)))
 
+/** Le relevé forcé : il contourne l'espacement minimal, puisque c'est un geste. */
+function relancer() { void v.relever(true) }
+
 async function toutAppliquer() {
   aToutAppliquer.value = false
   if (enLot.value) return
@@ -449,7 +452,9 @@ const progChanges = computed(() => {
   <Popup
     popup-class="vt-inbox-popup"
     title="Propositions de Claude"
-    :subtitle="v.pendingCount.value ? `${v.pendingCount.value} en attente · rien n'est écrit avant ta validation` : 'Rien en attente'"
+    :subtitle="v.releveKo.value
+      ? 'Boîte injoignable · le compte ci-dessous peut être faux'
+      : (v.pendingCount.value ? `${v.pendingCount.value} en attente · rien n'est écrit avant ta validation` : 'Rien en attente')"
     @close="emit('close')"
   >
     <template #default>
@@ -511,7 +516,19 @@ const progChanges = computed(() => {
       </template>
 
       <template v-else>
-      <p v-if="!v.pending.value.length" class="muted vt-txt">
+      <!--
+        « Rien en attente » et « je n'ai pas pu demander » ne s'affichaient pas
+        différemment, parce que la liste est vide dans les deux cas. Trois
+        propositions ont attendu une soirée pendant que l'écran annonçait le calme.
+        Un relevé qui échoue le dit maintenant, et ne prétend plus avoir regardé.
+      -->
+      <p v-if="v.releveKo.value" class="vt-txt vt-ko">
+        Je n’ai pas pu relever la boîte{{ v.error.value ? ` — ${v.error.value}` : '' }}.
+        Il y a peut-être quelque chose en attente : ce qui s’affiche ci-dessous date du
+        dernier relevé réussi. Je réessaie tout seul ; tu peux aussi
+        <button type="button" class="vt-relance" @click="relancer">réessayer maintenant</button>.
+      </p>
+      <p v-else-if="!v.pending.value.length" class="muted vt-txt">
         Rien en attente. Ce que Claude propose depuis une conversation atterrit ici, et
         <b>rien n’est écrit</b> avant que tu valides.
       </p>

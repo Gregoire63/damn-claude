@@ -310,3 +310,42 @@ describe('la chaîne complète, sur ses chiffres réels', () => {
     expect(isDayPlayed('2026-08-18', '2026-08-19', 9)).toBe(true)
   })
 })
+
+// ─── Le journal des échecs, et le retrait d'une proposition ──────────────────
+// Deux outils nés de la même soirée : trois fois la même tarte dans la boîte de
+// réception, et un écran qui affichait « Rien en attente » alors qu'il n'avait rien
+// pu demander. L'un rend le silence lisible, l'autre rend le doublon rattrapable.
+describe('ce que le connecteur sait des pannes de l\'application', () => {
+  it('déclare un outil « erreurs » qui lit le journal du miroir', () => {
+    expect(MCP).toMatch(/name: 'erreurs'/)
+    expect(MCP).toMatch(/lireJournal\(/)
+    expect(MCP).toMatch(/from '~\/lib\/journal'/)
+  })
+
+  // Le chemin niché est exactement ce qu'une conversation ne trouve pas toute seule :
+  // la carte de « champ » ne descend pas d'un cran. L'outil dédié est la réponse.
+  it('dit comment effacer une ligne réglée, plutôt que de laisser deviner le chemin', () => {
+    expect(MCP).toMatch(/\/erreurs\/</)
+    expect(MCP).toMatch(/supprimer/)
+  })
+
+  it('déclare le retrait d\'une proposition, et le borne à ce qui attend encore', () => {
+    expect(MCP).toMatch(/name: 'annuler_proposition'/)
+    expect(MCP).toMatch(/cancelProposal\(/)
+    const VAULT = readFileSync('server/utils/vault.ts', 'utf8')
+    // La garde : une décision déjà prise ne se défait pas depuis une conversation.
+    expect(VAULT).toMatch(/found\.status !== 'pending'/)
+    expect(VAULT).toMatch(/'cancelled'/)
+  })
+
+  it('signale les doublons dès que plusieurs propositions attendent', () => {
+    expect(MCP).toMatch(/en_attente/)
+    expect(MCP).toMatch(/annuler_proposition.{0,80}doublon|doublon.{0,120}annuler_proposition/s)
+  })
+
+  // Le piège du journal : il voyage DANS le miroir. Si plus rien ne part, il reste
+  // vide — et un journal vide se lit « tout va bien ». L'outil doit le dire lui-même.
+  it('prévient qu\'un journal vide peut vouloir dire que rien ne part', () => {
+    expect(MCP).toMatch(/le journal arrive PAR le miroir/)
+  })
+})

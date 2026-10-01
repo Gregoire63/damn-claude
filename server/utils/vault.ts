@@ -38,7 +38,7 @@ export interface VaultProposal {
   summary: string
   /** Le détail, tel que l'application saura l'appliquer. */
   patch: Record<string, unknown>
-  status: 'pending' | 'applied' | 'refused'
+  status: 'pending' | 'applied' | 'refused' | 'cancelled'
   resolvedAt?: string
 }
 
@@ -195,6 +195,33 @@ export async function addProposal(p: Omit<VaultProposal, 'id' | 'at' | 'status'>
   const created: VaultProposal = { ...p, id: randomBytes(8).toString('hex'), at: now, status: 'pending' }
   await writeJson(KEY_PROPOSALS, [...all, created].slice(-PROPOSAL_KEEP))
   return created
+}
+
+/**
+ * Retirer une proposition qu'on a déposée soi-même.
+ *
+ * Trois fois la même tarte dans la boîte, un soir d'octobre : la conversation ne
+ * recevait aucun accusé de réception et redéposait, faute de savoir que la première
+ * était arrivée. Elle n'avait AUCUN moyen de se corriger — déposer était le seul
+ * geste existant.
+ *
+ * Ce retrait n'écrit rien dans les données : il enlève une demande, il n'en applique
+ * aucune. C'est pourquoi il ne passe pas par une validation — faire valider le
+ * ménage des doublons reviendrait à faire relire trois fois la même phrase pour
+ * avoir le droit d'en effacer deux.
+ *
+ * Et il ne peut pas défaire une décision : `status !== 'pending'` est un refus, donc
+ * une proposition déjà appliquée pendant que la conversation réfléchissait reste
+ * appliquée.
+ */
+export async function cancelProposal(id: string, now: string): Promise<boolean> {
+  const all = await readProposals()
+  const found = all.find(p => p.id === id)
+  if (!found || found.status !== 'pending') return false
+  found.status = 'cancelled'
+  found.resolvedAt = now
+  await writeJson(KEY_PROPOSALS, all)
+  return true
 }
 
 export async function resolveProposal(id: string, status: 'applied' | 'refused', now: string): Promise<boolean> {

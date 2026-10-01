@@ -636,6 +636,10 @@ input::-webkit-outer-spin-button, input::-webkit-inner-spin-button { -webkit-app
 .vt-row { margin-top: 4px; }
 .vt-warn { background: #f6ece1; border: 1px solid #e6c3b0; color: #b5502f; border-radius: 10px; padding: 10px 12px; font-size: 12.5px; line-height: 1.5; margin-top: 8px; }
 .vt-count { font-size: 11px; color: #b5502f; font-weight: 700; }
+/* Relevé impossible : même teinte que l'avertissement, parce que c'en est un —
+   l'écran ne sait pas ce qui attend, et il doit le dire sans crier. */
+.vt-ko { background: #f6ece1; border: 1px solid #e6c3b0; color: #b5502f; border-radius: 10px; padding: 10px 12px; margin-top: 8px; }
+.vt-relance { background: none; border: none; padding: 0; font-family: var(--font-body); font-size: inherit; color: inherit; font-weight: 700; text-decoration: underline; cursor: pointer; }
 .vt-prop { background: var(--bg-secondary); border: 1px solid var(--bg-accent); border-left: 3px solid var(--accent-primary); border-radius: 10px; padding: 11px 12px; margin-top: 8px; display: flex; flex-direction: column; gap: 6px; }
 .vt-p-sum { font-size: 13.5px; font-weight: 600; line-height: 1.45; }
 .vt-p-meta { font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.06em; }

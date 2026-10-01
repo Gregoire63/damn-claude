@@ -35,7 +35,8 @@ export interface RawProposal {
   action: string
   summary: string
   patch: Record<string, unknown>
-  status: 'pending' | 'applied' | 'refused'
+  /** « cancelled » : retirée par Claude lui-même, jamais par un geste de l'écran. */
+  status: 'pending' | 'applied' | 'refused' | 'cancelled'
   resolvedAt?: string
 }
 
