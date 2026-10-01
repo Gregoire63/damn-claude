@@ -153,3 +153,62 @@ describe('les passkeys', () => {
     expect(await readCredentials()).toEqual([])
   })
 })
+
+// ─── La session glisse, sinon elle tombe un matin sans prévenir ──────────────
+// Le jeton porte son expiration dans sa signature, et rien ne la repoussait : elle
+// était comptée depuis le déverrouillage au passkey, une fois pour toutes. Quelqu'un
+// qui ouvrait l'application tous les jours se faisait déconnecter au trentième — et
+// rien ne le disait : le relevé de la boîte et l'envoi du miroir s'arrêtent tous les
+// deux en silence, et l'écran annonce « Rien en attente ».
+describe('la fenêtre de session se repousse à l\'usage', async () => {
+  const { SESSION_TTL, sessionAProlonger, signToken, verifyToken } = await import('../../server/utils/vault')
+  const T0 = Date.UTC(2026, 9, 1, 8, 0, 0)
+  const JOUR = 86_400_000
+
+  it('ne resigne rien tant qu\'il reste plus de la moitié de la vie', () => {
+    const exp = Math.floor(T0 / 1000) + SESSION_TTL
+    expect(sessionAProlonger(exp, T0)).toBe(false)
+    expect(sessionAProlonger(exp, T0 + 14 * JOUR)).toBe(false)
+  })
+
+  it('resigne dès la moitié passée — donc bien avant l\'échéance', () => {
+    const exp = Math.floor(T0 / 1000) + SESSION_TTL
+    expect(sessionAProlonger(exp, T0 + 15 * JOUR)).toBe(true)
+    expect(sessionAProlonger(exp, T0 + 29 * JOUR)).toBe(true)
+  })
+
+  /**
+   * LA propriété : un usage quotidien ne doit jamais fermer la session. On rejoue
+   * cent jours d'ouvertures en resignant quand la règle le demande, et le jeton reste
+   * valide tout du long — là où l'ancien tombait au trentième.
+   */
+  it('cent jours d\'ouvertures quotidiennes ne la ferment jamais', () => {
+    let jeton = signToken({ sub: 'owner', scope: 'app' }, SESSION_TTL, T0)
+    for (let j = 1; j <= 100; j++) {
+      const t = T0 + j * JOUR
+      const p = verifyToken(jeton, t)
+      expect(p, `session perdue au jour ${j}`).not.toBeNull()
+      if (sessionAProlonger(p!.exp, t)) {
+        const { exp: _e, ...reste } = p!
+        jeton = signToken(reste, SESSION_TTL, t)
+      }
+    }
+  })
+
+  // Et l'inverse doit rester vrai : une absence réelle referme le coffre.
+  it('se ferme après une absence de plus de trente jours', () => {
+    const jeton = signToken({ sub: 'owner', scope: 'app' }, SESSION_TTL, T0)
+    expect(verifyToken(jeton, T0 + 29 * JOUR)).not.toBeNull()
+    expect(verifyToken(jeton, T0 + 31 * JOUR)).toBeNull()
+  })
+
+  it('garde le sujet et la portée en resignant — une session ne change pas de nature', () => {
+    const jeton = signToken({ sub: 'owner', scope: 'app' }, SESSION_TTL, T0)
+    const p = verifyToken(jeton, T0 + 20 * JOUR)!
+    const { exp: _e, ...reste } = p
+    const neuf = verifyToken(signToken(reste, SESSION_TTL, T0 + 20 * JOUR), T0 + 20 * JOUR)!
+    expect(neuf.sub).toBe('owner')
+    expect(neuf.scope).toBe('app')
+    expect(neuf.exp).toBeGreaterThan(p.exp)
+  })
+})

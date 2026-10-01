@@ -239,6 +239,10 @@ export function useVault() {
     try {
       state.value = await $fetch<VaultState>('/api/auth/me')
       if (state.value.connected) await loadPending()
+      // Configuré mais fermé : ce n'est pas une panne, mais c'est la raison pour
+      // laquelle rien n'arrive — et sans ça elle ne se lit nulle part. Le journal
+      // regroupe, donc une instance qui reste verrouillée tient sur une ligne.
+      else if (state.value.registered) journal.noter({ poste: 'session', quoi: 'Coffre verrouillé : ni relevé ni envoi tant qu\'il n\'est pas déverrouillé.' })
     }
     catch (e) {
       // Hors ligne, le coffre reste un confort : l'application n'en dépend pas. Mais
@@ -590,12 +594,28 @@ export function useVault() {
 
   /** Applicable d'un tap ? Sert aussi à l'écran, pour ne pas promettre un bouton
    *  qui ne ferait rien. */
+  /**
+   * Le coffre est configuré, mais fermé.
+   *
+   * C'est un TROISIÈME état, et son absence a coûté une soirée de plus que le
+   * `catch` muet. Verrouillé, `refresh` n'appelle même pas `loadPending` et
+   * `relever` sort à la première ligne : rien n'échoue, donc `releveKo` reste faux,
+   * donc l'écran affiche « Rien en attente » — alors que personne n'a rien demandé.
+   * Le miroir cesse de vieillir en même temps, par le même chemin, et c'est le seul
+   * symptôme visible de l'extérieur.
+   *
+   * `registered` fait la différence avec une instance neuve : là, il n'y a rien à
+   * déverrouiller, et réclamer une empreinte pour une boîte qui n'existe pas serait
+   * pire que le silence.
+   */
+  const verrouille = computed(() => !!state.value.registered && !state.value.connected)
+
   const applicable = (p: RawProposal) => planFor(p, ctx) !== null
 
   const pendingCount = computed(() => pending.value.length)
 
   return {
-    state, pending, recent, mirrorAt, busy, error, pendingCount, arrivees, vuArrivees, releveKo,
+    state, pending, recent, mirrorAt, busy, error, pendingCount, arrivees, vuArrivees, releveKo, verrouille,
     hydrate, refresh, register, ajouterSecours, revoquer, rename, login, logout, loadPending, relever, push, apply, resolve, applicable, ctx, restoreAll,
   }
 }

@@ -1,4 +1,4 @@
-import { ownerName, session } from './_auth'
+import { ownerName, prolongerSession, session } from './_auth'
 import { bootstrapArme, origineBootstrap, readCredentials } from '../../utils/vault'
 
 /**
@@ -12,8 +12,13 @@ import { bootstrapArme, origineBootstrap, readCredentials } from '../../utils/va
  */
 export default defineEventHandler(async (event) => {
   const creds = await readCredentials()
+  // L'appel que l'application passe à CHAQUE ouverture : c'est le meilleur endroit
+  // pour repousser l'échéance, et le seul qui couvre quelqu'un qui consulte sans
+  // jamais rien modifier.
+  const s = session(event)
+  if (s) prolongerSession(event, s)
   return {
-    connected: !!session(event),
+    connected: !!s,
     registered: creds.length > 0,
     /** Combien de passkeys : un seul veut dire « pas encore de secours ». */
     passkeys: creds.length,

@@ -42,9 +42,12 @@ vi.mock('../../composables/useVault', () => ({
     pending,
     recent: ref([]),
     pendingCount: ref(0),
-    // Le relevé a marché : c'est le cas de ces tests, qui portent sur le lot et non
-    // sur la panne. Une boîte injoignable a son propre fichier.
+    // Le coffre est ouvert et le relevé a marché : c'est le cas de ces tests, qui
+    // portent sur le lot et non sur la panne. Verrou et boîte injoignable ont leur
+    // propre fichier.
     releveKo: ref(false),
+    verrouille: ref(false),
+    login: vi.fn(async () => true),
     error: ref(null),
     state: ref({ connected: true, registered: true, bootstrapReady: false, passkeys: 1, appareils: [], ownerName: '' }),
     ctx: {},

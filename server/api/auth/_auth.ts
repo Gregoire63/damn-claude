@@ -1,5 +1,6 @@
 import type { H3Event } from 'h3'
-import { SESSION_COOKIE, SESSION_TTL, readCredential, verifyToken } from '../../utils/vault'
+import type { TokenPayload } from '../../utils/vault'
+import { SESSION_COOKIE, SESSION_TTL, readCredential, sessionAProlonger, signToken, verifyToken } from '../../utils/vault'
 
 // Ce qui identifie « le site » aux yeux d'un passkey.
 //
@@ -76,9 +77,25 @@ export function clearSession(event: H3Event) {
   deleteCookie(event, SESSION_COOKIE, { path: '/' })
 }
 
+/**
+ * Repousse l'échéance de la session quand elle a vécu plus de la moitié de sa vie.
+ *
+ * À appeler depuis TOUTE requête qui prouve que l'application est vivante — c'est ce
+ * qui transforme « trente jours après le passkey » en « trente jours après la
+ * dernière utilisation ». Sans elle, quelqu'un qui ouvre l'application chaque matin
+ * se faisait déconnecter au trentième, sans rien avoir fait et sans rien voir : le
+ * relevé de la boîte et l'envoi du miroir s'arrêtent tous les deux en silence.
+ */
+export function prolongerSession(event: H3Event, payload: TokenPayload, nowMs = Date.now()) {
+  if (!sessionAProlonger(payload.exp, nowMs)) return
+  const { exp: _echu, ...sansExp } = payload
+  setSession(event, signToken(sansExp, SESSION_TTL, nowMs))
+}
+
 /** Refuse proprement plutôt que de laisser filer une requête non authentifiée. */
 export function requireSession(event: H3Event) {
   const s = session(event)
   if (!s) throw createError({ statusCode: 401, statusMessage: 'Session requise' })
+  prolongerSession(event, s)
   return s
 }

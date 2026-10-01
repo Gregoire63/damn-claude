@@ -75,6 +75,22 @@ const applicables = computed(() => v.pending.value.filter(p => v.applicable(p)))
 /** Le relevé forcé : il contourne l'espacement minimal, puisque c'est un geste. */
 function relancer() { void v.relever(true) }
 
+/**
+ * Déverrouiller depuis la boîte, et relever dans la foulée.
+ *
+ * Le bouton existait, mais dans Profil → Connecteur Claude : trois écrans plus loin
+ * que l'endroit où l'on vient justement voir ce qui attend. Et le relevé qui suit
+ * est forcé, sinon l'espacement minimal avale le premier et la boîte reste vide une
+ * minute de plus — juste après le geste censé la rouvrir.
+ */
+async function deverrouiller() {
+  if (await v.login()) {
+    await v.relever(true)
+    emit('flash', 'Déverrouillé ✓')
+  }
+  else emit('flash', v.error.value ?? 'Déverrouillage impossible')
+}
+
 async function toutAppliquer() {
   aToutAppliquer.value = false
   if (enLot.value) return
@@ -452,9 +468,11 @@ const progChanges = computed(() => {
   <Popup
     popup-class="vt-inbox-popup"
     title="Propositions de Claude"
-    :subtitle="v.releveKo.value
-      ? 'Boîte injoignable · le compte ci-dessous peut être faux'
-      : (v.pendingCount.value ? `${v.pendingCount.value} en attente · rien n'est écrit avant ta validation` : 'Rien en attente')"
+    :subtitle="v.verrouille.value
+      ? 'Coffre verrouillé · rien n\'est relevé ni envoyé'
+      : v.releveKo.value
+        ? 'Boîte injoignable · le compte ci-dessous peut être faux'
+        : (v.pendingCount.value ? `${v.pendingCount.value} en attente · rien n'est écrit avant ta validation` : 'Rien en attente')"
     @close="emit('close')"
   >
     <template #default>
@@ -522,7 +540,24 @@ const progChanges = computed(() => {
         propositions ont attendu une soirée pendant que l'écran annonçait le calme.
         Un relevé qui échoue le dit maintenant, et ne prétend plus avoir regardé.
       -->
-      <p v-if="v.releveKo.value" class="vt-txt vt-ko">
+      <!--
+        Verrouillé, l'application ne DEMANDE rien : `refresh` saute le relevé et
+        `relever` sort à la première ligne. Rien n'échoue, donc rien ne s'affichait —
+        et la phrase rassurante tenait le haut de l'écran pendant que quatre
+        propositions attendaient. C'est le premier cas à traiter, avant la panne de
+        relevé : on ne peut pas avoir raté un appel qu'on n'a pas passé.
+      -->
+      <div v-if="v.verrouille.value" class="vt-txt vt-ko">
+        <p>
+          Le coffre est <b>verrouillé</b> : je ne peux ni relever ce qui attend, ni
+          envoyer tes données. Ce qui s’affiche ci-dessous date de la dernière fois
+          qu’il était ouvert.
+        </p>
+        <button type="button" class="btn-primary vt-deverrouiller" :disabled="v.busy.value" @click="deverrouiller">
+          {{ v.busy.value ? 'Déverrouillage…' : '🔓 Déverrouiller' }}
+        </button>
+      </div>
+      <p v-else-if="v.releveKo.value" class="vt-txt vt-ko">
         Je n’ai pas pu relever la boîte{{ v.error.value ? ` — ${v.error.value}` : '' }}.
         Il y a peut-être quelque chose en attente : ce qui s’affiche ci-dessous date du
         dernier relevé réussi. Je réessaie tout seul ; tu peux aussi

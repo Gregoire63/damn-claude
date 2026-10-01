@@ -231,6 +231,7 @@ function onScroll() { titreReplie.value = window.scrollY > 34 }
 const vault = useVault()
 /** Le nombre écrit sur la cloche. Zéro : pas de badge, le bouton reste. */
 const propositionsEnAttente = computed(() => vault.pendingCount.value)
+const coffreVerrouille = computed(() => vault.verrouille.value)
 
 /**
  * Signaler l'ARRIVÉE, pas seulement l'état.
@@ -509,14 +510,23 @@ onUnmounted(() => {
         <button
           v-if="demarrage.fini.value"
           class="header-alerte"
-          :class="{ some: propositionsEnAttente > 0, neuf: clocheNeuve }"
-          :aria-label="propositionsEnAttente
-            ? `Propositions de Claude : ${propositionsEnAttente} en attente`
-            : 'Propositions de Claude'"
+          :class="{ some: propositionsEnAttente > 0, neuf: clocheNeuve, verrou: coffreVerrouille }"
+          :aria-label="coffreVerrouille
+            ? 'Propositions de Claude : coffre verrouillé, rien n\'est relevé'
+            : propositionsEnAttente
+              ? `Propositions de Claude : ${propositionsEnAttente} en attente`
+              : 'Propositions de Claude'"
           @click="propositionsOuvertes = true; vault.vuArrivees()"
         >
           <Glyphe nom="cloche" :taille="20" />
           <span v-if="propositionsEnAttente" class="header-badge mono">{{ propositionsEnAttente > 9 ? '9+' : propositionsEnAttente }}</span>
+          <!--
+            Verrouillé, le compte vaut zéro parce que personne n'a demandé — pas parce
+            que rien n'attend. Une cloche parfaitement normale n'invite pas à ouvrir
+            la feuille, donc la seule phrase qui explique le silence reste derrière un
+            geste que rien ne suggère. Ce point le suggère.
+          -->
+          <span v-else-if="coffreVerrouille" class="header-verrou" aria-hidden="true">•</span>
         </button>
       </div>
       <!-- Desktop : navigation en haut -->

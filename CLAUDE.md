@@ -244,6 +244,19 @@ tiennent :
   que plus rien ne part — l'outil `erreurs` le dit lui-même, parce que « vide » se lit
   spontanément « tout va bien ».
 
+Il y a un TROISIÈME état, et c'est celui qui a coûté le plus cher : **coffre
+configuré mais fermé**. Là, `refresh` n'appelle même pas `loadPending` et `relever`
+sort à sa première ligne — rien n'échoue, donc `releveKo` reste faux, donc l'écran
+affichait « Rien en attente », la phrase la plus rassurante de l'application, pendant
+que quatre propositions attendaient. Le miroir cesse de vieillir par le même chemin,
+et c'est le seul symptôme visible de l'extérieur : un `miroir_du` qui ne bouge plus
+veut dire « session fermée » bien plus souvent que « rien n'a changé ». D'où
+`verrouille` (= `registered && !connected`), la feuille qui le dit avec son bouton de
+déverrouillage — à portée, et non trois écrans plus loin dans les réglages — et le
+point sur la cloche, sans quoi rien n'inviterait à ouvrir la feuille où se trouve
+l'explication. `registered` fait la différence avec une instance neuve : réclamer une
+empreinte pour une boîte qui n'existe pas serait pire que le silence.
+
 **Une proposition déposée doit pouvoir être RETIRÉE par qui l'a déposée.** Déposer
 était le seul geste existant : sans accusé de réception, une conversation qui ne voit
 rien arriver redépose, et trois fois la même tarte se retrouvent dans la boîte.
@@ -471,9 +484,23 @@ suffirait d'essayer jusqu'à tomber juste. Et « code déjà consommé » se dis
 « code invalide », parce que le premier dit quoi faire et le second envoie chercher
 une faute de frappe qui n'existe pas.
 
+**La session GLISSE, sinon trente jours veulent dire trente jours.** Le jeton porte
+son expiration dans sa signature, et rien ne la repoussait : elle était comptée depuis
+le déverrouillage au passkey, une fois pour toutes. Quelqu'un qui ouvrait
+l'application tous les matins se faisait donc déconnecter au trentième, sans rien
+avoir fait — et sans rien voir, puisque le relevé de la boîte et l'envoi du miroir
+s'arrêtent tous les deux en silence (voir « coffre configuré mais fermé » plus haut).
+`prolongerSession` resigne depuis `requireSession` et depuis `/api/auth/me`, dès que
+la moitié de la vie est passée : un `Set-Cookie` tous les quinze jours en usage
+quotidien, et une session qui ne se ferme plus qu'après quinze jours d'absence
+RÉELLE. Volontairement sans plafond absolu — un plafond rendrait la déconnexion plus
+rare, pas plus compréhensible, et on retomberait sur la même surprise six mois plus
+tard.
+
 Tout ça est couvert par `test/unit/passkeys.test.ts`, en comportement et non en
 lecture de source : un code qui redeviendrait valide après usage ne se remarquerait
-jamais autrement.
+jamais autrement, et une session qui cesse de glisser encore moins — le test rejoue
+cent jours d'ouvertures quotidiennes.
 
 ## Le connecteur
 
@@ -491,7 +518,7 @@ Deux invariants tenus par des tests :
 
 ## Les tests
 
-1512 tests, 89 fichiers, deux projets. La plupart tournent sur le **pack d'exemple**,
+1520 tests, 90 fichiers, deux projets. La plupart tournent sur le **pack d'exemple**,
 déclaré fichier par fichier (`vi.mock('../../data/nutritionProgram', …)`, voir
 `test/exemple.ts`) : vérifier que la modulation des féculents ne touche pas aux
 protéines demande des aliments aux vraies macros, pas trois objets fabriqués.

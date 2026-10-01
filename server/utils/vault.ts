@@ -557,6 +557,29 @@ export function verifyToken(token: string | undefined | null, nowMs: number): To
 
 export const SESSION_COOKIE = 'gr-session'
 export const SESSION_TTL = 60 * 60 * 24 * 30 // 30 jours : c'est un téléphone personnel
+
+/**
+ * Faut-il resigner la session ?
+ *
+ * Le jeton porte son expiration DANS sa signature, et rien ne la repoussait : elle
+ * était donc comptée depuis le déverrouillage au passkey, une fois pour toutes.
+ * Ouvrir l'application tous les jours n'y changeait rien — au trentième, la session
+ * tombait, l'application cessait de relever sa boîte et d'envoyer son miroir, et
+ * l'écran annonçait « Rien en attente ». Trente jours sans le moindre signe, pour un
+ * usage quotidien : exactement l'inverse de ce que « 30 jours » laissait entendre.
+ *
+ * On glisse donc la fenêtre : toute requête authentifiée repousse l'échéance. Le
+ * seuil à la moitié est là pour ne pas renvoyer un `Set-Cookie` à chaque appel —
+ * avec un usage quotidien, ça fait une signature tous les quinze jours, et la
+ * session ne se ferme plus qu'après quinze jours d'absence RÉELLE.
+ *
+ * Volontairement sans plafond absolu : un plafond rendrait la déconnexion plus rare,
+ * pas plus compréhensible, et on retomberait sur la même surprise six mois plus tard.
+ * Le coffre se referme quand on ne s'en sert plus, ce qui est la seule règle qu'on
+ * puisse deviner sans lire le code.
+ */
+export const sessionAProlonger = (exp: number, nowMs: number, ttl = SESSION_TTL): boolean =>
+  exp - Math.floor(nowMs / 1000) <= ttl / 2
 export const CHALLENGE_TTL = 60 * 5
 export const CODE_TTL = 60 * 2
 export const ACCESS_TTL = 60 * 60 * 24 * 90 // le connecteur ne doit pas se déconnecter tous les matins
